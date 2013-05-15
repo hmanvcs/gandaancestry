@@ -1,0 +1,180 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$id = decode($request->clanid);
+	$clan = new Clan();
+	$clan->populate($id);
+	// debugMessage($request->clanid);
+	$title = "Upload Photo"; 
+	if(!isEmptyString($request->crop)){
+		$title = "Crop Picture"; 
+	}
+	
+	$imgpath = "";
+	$covercustom = "";
+	switch($request->type){
+		case 1:
+			$iscover = true;
+			$imgpath = $clan->getCoverPhotoPath();
+			$covercustom = ' style="width:90%;"';
+			$title = "Upload Cover Photo";
+			$croppath = $clan->getLargeCoverPath(); 
+			break;
+		case 2:
+			$iscover = false;
+			$imgpath = $clan->getTotemPath();
+			$croppath = $clan->getLargeTotemPath();
+			$title = "Upload ".$clan->getName()." Totem Image"; 
+			break;
+		case 3:
+			$iscover = false;
+			$imgpath = $clan->getFlagPath();
+			$title = "Upload ".$clan->getName()." Flag Image"; 
+			$croppath = $clan->getLargeFlagPath();
+			break;
+		default:
+			break;
+	}
+					
+	$posturl = $this->baseUrl("clan/processpicture");
+	$this->headTitle($title);
+	
+	$usemainlayout = false;
+	
+?>
+<script>
+$(document).ready(function() {
+	// remove box style if no profile picture
+	<?php if($clan->hasTotemImage()){ ?>
+		$("#profileinfo").addClass('new_pic');
+	<?php } ?>
+	
+	<?php if($iscover){ ?>
+		$('#photo').imgAreaSelect({ 
+			aspectRatio: '163:63', 
+			handles: true,
+			fadeSpeed: 200, 
+			minWidth: 100,
+			maxWidth: 500,
+			x1: 0, y1: 0, x2: 300, y2: 116,
+			/*onSelectChange: preview,*/
+			onSelectEnd: function (img, selection) {
+				$('input[name="x1"]').val(selection.x1);
+				$('input[name="y1"]').val(selection.y1);
+				$('input[name="x2"]').val(selection.x2);
+				$('input[name="y2"]').val(selection.y2);
+				$('input[name="h"]').val(selection.height);
+				$('input[name="w"]').val(selection.width);            
+			}
+		});	
+	<?php } else { ?>
+		$('#photo').imgAreaSelect({ 
+			aspectRatio: '32:35', 
+			handles: true,
+			fadeSpeed: 200, 
+			minWidth: 90,
+			maxWidth: 300,
+			x1: 0, y1: 0, x2: 250, y2: 260,
+			/*onSelectChange: preview,*/
+			onSelectEnd: function (img, selection) {
+				$('input[name="x1"]').val(selection.x1);
+				$('input[name="y1"]').val(selection.y1);
+				$('input[name="x2"]').val(selection.x2);
+				$('input[name="y2"]').val(selection.y2);
+				$('input[name="h"]').val(selection.height);
+				$('input[name="w"]').val(selection.width);            
+			}
+		});	
+	
+	<?php } ?>
+}); 
+</script>
+<style>
+h3.well-legend {
+	color:#333333;
+	font-size:14px;
+}
+#contentcolumn {
+	height:auto;
+	min-height:300px;
+}
+</style>
+<div class="row margin0">
+	<span class="span11 margin0">        
+       <table class="table noborder margin0">
+            <tr>
+                <td style="vertical-align:top; width:190px; padding-left:40px; padding-right:25px;">
+                    <table class="table noborder margin0" style="width:180px;">
+                        <tr>
+                            <td>
+                                <h3 class="well-legend">Current Photo</h3>
+                                <div class="profileinfo clantotem" style="margin-top:15px;">
+                                    <img id="profileimage" src="<?php echo $imgpath; ?>" <?php echo $covercustom; ?>  />
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="vertical-align:top;">
+					<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                        <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                    <?php } ?>	
+                    <?php if($sessionhaserror) { ?>
+                        <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                    <?php } ?>
+					<?php if(isEmptyString($request->crop)){ ?>
+                        <form id="pictureform" action="<?php echo $posturl; ?>" method="post" enctype="multipart/form-data">					
+                            <table class="table noborder margin0">
+                                <tr>
+                                    <td style="vertical-align:top; border-bottom:2px dotted #e2e2e2; padding-bottom:50px;">
+                                        <h3 class="well-legend">Upload a Photo</h3>
+                                        <label style="display:block; margin-top:5px;">You can upload a JPG, GIF or PNG file (File size limit is 2 MB)</label>
+                                        <input class="file" type="file" name="profileimage" id="profileimage" />
+                                        <input type="hidden" id="id" name="id" value="<?php echo encode($clan->getID()); ?>" />
+                                        <input type="hidden" id="filename" name="filename" value="" />
+                                        <input type="hidden" id="type" name="type" value="<?php echo $request->type; ?>" />
+                                        <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('clan/view/id/'.encode($clan->getID()))); ?>" />
+                    					<input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl('clan/picture/id/'.encode($clan->getID()))); ?>" />
+                                    </td>
+                                </tr>  
+                                <tr>
+                                    <td style="padding-top:25px;"><button style="" type="submit" class="btn btn-primary" id="upload" name="submit" title="Upload"><i class="icon-upload icon-white"></i>&nbsp; Upload</button> or <a href="<?php echo $this->baseUrl("clan/view/id/".encode($clan->getID())); ?>" title="<?php echo $this->translate("global_button_cancel"); ?>"><?php echo $this->translate('global_button_cancel'); ?></a>&nbsp;
+                                    </td>
+                                </tr>       
+                            </table>
+                        </form>	
+					<?php } else { ?>
+                        <form action="<?php echo $this->baseUrl("clan/croppicture"); ?>" id="indexform" method="post">
+                            <table class="table noborder margin0">
+                                <tr>
+                                    <td style="vertical-align:top; border-bottom:2px dotted #e2e2e2; padding-bottom:30px;">
+                                        <h3 class="well-legend">Resize/Crop Photo</h3>
+                                        <label style="margin:15px; margin-left:-2px; display:block; font-size:13px; font-style:normal;" class="pagedescription">Drag the handles on the image canvas below to resize and click <b>'Crop Photo'</b> to save changes.</label>
+                                        <img src="<?php echo $croppath; ?>" id="photo" />
+                                        <input type="hidden" name="x1" value="" />
+                                        <input type="hidden" name="y1" value="" />
+                                        <input type="hidden" name="x2" value="" />
+                                        <input type="hidden" name="y2" value="" />
+                                        <input type='hidden' name='w' value='' />
+                                        <input type='hidden' name='h' value='' />
+                                        <input type="hidden" id="id" name="id" value="<?php echo encode($clan->getID()); ?>" />
+                    					<input type="hidden" id="type" name="type" value="<?php echo $request->type; ?>" />
+                                        <button style="float:right; display:inline-block;" type="submit" id="startcrop" class="btn btn-primary btn-large">Crop Photo</button>
+                                   </td>
+                                </tr>  
+                                <tr>
+                                    <td>
+                                    </td>
+                                </tr>       
+                            </table>
+                        </form>
+                    <?php } ?>
+                </td>
+            </tr>
+        </table>
+	</span>
+</div>  
+<?php
+	$session->setVar(SUCCESS_MESSAGE, '');
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

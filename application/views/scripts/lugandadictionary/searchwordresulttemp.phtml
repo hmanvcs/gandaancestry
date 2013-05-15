@@ -1,0 +1,267 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	$conn = Doctrine_Manager::connection();
+	
+	$word = trim($request->word);
+	$from = $request->from;
+	if ($from == "english") {
+		$premquery = "SELECT englishword as \"English Word\", hasclips as \"hasClips\", singular as \"Singular\", plural as \"Plural\", type as \"Type\", context as \"Context\", root as \"Root\", prefix1 as\"Prefix1\", prefix2 as \"Prefix2\",";
+		$premquery .= " lexample1 as \"Luganda Example1\", eexample1 as \"English Example1\", lexample2 as \"Luganda Example2\", eexample2 as \"English Example2\" from premiumdictionary WHERE englishword ='".$word."' ORDER BY englishword";
+		$nearquery = "SELECT DISTINCT englishword as \"English Word\" from premiumdictionary WHERE englishword != '".$word."' AND englishword LIKE '".$word."%' OR plural = '".$word."' OR singular = '".$word."' OR nearmatch = '".$word."' ORDER BY englishword";
+		if ($word != "") {
+			//$result = $conn->fetchAll($premquery) or die("Invalid query: " . mysql_error());
+			openDatabaseConnection();
+			$result = mysql_query($premquery) or die("Invalid query: " . mysql_error());
+			$counter = 0;
+			$columnCount =  mysql_num_fields($result);
+			$rowcount = mysql_num_rows($result);
+			
+?>
+
+<table class="">
+ 
+  <tr>
+ 
+  <td><?php
+	 	$rowcountold = $rowcount;
+	 	openDatabaseConnection();
+		$nearqueryresult = mysql_query($nearquery) or die("Invalid query: " . mysql_error());
+		$rowcountnew = mysql_num_rows($nearqueryresult);
+	  
+	   if (($rowcountold != 0) || ($rowcountnew != 0)) {
+	  	  echo "<div class=\"searchresults_div\" style=\"height:200\">";
+	   }
+	  ?>
+    <span id="list_div">
+    <table  class="table table-bordered table-striped">
+      <?php
+												
+												// print the column headers
+												
+												/* get column metadata */
+												echo "<tr>";
+												echo "<td nowrap><font color =\"#000066\">".$rowcount." matching entries found for <B>".$word."</B></font></td>";
+												echo "</tr>";								
+																								
+												$i = 1;
+												
+												// print the rows
+												while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+													// open the row
+													echo "<tr>";																							
+													// return the data in each column
+														if (($counter % 2) == 0) {
+															// use a class with a dark background
+															$tdclass= "";
+														} else {
+															// use a class with a white
+															$tdclass= "";
+														}					
+																		
+														$lexample1 = str_replace("#root", $line['Root'], $line['Luganda Example1']);
+														$lexample1 = str_replace("#prefix1", $line['Prefix1'], $lexample1);
+														$eexample1 = str_replace("#english", $line['English Word'], $line['English Example1']);
+														$lexample2 = str_replace("#root", $line['Root'], $line['Luganda Example2']);
+														$lexample2 = str_replace("#prefix2", $line['Prefix2'], $lexample2);
+														$eexample2 = str_replace("#english", $line['English Word'], $line['English Example2']);
+														
+															// display contents for English to Luganda
+															// english word
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"676\" nowrap>".$i.". ".$line['Type'];
+															//display the context incase it is available
+															if($line['Context'] != ""){
+															echo " (".$line['Context'].")";
+															}
+															echo ": <B>".$line['Prefix1'].$line['Root']."</b>&nbsp;";
+															if($line['hasClips'] == "true") {
+															echo "<a href=\"javascript:popWin('".$this->baseUrl('lugandadictionary/audio/word/'.$line['Prefix1'].$line['Root'])."')\"><img src=\"".$this->baseUrl('/images/audioicon.gif')."\" width=\"13\" height=\"21\" hspace=\"2\" border=\"0\" align=\"absbottom\" onMouseOver=\"domTT_activate(this, event, 'content', document.getElementById('audioclip_tt'));\"></a>";
+															}
+															//Display second translation if prefix2 exists
+															if ($line['Prefix2'] != ""){
+															 echo " or <B>".$line['Prefix2'].$line['Root']."</b>&nbsp;";
+															if($line['hasClips'] == "true") {
+															 echo "<a href=\"javascript:popWin('".$this->baseUrl('lugandadictionary/audio/word/'.$line['Prefix1'].$line['Root'])."')\"><img src=\"".$this->baseUrl('/images/audioicon.gif')."\" width=\"13\" height=\"21\" hspace=\"2\" border=\"0\" align=\"absbottom\" onMouseOver=\"domTT_activate(this, event, 'content', document.getElementById('audioclip_tt'));\"></a>";
+															 }
+															 }
+															echo "<BR><I>example 1</I>: ".$lexample1." => ".$eexample1;
+															//Display second example if it exists
+															if($lexample2 != "") {
+															echo "<BR><I>example 2</I>: ".$lexample2." => ".$eexample2."</td></tr>";
+															}
+															// Add separator row
+															//echo "<tr><td class=\"".$tdclass."\" height=\"10\">&nbsp;</td><tr>";
+															
+													$i++;										
+													$counter++;													
+											} // end of while
+											mysql_free_result($result);
+											
+											//echo "<tr><td class=\"\" height=\"20\" width = \"676\">&nbsp;</td></tr>";
+
+											
+										}
+									?>
+    </table>
+    <table  class="table table-bordered table-striped">
+    <?php
+		
+													
+													$result = mysql_query($nearquery) or die("Invalid query: " . mysql_error());
+													$counter = 0;
+													$rowcount = mysql_num_rows($result);
+													
+												
+												
+												/* get column metadata */
+												echo "<tr>";
+												echo "<td nowrap><font color =\"#000066\">".$rowcount." near matches for <B>".$word."</B></font></td>";
+												echo "</tr>";
+												
+												
+												// check if there are any rows returned
+												if (mysql_num_rows($result) == 0) {
+													echo "<tr><td height=\"20\" width = \"500\">No near matches found</td></tr>";
+													
+												} else {
+												$i = 1;
+												
+												// print the rows
+												while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+													// open the row
+													echo "<tr>";																							
+													// return the data in each column
+														if (($counter % 2) == 0) {
+															// use a class with a dark background
+															$tdclass= "";
+														} else {
+															// use a class with a white
+															$tdclass= "";
+														}									
+															//create hidden field with value as english word		
+															echo "";
+															// display near match english word
+															echo "<td class=\"".$tdclass."\" height=\"20\" width = \"500\" nowrap>".$i.". <span onclick=\"return showNearMatchTranslation('".$i."')\" class=\"dictionarylinks\">".$line['English Word']."</span>";
+															//add hidden field and set its valueto the value of the near match
+															//TBD: Add error checking code
+															echo "<input type=\"hidden\" name=\"".$i."\" id=\"".$i."\" value = \"".$line['English Word']."\"></td></tr>";
+																											
+													$i++;										
+													$counter++;										
+
+										}	//end of while
+											//echo "<tr><td class=\"\" height=\"20\" width = \"500\">&nbsp;</td></tr>";
+
+										} 
+	?>
+    </table>
+    </span>
+    <?php
+		 	$rowcountnew = $rowcount;
+			
+		 	if (($rowcountnew != 0) || ($rowcountold != 0)) {
+				echo "</div>";
+			}
+		 ?></td>
+    </tr>
+  
+</table>
+<?php }?>
+<?php	
+	if ($from == "english") {
+		$query = "SELECT englishword as \"English Word\", type as Type, lugandaword as \"Luganda Word\", plural as  \"Luganda Plural\" from dictionary WHERE englishword LIKE '".$word."%' ORDER BY englishword";
+	} else {
+		$query = "SELECT lugandaword as \"Luganda Word\", plural as  \"Luganda Plural\", type as Type, englishword as \"English Word\" from dictionary WHERE lugandaword LIKE '%".$word."%' OR plural LIKE '%".$word."%' OR stem LIKE '%".$word."%' OR stem2 LIKE '%".$word."%' ORDER BY lugandaword";
+	}
+?>
+<table cellpadding="0" cellspacing="0" border="0">
+  
+  <?php if ($word != "") { ?>
+  <?php if ($from == "english") { ?>
+  <tr>
+    <td class="bluetext" >Matching Words for '<?php echo str_replace('\\', '',$word); ?>' translated to Luganda</td>
+  </tr>
+  <?php } else {?>
+  <tr>
+    <td class="bluetext" >Matching Words for: '<?php echo str_replace('\\', '',$word); ?>' translated to English</td>
+  </tr>
+  <?php } ?>
+  <?php } ?>
+  <tr>
+  <tr>
+    <td>&nbsp;</td>
+  </tr>
+  <td><div class="searchresults_div" style="height:200" id="list_div">
+      <table  class="table table-bordered table-striped">
+        <?php
+											if ($word != "") {
+													openDatabaseConnection();
+													$result = mysql_query($query) or die("Invalid query: " . mysql_error());
+													$counter = 0;
+													$columnCount =  mysql_num_fields($result);
+												// print the column headers
+												print "<thead>";
+												/* get column metadata */
+												$i = 0;
+												echo "<tr>";
+												while ($i < mysql_num_fields($result)) {
+													// echo "Information for column $i:<br />\n";
+													$meta = mysql_fetch_field($result);
+													echo "<th>".$meta->name."</th>";
+													$i++;
+												}
+												echo "</tr>";
+												print "</thead>";
+												//print "<tr><td colspan=\"4\"><div class=\"searchresults_div\" style=\"height:200\" id=\"list_div\"><table class=\"dictionarytable\">";
+												// check if there are any rows returned
+												if (mysql_num_rows($result) == 0) {
+													echo "<tr><td height=\"20\" colspan=\"4\">No matches found</td></tr>";
+												} else {
+												// print the rows
+												while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+													// open the row
+													echo "<tr>";																							
+													// return the data in each column
+														if (($counter % 2) == 0) {
+															// use a class with a dark background
+															$tdclass= "bcktanbgd";
+														} else {
+															// use a class with a white
+															$tdclass= "";
+														}													
+														
+														if ($from == "english") {
+															// display contents for English to Luganda
+															// english word
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"200\">".$line['English Word']."</td>";
+															// type
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"50\">".$line['Type']."</td>";
+															// luganda word
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"250\">".$line['Luganda Word']."</td>";
+															// plural
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"250\">".$line['Luganda Plural']."</td>";																										
+															$i++;										
+														} else {
+															// display contents for Luganda to English
+															// luganda word
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"250\">".$line['Luganda Word']."</td>";
+															// plural
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"250\">".$line['Luganda Plural']."</td>";
+															// type
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"50\">".$line['Type']."</td>";
+															// english word
+															echo "<td class=\"".$tdclass."\" height=\"20\" width=\"200\">".$line['English Word']."</td>";
+														}
+
+													// close the row
+													echo "</tr>";
+													$counter++;													
+												} // end of while
+											}
+											//print "</table></div></td></tr>";
+										}	
+									?>
+      </table>
+    </div></td>
+    </tr>
+  
+</table>

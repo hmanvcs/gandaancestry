@@ -1,0 +1,127 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Kabaka";
+	$this->headTitle($this->translate("appname")." | Kabaka"); 
+
+?>
+<script>
+$(document).ready(function(){
+	// $("#contentwrapper").removeClass('well');
+});
+</script>
+<style>
+</style>
+<div class="row marginleft0 margin0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+    	<h1 style="text-align:center; font-size:26px;"><?php echo $title; ?></h1>  
+        <div class="content">
+            <h2>Kabaka Institution</h2>
+            <p>Kabaka is the head of the Ganda nation and Baganda look to him for cultural, political, and spiritual guidance. Indeed, most of Ganda cultural practices and norms can be traced to utterances or orders of the Kabaka. Only one person may be referred to as Kabaka at any one time - once a Kabaka is deceased, he is referred to a Ssekabaka.</p>
+            <p>As Ssabataka, Kabaka is the unprejudiced leader of all Baganda clans and their heads (abataka). The office of Kabaka is not hereditary but only a prince of Buganda (mulangira) can become Kabaka, the highest priority being given to the sons of the passing Kabaka. Kabaka, in his official role, does not belong to a clan, the way other Baganda do. However, the prince occupying the office of Kabaka is still a member of the Balangira (princes and princesses) clan and belongs to a mutuba in that clan.</p>            <p>Furthermore, Ganda culture strongly ties Kabaka to his mother's clan and he generally relates to it as a son, giving them special privileges above other clans. Indeed, Kabaka does not marry from his mother's clan (okuzira) because many Baganda view him as a de facto member of that clan. This enables a natural rotation of the opportunity to produce the next Kabaka from one clan to another over time, probably the best explanation of the strong love Baganda have for Kabaka.</p>
+            
+            <h2>Kabaka Ronald Muwenda Mutebi II</h2> 
+            <div class="margin0" style="position:relative; padding-right:180px;">
+                <p>Kabaka Ronald Frederick Muwenda Mutebi II is the 36th Kabaka of Buganda. He was born at the royal palace, Twekobe,Mengo (Buganda) on 13th April, 1955. He is the son of the late Sekabaka Edward Frederick Luwangula Walugembe Muteesa II and the late Kabejja Sarah Nalule Kisosonkole of the Nkima clan.</p>
+                <p>Muwenda Mutebi spent part of his childhood in exile following the desecration of the Buganda kingdom between 1966-1986.</p> 
+                <span style="position:absolute; right:5px; top:8px; width:160px;">
+                	<img src="<?php echo $this->baseUrl('images/kabakawed.png'); ?>" />
+                    <label style="display:block; white-space:normal;">Kabaka Muwenda Mutebi II and Nnabagereka </label>
+                </span>
+            </div>             
+            <h2>Education</h2> 
+            <p>Kabaka Ronald Muwenda Mutebi II was educated both privately at the royal palace at Mengo and at other highly reputable schools:</p>
+            <ul>
+                <li>A Preparatory school in Bugangaizi county, Buganda (Uganda) </li>
+                <li>Buddo Primary School, Buganda (Uganda)</li> 
+                <li>Kingsmead Preparatory School, Sussex, UK </li>
+                <li>Bradford Public School, Reading, UK </li>
+                <li>Cambridge University, Cambridge, UK </li>
+            </ul>
+			<h2>Nnabagereka</h2>
+            <p>Kabaka Muwenda Mutebi II married Lady Sylvia Nagginda Luswata of the musu clan on 27th August, 1999 in Saint Pauls Cathedral in Namirembe, making her Nnabagereka.</p> 
+            <p>Sylvia Nagginda Luswata, Nnabagereka was born on September, 1964 in England. She recieved her early education in Buganda (Uganda), at Lake Victoria Primary School, Gayaza Junior School, and Wanyange Girls School. She went on to earn an Associates degree with honours from the City University of New York, a Bachelor of Arts degree from New York University (NYU), and a Master of Arts degree from the New York Institute of Technology.</p>
+            
+            <h2>Children</h2> 
+            <ul>
+                <li>Omulangira Jjunju Suuna Kiweewa
+                <li>Omumbejja Joan Nassolo
+                <li>Omumbejja Victoria Nkinzi
+                <li>Omumbejja Sarah Katrina Sangalyambogo
+                <li>Omulangira Richard Ssemakokiro
+            </ul>
+            <h2>Ascendance</h2> 
+            <p>Ronald Muwenda Mutebi II became Kabaka on November 21, 1969 after the death of his father and the okubikkaakabugo ceremony. Although to his Baganda subjects, Mutebi was the Kabaka living in exile, he was only recoginized by the Uganda government in 1993 when the Bataka of Buganda arranged for his formal coronation. Mutebi was formally crowned Sabasajja Kabakawa Buganda at Nagalabi, Busiro county, on July 31, 1993.</p> 
+            <p>Mutebi's father was much loved Ssekabaka Fredrick Edward Walugembe Muteesa II who was forced into exile when Milton Apollo Obote, then Prime Minister of Uganda, staged a military coup, changed the constitution, and abolished the official recognition of Kabaka of Buganda.</p>
+			<h2>Lineage of Kabaka Mutebi II – The Kintu Dynasty</h2>
+            <table class="table table-bordered table-condesed list" id="dynasty">
+            	<thead>
+                	<tr>
+                    	<td style="width:10px;">#</td>
+                        <td>KABAKA</td>
+                        <td style="width:15%;">REIGN START</td>
+                        <td style="width:14%;">REIGN END</td>
+                        <td style="width:21%;">MOTHER</td>
+                        <td style="width:20%;">MOTHER'S CLAN</td>
+                    </tr>
+                </thead>
+                <tbody>
+                	<?php 
+						$kabaka = new Kabaka();
+						$data = $kabaka->getAllKings();
+						$id = 'class=""';
+						$showtd = true;
+						$spanedrow = false;
+						// debugMessage($data);
+						foreach($data as $value){
+							if($value['hasspan'] == 1 && $value['spanrow1'] == 0){
+								$showtd = false;
+								$spanedrow = true;
+							} else {
+								$showtd = true;
+								$spanedrow = false;
+							}
+							if($value['hasspan'] == 1 && $value['spanrow1'] == 1){
+								$spanattr = 'rowspan="2"';
+							} else {
+								$spanattr = '';
+							}
+					?>
+                    <tr>
+                    	<?php if($spanedrow == false){ ?> 
+                            <td <?php echo $spanattr; ?>>
+                                <?php if($showtd == true){ ?>
+                                    <?php echo $value['no']; ?>
+                                <?php } ?>
+                            </td>
+                            <td <?php echo $spanattr; ?>>
+                                <?php if($showtd == true){ ?>
+                                    <?php echo $value['name']; ?>
+                                <?php } ?>
+                            </td>
+                        <?php } ?>
+                        <td><?php echo $value['from']; ?></td>
+                        <td><?php echo $value['to']; ?></td>
+                        <?php if($spanedrow == false){ ?> 
+                            <td <?php echo $spanattr; ?>>
+								<?php if($showtd == true){ ?>
+									<?php echo $value['mothername']; ?>
+                                <?php } ?>
+                            </td>
+                            <td <?php echo $spanattr; ?>>
+								<?php if($showtd == true){ ?>
+									<?php echo $value['motherclan']; ?>
+                                <?php } ?>
+                            </td>
+                        <?php } ?>
+                    </tr>
+                    <?php } ?>
+				</tbody>
+            </table>
+        </div>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

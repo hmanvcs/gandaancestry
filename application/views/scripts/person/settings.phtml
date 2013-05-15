@@ -1,0 +1,64 @@
+<div id="settings">
+    <form id="profileform-settings" class="form-horizontal settings">
+    <?php if($request->tab == 'settings'){ ?>
+    <div class="row" style="margin-left:0px;"> 		
+        <span class="span9">
+            <div class="well lighter row" style="min-height:80px;">
+                <h3 class="well-legend">Account</h3>
+                <table class="table">                       
+                   <tr>		                    
+                        <td width="25%"><label class="control-label leftalign"><?php echo "Login ".$this->translate("useraccount_email_label"); ?>: </label></td>
+                        <td><?php echo $person->getOwner()->getEmail(); ?> &nbsp;</td>
+                   </tr>
+                   <tr>		                    
+                        <td><label class="control-label leftalign"><?php echo $this->translate("useraccount_password_label"); ?>: </label></td>
+                        <td><a class="changepassword" id="changepassword" rel="Change Password" href="<?php echo $this->baseUrl('profile/changepassword/pgc/true/id/'.encode($person->getID())); ?>">Change Password</a></td>
+                   </tr>
+                </table>
+            </div>
+            <div class="well lighter row" style="min-height:80px;">
+                <h3 class="well-legend">Reset Family Tree</h3>
+                <table class="table">                       
+                   <tr>		                    
+                        <td>Use this option to reset your Family Tree. This will delete everyone from your tree apart from yourself and you will be able to start afresh.</td>
+                   </tr>
+                   <tr>		                    
+                        <td><a class="reset btn btn-primary btn-mini btn-gold resettree" id="<?php echo $id; ?>" rel="Reset Family Tree" href="javascript: void(0)"><i class="icon-trash"></i> Reset Family Tree</a></td>
+                   </tr>
+                </table>
+            </div>
+            <div class="well lighter row" style="min-height:80px;">
+                <h3 class="well-legend">Unsubscribe My Account</h3>
+                <table class="table"> 
+                   <tr>		                    
+                        <td>By unsubscribing your account, it means that you will no longer be able to login into <?php echo $this->translate("appname"); ?></td>
+                   </tr>                      
+                   <tr>		                    
+                        <td><a class="reset btn btn-mini btn-primary btn-danger delete" id="<?php echo $id; ?>" rel="Unsubscribe" href="javascript: void(0)"><i class="icon-trash icon-white"></i> Unsubscribe</a></td>
+                   </tr>
+                </table>
+            </div>
+            <div class="well lighter row" style="min-height:80px;">
+                <h3 class="well-legend">Enable/Disable Demo Functionality</h3>
+                <table class="table"> 
+                   <tr>		                    
+                        <td>
+                        	<div class="hasprivacy" id="private_default">
+                                <ul class="defaultlist nav nav-pills">
+                                    <?php 
+                                        $lookup = new LookupTypeValue();
+                                        $lookup->populate(92);
+                                    ?>
+                                    <li class="<?php echo $lookup->getLookupTypeValue() == 0 ? 'activeprivacy' : ''; ?>"><input type="radio" name="demoflag" class="demoflag <?php echo $lookup->getLookupTypeValue() == 0 ? 1 : 0; ?>" id="flag_1" value="0" placeholder="enable" person="<?php echo $person->getID(); ?>" /><br />Enable Tree Updates</li>
+                                    <li class="<?php echo $lookup->getLookupTypeValue() == 1 ? 'activeprivacy' : ''; ?>"><input type="radio" name="demoflag" class="demoflag <?php echo $lookup->getLookupTypeValue() == 1 ? 1 : 0; ?>" id="flag_2" placeholder="disable" value="1" person="<?php echo $person->getID(); ?>" /><br />Disable Tree Updates</li>
+                                </ul>
+                            </div>
+                        </td>
+                   </tr>                      
+                </table>
+            </div>
+        </span>
+    </div>
+    <?php } ?>
+    </form>
+</div>

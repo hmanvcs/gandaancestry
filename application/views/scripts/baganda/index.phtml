@@ -1,0 +1,190 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Baganda";
+	$this->headTitle($this->translate("appname")." | Baganda"); 
+	
+	$searchnames = '';
+	if(!isEmptyString($request->firstname)){
+		$searchnames .= $request->firstname;
+	}
+	if(!isEmptyString($request->lastname)){
+		$searchnames .= " ".$request->lastname;
+	}
+	if(!isEmptyString($request->clanname)){
+		$searchnames .= " ".$request->clanname;
+	}
+	if (!isEmptyString($request->letter)){
+		$searchnames .= "Browse By: <b>".strtoupper($request->letter)."</b>";
+	}
+	
+	$paginate = new Pagination();	
+	$paginate->setView($this);
+	# set the search columns to be used on this list
+	$paginate->setSearchColumns(array("p.firstname","p.lastname","p.clanname"));
+	$paginate->setDefaultSortBy("p.firstname");	
+	$paginate->setDefaultSortOrder("ASC");
+	$paginate->setItemCountPerPage("50");
+	
+	# define the letter to be clicked to ease navigation 
+	$where_query = " WHERE p.id <> '' ";
+	
+	$searched = false;
+	if(!isEmptyString($request->searchterm)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->searchterm."%' OR  p.lastname LIKE '%".$request->searchterm."%' OR p.clanname LIKE '%".$request->searchterm."%') ";
+		$searched = true;
+	}
+	if(!isEmptyString($request->firstname)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->firstname."%') ";
+		$searched = true;
+	}
+	if(!isEmptyString($request->lastname)){
+		$where_query .= " AND (p.lastname LIKE '%".$request->lastname."%') ";
+		$searched = true;
+	}
+	if(!isEmptyString($request->clanname)){
+		$where_query .= " AND (p.clanname LIKE '%".$request->clanname."%') ";
+		$searched = true;
+	}
+	if(!isEmptyString($request->othernames)){
+		$where_query .= " AND (p.othernames LIKE '%".$request->othernames."%') ";
+		$searched = true;
+	}
+	if(!isEmptyString($request->screenname)){
+		$where_query .= " AND (p.screenname LIKE '%".$request->screenname."%') ";
+		$searched = true;
+	}
+	
+	if (!isEmptyString($request->letter)){
+		$where_query .= " AND (`p`.`firstname` LIKE '".$request->letter."%') ";
+		$searched = true;
+	}
+	
+	$paginate->processPost($request->getParams());
+	$all_results_query = "SELECT p.id, p.firstname, p.lastname, p.clanname FROM person p ".$where_query." AND p.statusflag <> 2 AND p.id <> 1 AND p.addedbyid = 454 ".$paginate->getSearchAndFilterSQL()." ".$paginate->getSortSQL();
+	
+	// debugMessage($all_results_query);
+	$paginate->setItemCountFromSQLQuery($all_results_query);
+	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
+	// debugMessage($current_results_query);
+	$conn = Doctrine_Manager::connection(); 
+	$result = $conn->fetchAll($current_results_query);
+	$has_no_data = (count($result) == 0) ? true : false; 
+	
+	// debugMessage($result);
+
+?>
+<script>
+$(document).ready(function(){		
+	// set hidden field for the alphabet and submit the form
+	$(".alphabet").click(function(){
+		var letter = $(this).attr('id');
+		// alert(letter);
+		$('#letter').val(letter);
+		$('#firstname, #lastname, #clanname').val('');
+		$("#listform").submit();
+	});
+	
+	$("#contentwrapper").removeClass('well');
+}); 
+</script>
+<style>
+
+</style>
+<div class="row marginleft0">
+    <div class="span11 pull-left marginleft0 public_leftcolumn" style="margin-top:-10px;">
+    	<h1><?php echo $title; ?></h1>  
+        <form action="<?php echo $this->baseUrl("baganda/indexsearch"); ?>" method="get" id="listform" class="form-search">
+        <div class="wellcontent" style="position:relative;">
+          <ul class="nav pagination pull-left" id="searchbox">
+          	<li>
+            	<a style="padding-left:0; padding-right:0;">
+                    <table id="directorysearchtable" class="table noborder margin0">
+                        <tr>
+                            <td style="padding-top:10px;"><label style="font-size:12px; color:#777777;" class="control-label leftalign margin0">Find a Muganda:</label></td>
+                            <td style="padding-top:10px;"><input name="firstname" id="firstname" type="text" class="span2 padding3" value="<?php echo $request->firstname; ?>" placeholder="<?php echo $this->translate("person_firstname_label"); ?>" /></td>
+                            <td style="padding-top:10px;"><input name="lastname" id="lastname" type="text" class="span2 padding3" value="<?php echo $request->lastname; ?>" placeholder="<?php echo $this->translate("person_lastname_label"); ?>" /></td>
+                            <td style="padding-top:10px;"><input name="clanname" id="clanname" type="text" class="span2 padding3" value="<?php echo $request->clanname; ?>" placeholder="<?php echo $this->translate("person_clanname_label"); ?>" /></td>
+                            <td style="padding-top:10px;"><button type="submit" id="searchbutton" class="btn" style="padding:6px 10px"><i class="icon-search"></i></button>
+                            <input type="hidden" name="letter" id="letter" value="<?php echo $request->getParam('letter'); ?>" /></td>
+                        </tr>
+                    </table>
+                </a>
+            </li>
+          </ul>
+          <div class="alphabetlist pull-left"><?php echo $paginate->getAlphabetString(); ?></div>
+          <label class="searchedterm control-label pull-left leftalign" style=""><?php echo $searchnames; ?></label>
+            <div class="paginatecustom">
+            <?php if($searched){ ?>
+				<?php if(!$has_no_data){ ?>
+                    <?php echo sprintf($this->translate("person_list_baganda_counter"), $paginate->getItemCounterText()); ?> | 
+                <?php } ?>
+                <a href="<?php echo $this->baseUrl('baganda'); ?>" title="Reset list">Reset</a> | 
+                <a href="<?php echo $this->baseUrl('person/list/range/1'); ?>" title="View all people on <?php echo $this->translate("appname"); ?>">View all</a>
+                
+            <?php } ?>    
+            </div>
+          <?php if ($has_no_data) { ?>
+            <div style="clear:both;" class="alert alert-info"><?php echo $this->translate("person_list_norecords"); ?></div>
+          <?php } else { ?>
+            <?php // echo $this->listcountdropdown; ?>
+            <?php if($searched){ ?>
+            <ul id="bagandalist" class="nav nav-stacked">
+				<?php 				  		
+                    foreach($result as $line){
+                        // debugMessage($line['id']);
+                        $currentprofile = new Person();
+                        $currentprofile->populate($line['id']);	
+                        $id = $currentprofile->getID();	
+                        $name = $currentprofile->getName();
+                        $firstname = $currentprofile->getFirstName();
+						$parent = "--";
+						if($currentprofile->isMuganda() && $currentprofile->hasFather()){
+							 $parent = "<a href='".$this->baseUrl("user/view/id/".encode($currentprofile->getFatherID()))."' title='View Profile'>".$currentprofile->getFather()->getName()."</a>";
+						}
+						if($currentprofile->isMujjwa() && $currentprofile->hasMother()){
+							 $parent = "<a href='".$this->baseUrl("user/view/id/".encode($currentprofile->getMotherID()))."' title='View Profile'>".$currentprofile->getMother()->getName()."</a>";
+						}
+                ?>
+                    <li>
+                        <table class="table noborder margin0">
+                        	<tr>
+                            	<td width="75">
+                                    <div class="thumbinfo <?php echo $currentprofile->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>"> 
+                                        <a href="<?php echo $this->baseUrl("person/view/id/".encode($line['id'])); ?>" title="<?php echo $this->translate("person_button_view_profile"); ?>"><img class="profileimage" src="<?php echo $currentprofile->getThumbnailPicturePath(); ?>" /></a>
+                                    </div>
+                                </td>
+                                <td class="padding0">
+                                	<div style="position:relative;">
+                                	<h2><a href="<?php echo $this->baseUrl("person/view/id/".encode($line['id'])); ?>" title="<?php echo "View ".$currentprofile->getFirstName()."'s Profile"; ?>"><?php echo $currentprofile->getListName(); ?></a></h2>
+                                    <table class="itemlist table noborder margin0">
+                                    	<!--<tr>
+                                        	<td width="100"><label class="control-label"><?php e//cho $currentprofile->isMale() ? "Son of " : "Daughter of " ?>: </label></td>
+                                            <td><?php //echo $parent; ?></td>
+                                        </tr>-->
+                                        <tr>
+                                        	<td width="100"><label class="control-label">Clan:</label></td>
+                                            <td><?php echo isEmptyString($currentprofile->getClan()) ? '--' : $currentprofile->getClan()->getName(); ?></td>
+                                        </tr>
+                                    </table>
+                                    <a class="btn btn-primary btn-blue btn-mini" style="position:absolute; top:5px; right:20px;" href="<?php echo $this->baseUrl("person/view/id/".encode($currentprofile->getID())); ?>">View Full Profile</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                    </li>
+                <?php } ?>    
+            </ul>
+            <?php echo $paginate->getPaginationLinks(); ?>  
+            <div style="margin-bottom:15px;"><?php echo $this->listcountdropdown; ?></div>
+            <?php } ?>
+          <?php } ?>
+        </div>
+        </form>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

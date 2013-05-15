@@ -1,0 +1,313 @@
+<?php 
+	require_once APPLICATION_PATH.'/includes/header.php';
+
+	$title = $this->translate("companyname");
+	
+	$this->headMeta()->appendName('keywords', '');
+	$this->headMeta()->appendName('description', $title);
+	
+	$this->headTitle("Welcome to ".$title);
+	
+	$isbeta = true;
+	$islive = false;
+	
+	if($isbeta){
+		$person = new Person();
+		$posturl = $this->baseUrl("announcement/processapply");
+		
+		#in case of errors in session, populate the fields from session
+		if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+			$formvalues = $session->getVar(FORM_VALUES);
+			// $ssiga = $formvalues['ssiga']; unset($formvalues['ssiga']); 
+			$person->processPost($formvalues);	
+		}
+	}
+	
+?>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('.slideshow').cycle({
+		fx: 'fade', 
+		delay: 4000,
+		speed: 1000
+	});
+	
+	// set hidden field for the alphabet and submit the form
+	$(".alphabet").click(function(){
+		var letter = $(this).attr('id');
+		// alert(letter);
+		$('#letter').val(letter);
+		window.location.href = '<?php echo $this->baseUrl('baganda/index/letter/'); ?>'+letter;
+	});
+	
+	// remove well class from contentwrapper
+	$("#contentwrapper").removeClass('well');
+	
+	$("h2#build").css("margin","0 0 5px -2px");
+	
+	<?php if($isbeta){ ?>
+		$("#indexform").validate({		
+			rules: {
+				firstname: "required",
+				lastname: "required",
+				clanname: "required",
+				clanid: "required",
+				ssiga: "required",
+				email: {
+					required: true, 
+					email: true
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {	
+				firstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("person_lastname_error"); ?>",
+				clanname: "<?php echo $this->translate("person_clanname_error"); ?>",
+				clanid: "<?php echo $this->translate("person_clanid_error"); ?>",
+				ssiga: "Please enter your Ssiga",
+				email: {
+					"required": "<?php echo $this->translate("useraccount_email_error"); ?>", 
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+	<?php } ?>
+	
+	$("#firstname, #lastname").keyup(function(){
+		if($("#firstname").val() != '' && $("#lastname").val() != '' ){
+			$("#submitjoin").removeClass('disabled');
+		} else {
+			$("#submitjoin").addClass('disabled');
+		}
+	});
+});
+</script>
+<style>
+#betalogo {
+	/*display:none;*/
+}
+.table#homesignup td {
+	padding:5px;
+	padding-left:0;
+}
+.table#homesignup td input {
+	margin-bottom:0;
+	padding:3px;
+}
+h2#build {
+	display:block; 
+	margin:0 0 12px -2px; 
+	padding:0; 
+	text-align:left; 
+	font-size:36px; 
+	font-weight:bold;
+	margin-bottom:10px;
+	color:#303030;
+	font-family:'calibri','Telex',sans-serif;
+}
+#intromsg {
+	display:block; 
+	margin:0; 
+	padding:0 40px 0 0; 
+	text-align:left; 
+	color:#494949; 
+	font-size:17px;
+}
+#startnow {
+	display:block; 
+	margin:10px 0 10px 0;
+	padding:0; 
+	text-align:left;
+	font-weight:normal;
+	color:#000000;
+	font-size:26px;
+}
+#timetaken {
+	display:block; 
+	margin:12px 0; 
+	padding:0; 
+	text-align:left;
+	font-size:14px;
+}
+.slidelinks {
+	width:100%; 
+	display:block;
+	/*width:100px;
+	margin-right:5px;*/
+	font-size:16px;
+}
+#homeshow {
+	padding-left:0; 
+	padding-top:5px;
+	background-image: url("<?php echo $this->baseUrl('images/slidebg.jpg'); ?>");
+	background-repeat:no-repeat;
+	background-position:top left;
+}
+.slideshow a img {
+	/*width:300px;*/
+}
+#row1 {
+	padding:0; 
+	width:140px;
+}
+#row2 {
+	padding:0; 
+}
+#row3 {
+	padding:0;
+	width:50px;
+}
+#row4 {
+	padding:0;
+	width:450px;
+}
+</style>
+<!--[if IE]>
+<style>
+#row1 {
+	width:140px;
+}
+#row3 {
+	width:50px;
+}
+#row4 {
+	width:450px;
+}
+</style>
+<![endif]-->
+<div class="row marginleft0" style="padding-top: 20px;">
+    <table class="table noborder margin0" id="hometable">
+    	<tr>
+        	<td>&nbsp;</td>
+            <td colspan="3" style="padding-left:0; padding-bottom:0;"><h2 id="build">Celebrate your Baganda family ancestry.</h2></td>
+        </tr>
+        <tr>
+        	<td style="padding:0;"></td>
+            <td style="padding:0; padding-top:10px;" colspan="2"><label id="intromsg">Build your family tree and share it with friends and relatives.</label></td>
+            <td rowspan="2" style="padding-top:20px;"><h3 id="startnow" >Start now - its free.</h3><label id="timetaken">Registration takes less than 3 minutes.</label></td>
+        </tr>
+        <tr>
+        	<td></td>
+            <td style="text-align:left;" class="padding0">
+            	<table class="table noborder margin0 padding0" style="width:300px;">
+                    <tr>
+                        <td class="padding0" style="text-align:left; width:42%;"><a class="slidelinks" href="<?php echo $this->baseUrl('howitworks'); ?>" title="How it works">How it works</a></td>
+                        <td class="padding0" style="text-align:center; width:30%;"><a class="slidelinks" style="" href="<?php echo $this->baseUrl('benefits'); ?>" title="Benefits">Benefits</a></td> 
+                        <td class="padding0" style="text-align:right;"><a class="slidelinks pull-right" style="" href="<?php echo $this->baseUrl('news'); ?>" title="News">News</a></td>
+                    </tr>
+				</table>                            
+            </td>
+        </tr>
+        <tr>
+        	<td id="row1" style=""></td>
+        	<td id="row2" style="">
+                <div id="homeshow">
+                	<div class="slideshow">
+                    	<a href="<?php echo $this->baseUrl('howitworks'); ?>" title="How it works"><img src="<?php echo $this->baseUrl('images/slide_3.jpg'); ?>" /></a>
+                        <a href="<?php echo $this->baseUrl('benefits'); ?>" title="Benefits"><img src="<?php echo $this->baseUrl('images/slide_1.jpg'); ?>" /></a>
+                        <a href="<?php echo $this->baseUrl('news'); ?>" title="News"><img src="<?php echo $this->baseUrl('images/slide_2.jpg'); ?>" /></a>
+                        <a href="javascript:void(0)"><img src="<?php echo $this->baseUrl('images/slide_4.jpg'); ?>" /></a>
+                    </div>
+                </div>
+            </td>
+            <td id="row3" style=""></td>
+            <td id="row4" style="padding-left:0;">
+            <?php if($islive){ ?>                
+                <form class="form-horizontal well" style="width:330px; padding-bottom:30px;" id="joinform" action="<?php echo $this->baseUrl('signup/homejoin'); ?>" method="post">
+                <table class="table noborder" id="homesignup">
+                	<tr>
+                    	<td><label class="control-label leftalign"><?php echo $this->translate("person_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                        <input name="firstname" id="firstname" type="text" class="span4" /></td>
+                    </tr>
+                    <tr>
+                    	<td><label class="control-label leftalign"><?php echo $this->translate("person_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <input name="lastname" id="lastname" type="text" class="span4" /></td>
+                    </tr>
+                    <tr>
+                    	<td><label class="control-label leftalign"><?php echo $this->translate("person_email_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               		<input class="span4" name="email" id="email" type="text" /></td>
+                    </tr>
+                    <tr>
+                       <td><label class="control-label leftalign"><?php echo $this->translate("useraccount_password_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <input name="password" id="password" type="password" class="span3 password" /></td>
+                   </tr>
+                   <tr>
+                       <td><button type="submit" id="submitjoin" class="btn btn-primary btn-large btn-gold">Join Now</button>
+                       <input type="hidden" name="<?php echo URL_SUCCESS; ?>" id="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('signup')); ?>" />
+                       </td>
+                   </tr>
+                </table>
+                </form>
+                <?php } ?>
+                <?php if($isbeta){ ?>
+                <form  class="form-horizontal well" style="width:350px; padding-bottom:0;" id="indexform" action="<?php echo $posturl; ?>" method="post">
+                	<table class="table noborder" id="homesignup">
+                        
+                        <tr>
+                            <td><label class="control-label leftalign"><?php echo $this->translate("person_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                            <input name="firstname" id="firstname" type="text" class="span4" value="<?php //echo $person->getFirstName(); ?>" /><div id="firstname_error"></div></td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label leftalign"><?php echo $this->translate("person_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       		<input name="lastname" id="lastname" type="text" class="span4" value="<?php //echo $person->getLastName(); ?>" /><div id="lastname_error"></div></td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label leftalign">Clan Name: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                            <input class="span4" name="clanname" id="clanname" placeholder="e.g., Mugerwa" type="text" value="<?php //echo $person->getClanName(); ?>" /><div id="clanname_error"></div></td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label leftalign">Ekika (Clan): <?php echo $this->translate("global_required_field_marker"); ?></label>
+                            <?php
+                                $clanlookup = new LookupType();
+                                $clanlookup->setName("ALL_CLANS");
+                                $clandropdown = new Zend_Form_Element_Select('clanid',
+                                      array(
+                                              'multiOptions' => array_merge_maintain_keys(array('' => '<Select Clan>'), $clanlookup->getOptionValuesFromQuery()),
+                                              'view' => new Zend_View(),
+                                              'decorators' => array(array('ViewHelper')),
+                                              'class' => array('span3'),
+                                      )
+                                );
+                                
+                                $clandropdown->setValue('');
+                                echo $clandropdown->render();
+                            ?><div id="clanid_error"></div></td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label leftalign"><?php echo $this->translate("person_email_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                            <input class="span4" name="email" id="email" type="text" value="<?php //echo $person->getEmail(); ?>" /><div id="email_error"></div></td>
+                        </tr>
+                        <tr>
+            				<td><span class="requiredmark"><?php echo $this->translate("global_required_field_info"); ?></span></td>
+                        </tr>
+                       <tr>
+                           <td><button type="submit" id="submitjoin" class="btn btn-primary btn-large btn-gold disabled">Join Now</button>
+                           <input type="hidden" name="<?php echo URL_SUCCESS; ?>" id="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('signup')); ?>" />
+                           </td>
+                       </tr>
+                    </table>
+                </form>
+                <?php } ?>
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="4" style="text-align:center; padding:0;">
+            	<div style="margin:0 auto; width:165px;">
+                <a href="<?php echo $this->baseUrl('lugandadictionary'); ?>" title="Luganda Talking Dictionary"><img style="display:block; width:75px; margin:auto; text-align:center;" src="<?php echo $this->baseUrl('images/talk.png'); ?>" />Luganda Talking Dictionary</a></div>
+            </td>
+        </tr>
+        
+    </table>
+    
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

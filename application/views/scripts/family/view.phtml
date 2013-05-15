@@ -1,0 +1,324 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "View Family";
+	$isme = false;
+	$otherfamily = true;
+	if(isEmptyString($request->id)){
+		$title = "My Immediate Family";
+		$isme = true;
+		$otherfamily = false;
+	}
+	
+	$family = new Family();
+	$person = new Person();
+	
+	$family->populate(decode($request->id));
+	$id = $family->getID();
+	
+	$father = $family->getFather();
+	$mother = $family->getMother();
+	$familyname = isEmptyString($family->getFamilyName()) ? $title : $family->getFamilyName()."'s Family";
+	$parent_focusid = !isEmptyString($father->getID()) ? $father->getID() : $mother->getID();
+	$parent_name = !isEmptyString($father->getID()) ? $father->getName() : $mother->getName();
+	
+	$children = $family->getChildren();
+	$child_count = $children->count();
+	
+	// related families
+	$relatedfamilies = $family->getRelatedFamilies($family->getAddedByID());
+	$relatedfamilies_count = $relatedfamilies->count();
+	
+	if($isme){
+		$person->populate($personid);
+		
+		$father = $person->getFather();
+		$mother = $person->getMother();
+		$familyname = $person->getLastName();
+		$parent_focusid = !isEmptyString($father->getID()) ? $father->getID() : $mother->getID();
+		$parent_name = !isEmptyString($father->getID()) ? $father->getName() : $mother->getName();
+		
+		$children = $person->getAllChildren();
+		$child_count = 0;
+		if($children){
+			$child_count = $children->count();
+		}
+		$familymembers = $person->getImmediateFamilyMembers();
+		$familymembers_count = count($familymembers);
+		$relatedfamilies = $person->getFamily()->getRelatedFamilies($person->getID());
+		$relatedfamilies_count = $relatedfamilies->count();
+	}
+	
+	$this->headTitle($title);
+?>
+<script>
+$(document).ready(function() {
+	// remove box style if person has no profile picture
+	<?php if($person->hasProfileImage() || $mother->hasProfileImage() || $mother->hasProfileImage()){ ?>
+		$(".profileinfo").addClass('new_pic');
+	<?php } ?>
+	
+}); 
+</script>
+<style>
+
+</style>
+<?php if(isEmptyString($request->id)){ ?>
+<h1 style="text-align:center;"><?php echo $title; ?></h1>
+<?php } ?>
+<div class="row margin0">
+	<table class="table margin0 nohover">
+    	<tr>
+        	<td style="width:32%;">
+                <span class="well profile_span">
+                <?php if($otherfamily){ ?>
+                	<h3 class="profile_name nowrapping"><?php echo $father->getName(); ?></h3>
+                    <div class="profileinfo <?php echo $father->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>" style="margin:0 auto;"> 
+                        <?php if(!isEmptyString($father->getID())){ ?>
+                        	<a href="<?php echo $this->baseUrl("person/view/id/".encode($father->getID())); ?>" title="<?php echo $father->getName(); ?>"><img class="profileimage" src="<?php echo $father->getMediumPicturePath(); ?>" alt="<?php echo $father->getName(); ?>" /></a>
+						<?php } else { ?>
+                            <label class="unknownimagetext" style="font-size:14px;">Unknown Partner</label>
+                        <?php } ?>
+                    </div>
+                <?php } ?>
+                <?php if($isme){ ?>
+                	<h3 class="profile_name nowrapping"><?php echo $person->getName(); ?></h3>
+                    <div class="profileinfo <?php echo $person->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>" style="margin:0 auto;"> 
+                        <a href="<?php echo $this->baseUrl("person/view/id/".encode($father->getID())); ?>" title="<?php echo $person->getName(); ?>"><img class="profileimage" src="<?php echo $person->getMediumPicturePath(); ?>" alt="<?php echo $person->getName(); ?>" /></a>
+                    </div>
+                <?php } ?>    
+                </span>
+            </td>
+            <td style="text-align:center; <?php echo $isme == true ? 'width:50%' : ''; ?>;">
+                <span class="well span4" style="display:block; padding-top:5px; min-height:200px;">
+                	<table class="table noborder padding4">
+                    	<tr>
+                        	<td width="35%"><label class="infolabel">Family Name :</label></td>
+                            <td class="nowrapping">
+                            	<?php if($otherfamily){ ?>
+									<?php echo isEmptyString($family->getFamilyName()) ? '--' : $family->getFamilyName(); ?>
+                                <?php } ?>
+                                <?php if($isme){ ?>
+									<?php echo $person->getLastName(); ?>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <tr>
+                        	<td><label class="infolabel">Father:</label></td>
+                            <td class="nowrapping">
+                            	<?php if($otherfamily){ ?>
+									<?php if(isEmptyString($father->getID())){
+										echo "--";
+									} else { ?>
+										<a href="<?php echo $this->baseUrl("person/view/id/".encode($father->getID())); ?>" title="<?php echo $father->getName(); ?>"><?php echo  $father->getName(); ?></a>
+									<?php } ?>
+                                <?php } ?>
+                                <?php if($isme){ ?>
+									<?php echo isEmptyString($person->getFatherID()) ? '--' : $person->getFather()->getName(); ?>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <tr>
+                        	<td><label class="infolabel">Mother:</label></td>
+                            <td class="nowrapping">
+                            	<?php if($otherfamily){ ?>
+									<?php if(isEmptyString($mother->getID())){
+										echo "--";
+									} else { ?>
+										<a href="<?php echo $this->baseUrl("person/view/id/".encode($mother->getID())); ?>" title="<?php echo $mother->getName(); ?>"><?php echo  $mother->getName(); ?></a>
+									<?php } ?>
+                                <?php } ?>
+                                <?php if($isme){ ?>
+									<?php echo isEmptyString($person->getMotherID()) ? '--' : $person->getMother()->getName(); ?>
+                                <?php } ?>
+                        </tr>
+                        <tr>
+                        	<td><label class="infolabel">Family Clan:</label></td>
+                            <td class="nowrapping">
+                            	<?php if($otherfamily){ ?>
+									<?php echo isEmptyString($father->getClanID()) ? '--' : $father->getClan()->getFullName(); ?>
+                                <?php } ?>
+								<?php if($isme){ ?>
+									<?php echo isEmptyString($person->getClanID()) ? '--' : $person->getClan()->getFullName(); ?>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <?php if($otherfamily){ ?>
+                        <tr>
+                        	<td><label class="infolabel">Spouse Clan:</label></td>
+                            <td class="nowrapping"><?php echo isEmptyString($mother->getClanID()) ? '--' : $mother->getClan()->getFullName(); ?></td>
+                        </tr>
+                        <?php } ?>
+                        <tr>
+                        	<td><label class="infolabel">No. of Children:</label></td>
+                            <td class="nowrapping"><?php echo $child_count; ?></td>
+                        </tr>
+                        <tr>
+                        	<td colspan="2">
+                            <?php if($family->getAddedByID() == $personid || $family->getCreatedBy() == $userid || $father->getID() == $personid || $mother->getID() == $personid){ ?>
+                                <a style="float:left;" href="<?php echo $this->baseUrl('person/add/pgc/true/rel/5/focusid/'.encode($parent_focusid)); ?>" class="addperson btn btn-primary btn-mini " id="sonbutton_<?php echo $parent_focusid; ?>" title="<?php echo "Add Son of ".$parent_name; ?>" rel="<?php echo "Add Son of ".$parent_name; ?>"><i class="icon-white icon-plus"></i> Add a Son</a>&nbsp;&nbsp;
+                            <?php } ?>
+                            <?php if($family->getAddedByID() == $personid || $family->getCreatedBy() == $userid || $father->getID() == $personid || $mother->getID() == $personid){ ?>
+                                <a style="float:right;"  href="<?php echo $this->baseUrl('person/add/pgc/true/rel/6/focusid/'.encode($parent_focusid)); ?>" class="addperson btn btn-primary btn-mini" id="sonbutton_<?php echo $parent_focusid; ?>" title="<?php echo "Add Daughter of ".$parent_name; ?>" rel="<?php echo "Add Daughter of ".$parent_name; ?>"><i class="icon-white icon-plus"></i> Add a Daughter</a>
+                            <?php } ?>
+                            </td>
+                        </tr>
+                    </table>
+                </span>
+            </td>
+            <td style="text-align:right; <?php echo $otherfamily == true ? 'width:32%' : ''; ?>">
+            	<?php if($otherfamily){ ?>
+                <span class="well profile_span pull-right">
+                	<h3 class="profile_name nowrapping"><?php echo $mother->getName(); ?></h3>
+                    <div class="profileinfo <?php echo $mother->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>" style="margin:0 auto;"> 
+                        <?php if(!isEmptyString($mother->getID())){ ?>
+                                <a href="<?php echo $this->baseUrl("person/view/id/".encode($mother->getID())); ?>" title="<?php echo $mother->getName(); ?>"><img class="profileimage" src="<?php echo $mother->getMediumPicturePath(); ?>" alt="<?php echo $mother->getName(); ?>" /></a>
+						<?php } else { ?>
+                            <label class="unknownimagetext" style="font-size:14px;">Unknown Partner</label>
+                        <?php } ?>
+                    </div>
+                </span>
+                <?php } else { ?>
+                    <div class="well nobg" style="min-height:200px; padding-top:0;">
+                        <h2 class="well-legend">Quick Links</h2>
+                        <a style="float:right; display:block; margin-bottom:2px;" href="<?php echo $this->baseUrl('family/list/range/2'); ?>" class="btn btn-primary span2" title="List Related Families"><i class="icon-white icon-list"></i> My Families</a><br />
+                        <!--<a style="float:right;" href="<?php //echo $this->baseUrl('family/list/range/1'); ?>" class="btn btn-primary span2" title="List all GandaAncestry Families"><i class="icon-white icon-list"></i> All Families</a>-->
+                    </div>
+                <?php } ?>
+                
+            </td>
+		</tr>
+	</table> 
+</div>
+<div>            
+    <table class="table nohover">
+    	<tr>
+        	<td style="width:190px;">
+            	<div class="well nobg" style="min-height:280px; height:auto; padding-top:0;">
+                	<h2 class="well-legend">Related Families</h2>
+                    <?php if($relatedfamilies_count == 0){ ?>
+                    	<div class="alert alert-info" style="text-align:center;">None</div>
+                    <?php } else { ?>
+                        <ul class="nav" id="relatedlist" style="margin-top:10px;">
+                        <?php 
+                            foreach($relatedfamilies as $thefamily){
+                                // debugMessage($line);		
+                                $maleprofile = $thefamily->getFather();
+                                $femaleprofile = $thefamily->getMother();		
+                                $maletitle = isEmptyString($maleprofile->getID()) ? "Unknown" : $maleprofile->getName();	
+                                $femaletitle = isEmptyString($femaleprofile->getID()) ? 'Unknown' : $femaleprofile->getName();						
+                                $familytitle = $maletitle." and ".$femaletitle;
+                                // $familytitle = $maleprofile->getName()." and ".$femaleprofile->getName();
+                                
+                        ?>
+                        
+                            <li>
+                                <a style="height:100%; display:block; border-bottom:1px dashed #999999; padding:5px 0 5px; 0; text-align:center;" href="<?php echo $this->baseUrl("family/view/id/".encode($thefamily->getID())); ?>" title="<?php echo $familytitle; ?>">
+                                    <div style="float:left; margin-right:5px;" class="thumbinfo tiny <?php echo $maleprofile->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>"> 
+                                        <?php if(!isEmptyString($maleprofile->getID())){ ?>
+                                            <img class="profileimage" src="<?php echo $maleprofile->getSmallPicturePath(); ?>" />
+                                        <?php } else { ?>
+                                            <label class="unknownimagetext">Unknown</label>
+                                        <?php } ?>
+                                    </div>
+                                    <label style="display:inline-block; padding-left:5px; padding-right:5px; margin-left:2px; margin-right:2px;">+</label>
+                                    <div style="float:rght; display:inline-block;" class="thumbinfo tiny <?php echo $femaleprofile->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>"> 
+                                        <?php if(!isEmptyString($femaleprofile->getID())){ ?>
+                                            <img class="profileimage" src="<?php echo $femaleprofile->getSmallPicturePath(); ?>" />
+                                        <?php } else { ?>
+                                            <label class="unknownimagetext">Unknown</label>
+                                        <?php } ?>
+                                    </div>
+                                    <span class="margin3" style="margin-top:5px; display:block;"><?php echo $familytitle; ?></span>
+                                </a>     
+                            </li>
+                            
+                        <?php } ?>
+                        </ul>
+                    <?php } ?>
+                    <?php if($relatedfamilies_count == 3){ ?>
+                    	<label class="divider"></label>
+                        <a style="display:block; width:100%; text-align:center;" href="<?php echo $this->baseUrl('family/list/range/2'); ?>" title="View My Families">...view all families</a>
+                    <?php } ?>
+                </div>
+            </td>
+            <td style="width:<?php echo $otherfamily == true ? '540px' : '650px'; ?>;">
+                <div class="well" style="min-height:280px; padding-top:0;">
+                	<?php if($otherfamily){ ?>
+                        <h2 class="well-legend">Children</h2>
+                        <?php if($child_count == 0){ ?> 
+                            <div class="alert alert-info" style="text-align:center;">There are currently no children in this family</div>
+                        <?php } else { ?>
+                            <div class="alert alert-info" style="text-align:center;"><?php echo "Viewing ".$child_count." ".($child_count == 1 ? 'child' : 'children')." from ".$familyname; ?></div>
+                            <ul class="nav widgetlist">
+                            <?php
+                                foreach ($children as $child){
+                                    // debugMessage($aperson);
+                                    $haspic = false;
+                                    if($child->hasProfileImage()){
+                                        $haspic = true;
+                                    }
+                            ?>
+                                <li class="well">
+                                    <a href="<?php echo $this->baseUrl("person/view/id/".encode($child->getID())); ?>" title="<?php echo $child->getName(); ?>">
+                                        <div class="thumbinfo <?php echo $haspic ? 'new_pic' : 'default_pic'; ?>"> 
+                                            <img class="profileimage" src="<?php echo $child->getThumbnailPicturePath(); ?>" />
+                                        </div>	
+                                        <span class="pull-right"><?php echo $child->getName(); ?><br /></span>
+                                    </a>
+                                </li>
+                            <?php } ?>
+                            </ul>   
+                        <?php } ?>
+                     <?php } ?> 
+                     <?php if($isme){ ?>
+                     	<h2 class="well-legend">Family Members</h2>
+                        <div class="alert alert-info" style="text-align:center;"><?php echo "Viewing ".$familymembers_count." people "; ?></div>
+                     	<ul class="nav widgetlist">
+							<?php 
+                                foreach($familymembers as $aperson){
+                                   	$theperson = new Person();
+									$theperson->populate($aperson['id']);
+									// debugMessage($aperson);
+									$haspic = false;
+									if($theperson->hasProfileImage()){
+										$haspic = true;
+									}
+                            ?>
+                                <li class="well">
+                                    <a href="<?php echo $this->baseUrl("person/view/id/".encode($theperson->getID())); ?>" title="<?php echo "View ".$theperson->getFirstName()."'s Profile"; ?>">
+                                        <div class="thumbinfo <?php echo $haspic ? 'new_pic' : 'default_pic'; ?>"> 
+                                            <img class="profileimage" src="<?php echo $theperson->getThumbnailPicturePath(); ?>" />
+                                        </div>	
+                                        <span class="pull-left" style="display:block; text-align:center; width:100%;">
+                                            <?php echo $theperson->getName(); ?><br />
+                                            <?php 
+                                                $me = '';
+                                                if($aperson['id'] == $personid){
+                                                    $me = ' (Myself)';
+                                                }
+                                                $rel = '<b>'.$aperson['Relationship'].$me.'</b>';	
+                                                echo $rel; 													
+                                            ?>
+                                        </span>
+                                    </a>
+                                </li>
+                            <?php } ?>
+                        </ul>
+                     <?php } ?>  
+                </div>
+            </td>
+            <?php if($otherfamily){ ?>
+            <td style="">
+            	<div class="well nobg" style="min-height:280px; padding-top:0;">
+                	<h2 class="well-legend">Quick Links</h2>
+                    <a style="display:block; text-align:center; margin-bottom:2px; margin-top:5px;" href="<?php echo $this->baseUrl('family/list/range/2'); ?>" class="btn btn-primary span2" title="List Related Families"><i class="icon-white icon-list"></i> My Families</a><br />
+                </div>
+            </td>
+            <?php } ?>  
+		</tr>
+	</table>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

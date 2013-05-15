@@ -1,0 +1,215 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Help Center";
+	$this->headTitle($this->translate("appname")." | ".$title); 
+
+?>
+<script>
+	$(document).ready(function(){
+		$('#helpcategories a').click(function(){
+			$("table.list").hide();
+			var id = $(this).attr('id');
+			$("table.list."+id).show();
+			if(id == 'all'){
+				$("table.list").show();
+			}
+		});
+		
+	}); 
+</script>
+<style>
+td.qn {
+	font-weight:bold;
+}
+.table td.ansline1 {
+	color:#333333;
+	font-weight:bold;
+}
+#helpcategories {
+	width:100%;
+}
+#helpcategories li {
+	width:28%;
+	margin-right:0;
+	font-size:18px;
+	display:inline-block;
+}
+#helpcategories li a {
+	
+}
+</style>
+<div class="row marginleft0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+        <div class="content">
+            <h1><?php echo $title; ?></h1>  	
+            
+            <h2>FREQUENTRY ASKED QUESTONS (FAQs)</h2>
+              <table class="table noborder margin0" style="margin-left:-15px;">
+                    <tbody>
+                        <tr>
+                            <td style="padding-left:0;">
+                            	<h3 style="font-size:15px; padding-left:15px;">Categories</h3>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left:0;">
+                            	<ul id="helpcategories" class="nav margin0 padding0">
+                                    <li><a id="all" href="javascript:void(0);">All Categories</a></li>
+                                    <li style="width:35%;"><a id="cat1" href="javascript:void(0);">Buganda Instutions</a></li>
+                                    <li><a id="cat2" href="javascript:void(0);">Business</a></li>
+                                    <li><a id="cat3" href="javascript:void(0);">Membership</a></li>
+                                    <li style="width:35%;"><a id="cat4" href="javascript:void(0);">Security and Privacy</a></li>
+                                    <li><a id="cat5" href="javascript:void(0);">Using GandaAncestry</a></li>
+								</ul>
+                            </td>
+                        </tr>                  
+                    </tbody>
+               </table>
+              	<table class="table table-bordered table-condesed list cat3">
+                    <tbody>
+                        <tr>
+                            <td style="width:15px;" class="qn">Q:</td>
+                            <td class="ansline1">My mother is a Muganda, but my father is not. Can I become a member and build a family tree? 
+                            <label class="regulardescription">Category: Membership</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">No. Under Buganda cultural norms you are a "Mujjwa". GandaAncestry registration is currently only available for baganda only. However, your mother can subscribe and add you to their family tree as a non muganda.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat3">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">Is GandaAncestry the system Baganda clan leaders are using to register Baganda?
+                            <label class="regulardescription">Category: Membership</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">No. GandaAncestry is a self-subscription social media website. Becoming a member of GandaAncestry does not prove that you are a Muganda or that you belong to a Baganda clan.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat3">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">What if someone is not a real Muganda, but registers by lying?
+                            <label class="regulardescription">Category: Membership</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">It is a violation of our <a href="<?php echo $this->baseUrl('aboutus/termsofservice'); ?>" title="GandaAncestry User Agreement">user agreement</a> when a user who is not a Muganda registers as a member. GandaAncestry reserves the right to cancel the account of any such violators. If you are aware of such a user, please report them immediately <a href="<?php echo $this->baseUrl('report'); ?>" title="Report violation of User Agreement">here</a>.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat5">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">How do I add a brother or sister as a relative of someone in my family tree?
+                            <label class="regulardescription">Category: Using GandaAncestry</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">The only relatives that you may add to a member of your family tree are Father, Mother, Spouse, Son or Daughter. If you add a new relative as a son to your father, it has the same effect as adding him as a brother. The same applies to a sister.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat5">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">How do I add images on my account?
+                            <label class="regulardescription">Category: Using GandaAncestry</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">At this time you may only add one image, to each profile of the people on your family tree (the profile photo). Future releases of GandaAncestry will allow you to create photo albums and add many photos, in a style comparable to what you see on Facebook.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat3">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">I am not a Muganda, but I love your culture immensely. How can I benefit?
+                            <label class="regulardescription">Category: Membership</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">GandaAncestry is specifically designed for members of Baganda clans and family institution. You could learn more about our culture by registering a qualifying Muganda to register a member and subsequently show his or her family tree. You can also browse the various cultural resources on the public pages of GandaAncestry.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat1">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">What is the relationship between GandaAncestry management and Mmengo?
+                            <label class="regulardescription">Category: Buganda Instutions</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">GandaAncestry is a private USA based business venture, led by a group of Mmamba clan members (Ssiga:Wampona Mubiru Kirimungo). There is no official relationship between Mengo and GandaAncestry, except that the Kabaka's government has a solid record of encouraging Baganda to work hard and create businesses.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat4">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">What if I do not want other members to see my family tree information?
+                            <label class="regulardescription">Category: Security and Privacy</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">GandaAncestry allows you to choose the level of privacy you want to have for your information. The options include "Only Myself ", "My Relatives ", and "Public". However, any user still be able to search for any member and see First Name, Surname, Baganda Clan and who added the record on GandaAncestry.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat2">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">Who owns GandaAncestry?
+                            <label class="regulardescription">Category: Business</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">GandaAncestry is privately funded by a few members of the Mmamba clan (Ssiga:Wampona Mubiru Kirimungo). Future plans include inviting members of other clans to participate. In the meantime, donations are most welcome. <a href="<?php echo $this->baseUrl('donate'); ?>">Click here to donate</a>.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+                <table class="table table-bordered table-condesed list cat3">
+                    <tbody>
+                        <tr>
+                            <td class="qn">Q:</td>
+                            <td class="ansline1">What are the membership charges and service fees for GandaAncestry?
+                            <label class="regulardescription">Category: Membership</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="qn">A:</td>
+                            <td class="ans">Basic GandaAncestry membership is free and will remain so in the future. However, when Premier features that require much higher resources, especially storage, become available, a moderate charge would be introduced for the premium users.</td>
+                        </tr>                  
+                    </tbody>
+                </table>
+        </div>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

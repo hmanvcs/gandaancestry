@@ -1,0 +1,230 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$id = decode($request->id);
+	$clan = new Clan();
+	$clan->populate($id);
+	
+	$title = $clan->isClan() ? $clan->getName() : 'Essiga lya '.$clan->getName();
+	$this->headTitle($title);
+	
+	$ssigas = $clan->getSsigas();
+	$totalssigas = $ssigas->count();
+	
+	$isclan = true;
+	$isssiga = false;
+	$hideall = false;
+	if($clan->isClan()){
+		$clanpeople = $clan->getClanPeople();
+		$isclan = true;
+		$isssiga = false;
+	}
+	if($clan->isSsiga()){
+		$clanpeople = $clan->getSsigaPeople();
+		$isclan = false;
+		$isssiga = true;
+	}
+	// $totalpeople = $clanpeople->count(); 
+	
+	//$clanmembers = $clan->getFeaturedClanMembers();
+	//$clanmembers_count = $clanmembers->count();
+	 
+	$isadmin = false;
+	if(isAdmin()){
+		$isadmin = true;
+	}
+	
+?>
+<style>
+.form-horizontal .control-label {
+	text-align:right;
+	width:0;
+	white-space:nowrap;
+}
+ul#clans li.well {
+	width:410px;
+}
+.table.clanlist td.field {
+	width:100px;
+}
+#summary.well {
+	padding-bottom:45px;
+}
+</style>
+
+<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+	<div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+<?php } ?>		
+<div class="well" id="summary">
+	<table id="summarycontainer">
+		<tr>
+			<td style="width:200px; vertical-align:top;">
+            <div class="profileinfo clantotem">
+				<?php if($isadmin){ ?>
+                    <a href="<?php echo $this->baseUrl('clan/picture/type/2/clanid/'.encode($clan->getID())); ?>" class="edittotem" title="Upload Totem Image"><img id="coverlogo" src="<?php echo $clan->getTotemPath(); ?>" /></a>
+                <?php } else { ?>
+                    <img id="coverlogo" src="<?php echo $clan->getTotemPath(); ?>" /></a>
+                <?php } ?>
+            </div>
+			</td>
+			<td width="60%" style="vertical-align:top; padding-left:15px;">
+				<table>
+                    <tr>
+						<td><h1><?php echo $title; ?></h1></td>
+					</tr>                    
+				</table>
+			</td>
+			<td style="vertical-align:top;">
+				<ul class="nav nav-tabs nav-stacked" style="width:180px;">                    
+                    <?php if($isadmin){ ?>    
+                        <li><a href="<?php echo $this->baseUrl('clan/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil"></i> Update Profile</a></li>
+                        <?php if($isclan){ ?>
+                        	<li><a href="<?php echo $this->baseUrl('clan/picture/type/2/clanid/'.encode($clan->getID())); ?>"><i class="icon-upload"></i> Upload Totem</a></li>
+                        <?php } ?>
+                        <li><a href="javascript: void(0)" id="deleteclan" class="deleteclan"><i class="icon-trash"></i> Delete</a></li>
+                    <?php } ?>
+                    <?php if($isssiga){ ?>
+                    	<li><a href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getClanID())); ?>" id="View <?php echo $clan->getClan()->getName(); ?> Profile"><i class="icon-list"></i> <?php echo $clan->getClan()->getName(); ?> Profile</a></li>
+                    <?php } ?>
+                    <li><a href="<?php echo $this->baseUrl('clan/list'); ?>"><i class="icon-list"></i> All Clans</a></li>
+                    
+			    </ul>
+			</td>
+		</tr>
+	</table>
+</div>
+<div class="well" style="height:auto; margin:-10px 0 10px 0; padding:10px">
+	<div id="tabs" style="margin-top:-35px; margin-bottom:0; min-height:400px;">   
+        <ul>
+           <li><a href="#basics"><?php echo $this->translate("clan_section_overview"); ?></a></li>
+           <?php if($isclan){ ?> 
+               	<?php if($hideall){ ?> 
+           		<li><a href="#ssiga"><?php echo $this->translate("clan_section_ssigas"); ?></a></li>
+              	<?php } ?>	
+           <li><a href="#names"><?php echo $this->translate("clan_section_names"); ?></a></li>
+           <?php } ?>
+        </ul>
+        <div id="basics">
+            <form id="profileform-clanal" class="form-horizontal">
+            <div class="row" style="margin-left:0px;">
+                <span class="span8" style="width:660px;">
+                    <div class="well lighter row" style="min-height:60px;">
+                        <h3 class="well-legend"><?php echo $this->translate("clan_section_summary"); ?></h3>
+                        <table class="table">
+                        	                       
+                           	<tr>
+                                <td style="width:18%;">
+                                    <label class="control-label"><?php echo $clan->isClan() ? $this->translate("clan_ekika_label")."<br />(".$this->translate("clan_fullname_label").")" : "Ssiga Name"; ?></label>
+                                </td>
+                                <td style="width:30%;" class="nowrapping"><?php echo $clan->getName(); ?></td>
+                                <td style="width:18%;"><label class="control-label"><?php echo $clan->isClan() ? "Omukulu w'ekika<br />(Clan Head)" : "Omukulu w'ESsiga<br />(Ssiga Head)"; ?></label></td>
+                                <td class="nowrapping"><?php echo $clan->getHeadTitle(); ?></td>
+		                	</tr>
+                            <?php if($isclan){ ?>
+                                <tr>
+                                    <td><label class="control-label"><?php echo $this->translate("clan_omuziro_label")."<br />(".$this->translate("clan_totem_label").")"; ?></label></td>
+                                    <td class="nowrapping"><?php echo isEmptyString($clan->getOmuziro()) ? '---' : $clan->getOmuziro(); ?></td>
+                                    <td><label class="control-label"><?php echo $this->translate("clan_obutaka_ssaza_label"); ?></label></td>
+                                    <td class="nowrapping"><?php echo $clan->getObutakaSsaza(); ?></td>
+                                </tr>
+                            <?php } else { ?>
+                                <tr>
+                                    <td><label class="control-label"><?php echo $this->translate("clan_obutaka_ssaza_label"); ?></label></td>
+                                    <td class="nowrapping" colspan="3"><?php echo $clan->getObutakaSsaza(); ?></td>
+                                </tr>
+                            <?php } ?>
+                            <?php if($isclan){ ?> 
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("clan_akabbiro_label"); ?></label></td>
+                                <td class="nowrapping" colspan="3"><?php echo isEmptyString($clan->getAkabbiro()) ? '---' : $clan->getAkabbiro(); ?></td>
+		                	</tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("clan_omubala_label"); ?></label></td>
+                                <td class="nowrapping" colspan="3"><?php echo isEmptyString($clan->getOmubala()) ? '---' : nl2br($clan->getOmubala()); ?></td>                                
+		                	</tr>
+                            <?php } ?>
+                        </table>
+                    </div>
+                </span> 
+                <span class="span3 pull-right" style="margin-right:-5px; margin-left:30px; width:205px;">                    
+                    <div class="well row" style="min-height:250px;">
+                        <h3 class="well-legend">Contacts</h3>
+                        <table class="table">                       
+                           <tr>		                    
+                                <td style="font-size:12px;"><b>Contact Person</b></td>
+                           </tr>
+                           <tr>
+                           		<td><?php echo isEmptyString($clan->getContactName()) ? '--' : $clan->getContactName(); ?></td>
+                           </tr>
+                           <tr>		                    
+                                <td style="font-size:12px; font-size:12px;"><b>Phone</b></td>
+                           </tr>
+                           <tr>
+                           		<td><?php echo isEmptyString($clan->getContactPhone()) ? '--' : $clan->getContactPhone(); ?></td>
+                           </tr>
+                        </table>
+                    </div>
+                </span>		
+            </div>
+            </form> 
+        </div>
+        <?php if($isclan){ ?>       
+        	<?php if($hideall){ ?> 
+            <div id="ssiga">
+                <?php require APPLICATION_PATH."/views/scripts/clan/ssigawidget.phtml"; ?>
+            </div>
+            <?php } ?>
+        <div id="names">
+            <form id="profileform-names" class="form-horizontal"> 	
+            <div class="row" style="margin-left:0px;">
+            	<?php require APPLICATION_PATH."/views/scripts/clan/nameswidget.phtml"; ?>    
+            </div>
+            </form>
+        </div>
+        <?php } ?>
+	</div>
+</div>
+<?php
+	$session->setVar(SUCCESS_MESSAGE, '');
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+$(document).ready(function() {
+	// override default tab
+	<?php if(!isEmptyString($request->tab)){ ?>
+		$("#tabs").tabs({ selected:'<?php echo $request->tab; ?>', fx: {opacity: 'toggle'} });	   
+	<?php } ?>
+	$('#tabs').tabs({
+		// the selected tab
+		selected: '<?php echo $request->tab; ?>'
+	});
+	
+	$(".morebio").click(function(){
+		$("#tabs").tabs({ selected:'history', fx: {opacity: 'toggle'} });
+	});
+	$(".gotossiga").click(function(){
+		$("#tabs").tabs({ selected:'ssiga', fx: {opacity: 'toggle'} });
+	});
+	$(".gotopeople").click(function(){
+		$("#tabs").tabs({ selected:'people', fx: {opacity: 'toggle'} });
+	});
+	$(".gotovip").click(function(){
+		$("#tabs").tabs({ selected:'vips', fx: {opacity: 'toggle'} });
+	});
+	
+	// delete rules
+	$(".deleteclan").click(function() {
+		removeLine();
+	});
+	function removeLine() {
+		// alert (deletable);
+		bootbox.confirm('<label class="blockcontainer">Are you sure you want to delete <b><?php echo $clan->getName(); ?></b>? <br /><br /> Click <b>OK</b> to confirm, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('clan/delete/id/'.$clan->getID()); ?>";					
+			} else {
+				return false;
+			}
+		});
+	}
+}); 
+</script>

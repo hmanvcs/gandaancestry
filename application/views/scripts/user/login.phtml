@@ -1,0 +1,138 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = sprintf($this->translate("useraccount_pagetitle_login"), $this->translate('appname'));
+	$this->headTitle($title);  
+	
+	$useraccount = new UserAccount();
+	if ($sessionhaserror) {
+	    $useraccount->processPost($session->getVar(FORM_VALUES)); 
+	}
+	
+	// sendTestMessage("testing sub","testing message");
+?>
+<script>
+$(document).ready(function(){
+	$("#loginheader").remove();
+	$("#contentwrapper").removeClass('well');
+});
+</script>
+<style>
+#contentwrapper {
+	border:none;
+}
+#contentcolumn {
+	min-height:0;
+	height:320px;
+}
+.table.list {
+	width:100%;
+}
+#loginwidget .table.list thead {
+	/*background: -moz-linear-gradient(top, #296E8D 0%, #338AB0 47%, #5CA1C0 100%); */
+	color:#fff;
+	background:none;
+	background-color:#0073b2;
+}
+#loginwidget .table.list thead tr td a {
+	color:#fff;
+}
+#loginwidget h3 {
+	color:#f1f1f1;
+}
+#loginwidget.well {
+    background-color: #F7F7F7;
+    border: 1px solid #80B0D4;
+    border-radius: 8px 8px 8px 8px;
+   	margin-bottom: 0;
+    padding: 2px;
+}
+</style>
+<span class="span6 offset3">
+	<form class="form-horizontal" id="loginform" action="<?php echo $this->baseUrl('user/checklogin'); ?>" method="post">
+        <?php if($request->delete == 1){ ?>
+            <div class="alert alert-success">Your Account on <?php echo $this->translate("appname"); ?> has been successfully deleted. </div>
+        <?php } ?> 
+        <div class="well padding2" id="loginwidget" style="margin-top:15px;">
+        	    
+            <table class="table noborder margin0 list">
+                <thead>
+                   <tr>
+                       <td colspan="2" style="padding:6px;"><h3>Login to your account</h3></td>
+                   </tr>
+                </thead>
+                <?php if($sessionhaserror) { ?>
+                <tr>			
+                   <td colspan="2"><div class="alert alert-error margin0"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+                </tr>
+                <?php } else { ?>
+                <tr>			
+                   <td colspan="2">
+                   <?php if(!isEmptyString($request->redirecturl)){ ?>
+                   		<div class="alert alert-info margin0 centeralign">Please login to continue</div>
+                   <?php } ?>
+                   </td>
+                </tr>
+                <?php } ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                <tr>			
+                   <td colspan="2"><div class="alert alert-success"><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div></td>
+                </tr>
+                <?php } ?> 
+                <?php if($request->refmsg == 1){ ?>
+                <tr>			
+                   <td colspan="2"><div class="alert alert-success">Successfully updated. Please login using you new Email Address and Password</div></td>
+                </tr>
+                <?php } ?>           
+                <tr class="tablespacer">
+                   <td class="span2"><label class="control-label" for="email"><?php echo $this->translate("useraccount_email_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+                   <td><input name="email" id="email" placeholder="Enter Email Address" /></td>
+                </tr>
+                <tr>
+                   <td><label class="control-label" for="email"><?php echo $this->translate("useraccount_password_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+                   <td><input name="password" id="password" type="password" placeholder="Enter Password" title="" /></td>
+                </tr>                    
+            </table>
+            <div class="form-actions noborder padding0">
+                <button id="login" class="btn btn-primary btn-gold" type="submit" title="Login"><i class="icon-lock"></i> Login</button>&nbsp;&nbsp;
+                <a href="<?php echo $this->baseUrl('index'); ?>" title="New to GandaAncestry? Register here">Signup on Home Page</a>
+                <input name="redirecturl" type="hidden" value="<?php echo $request->redirecturl;  ?>" />
+                <label style="margin-top:10px;"><a href="<?php echo $this->baseUrl("user/recoverpassword"); ?>">Forgot your password?</a></label>
+            </div>
+        </div>
+	</form>
+</span>   
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+$(document).ready(function() {
+		$("#email").focus();
+		$("#loginform").validate({		
+			// define the validation rules one field at a time
+			rules: {
+				email: {
+					"required": true,
+					"email": true
+				},
+				password: "required"
+			}, 
+			messages: {
+				email: {
+					"required": "<?php echo $this->translate("useraccount_email_error"); ?>",
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				},
+				password: "<?php echo $this->translate("useraccount_password_error"); ?>"
+			}
+		}); 
+	
+}); 
+</script>
+<style>
+.form-horizontal .control-label {
+	text-align:right;
+}
+.form-horizontal .form-actions {
+    text-align: left;
+}
+</style>

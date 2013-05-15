@@ -1,0 +1,77 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$paginate = new Pagination();
+	$showbottomsearch = true;
+	$thecontroller = $request->getControllerName();
+	$theaction = $request->getActionName();
+	$showsitelock = false;
+	
+	$hiddencontrollers = array("baganda", "user","person","family","clan","dashboard"); 
+	if (in_array($thecontroller, $hiddencontrollers)){
+		$showbottomsearch = false;
+	}
+?>
+<table class="table noborder margin0" id="footertable" style="width:980px;">
+<?php if($showbottomsearch){ ?>
+	<tr>
+    	<td class="padding0">
+        	<form action="<?php echo $this->baseUrl("index/homesearch"); ?>" method="post" id="searchform" class="form-search">
+            <table id="directorysearch" class="table noborder automargin">
+            	<tr>
+                	<td style="padding-top:5px;"><label class="control-label leftalign margin0">Find Baganda:</label></td>
+                    <td><input name="firstname" id="firstname" type="text" class="span2 padding3" value="" placeholder="<?php echo $this->translate("person_firstname_label"); ?>" /></td>
+                    <td><input name="lastname" id="lastname" type="text" class="span2 padding3" value="" placeholder="<?php echo $this->translate("person_lastname_label"); ?>" /></td>
+                    <td><button type="submit" class="btn"><i class="icon-search"></i>&nbsp;Search</button><input type="hidden" name="<?php echo URL_SUCCESS; ?>" id="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('signup')); ?>" />
+                    <input type="hidden" name="letter" id="letter" value="" /></td>
+                </tr>
+            </table>
+        	</form>
+        </td>
+    </tr>
+    <tr>
+    	<td class="padding0">
+        	<table id="directorylist" class="table noborder automargin">
+            	<tr>
+                	<td style="padding-top:5px;" class="alignright"><span><?php echo "Member Directory"; ?>:</span></td>
+                    <td><div class="alphabetlist"><?php echo $paginate->getAlphabetString(); ?></div></td>
+                    <td style="padding-top:5px;" class="leftright"><span>Browse members by: <a href="<?php echo $this->baseUrl('person/list/range/1'); ?>">Clan</a></span></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+<?php } ?>
+    <tr>
+    	<td class="padding0">
+        	<table id="lower" class="table noborder automargin" style="width:100%; margin:0 auto;">
+            	<tr>
+                	<td>
+                    <ul id="footermenu" class="nav nav-pills" style="margin:0 auto; width:auto; padding-left:6px; padding-right:0;">
+                        <li><a href="<?php echo isEmptyString($userid) ? $this->baseUrl('index') : $this->baseUrl('dashboard'); ?>" title="Home">Home</a></li>
+                        <li><a href="<?php echo $this->baseUrl('aboutus'); ?>" title="About <?php echo $this->translate('appname'); ?>">About</a></li>
+                        <li><a href="<?php echo $this->baseUrl('howitworks'); ?>" title="How it Works">How it Works</a></li>
+                        <li><a href="<?php echo $this->baseUrl('benefits'); ?>" title="Benefits">Benefits</a></li>
+                        <li><a href="<?php echo $this->baseUrl('kabaka'); ?>" title="Kabaka">Kabaka</a></li>
+                        <li><a href="<?php echo $this->baseUrl('baganda'); ?>" title="Baganda">Baganda</a></li>
+                        <li><a href="<?php echo $this->baseUrl('clans'); ?>" title="Clans">Clans</a></li>
+                        <li><a href="<?php echo $this->baseUrl('help'); ?>" title="Help Center">Help Center</a></li>
+                        <li><a href="<?php echo $this->baseUrl('news'); ?>" title="News">News</a></li>
+                        <li><a href="<?php echo $this->baseUrl('aboutus/termsofservice'); ?>" title="User Agreement">User Agreement</a></li>
+                        <li><a href="<?php echo $this->baseUrl('aboutus/privacypolicy'); ?>" title="Privacy Policy">Privacy</a></li>
+						<li><a href="<?php echo $this->baseUrl('donation'); ?>" title="Donate">Donate</a></li>
+                    </ul>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<p class="copyright"><?php echo sprintf($this->translate("copyright"), date("Y"), $this->translate("companyname")); ?></p>
+
+<!--<a id="floating_link" href="whatever.html">Go Somewhere</a>-->
+<?php if($showsitelock){ ?>
+	<div id="sitelock_shield_logo" class="fixed_btm" style="top:65%;position:fixed;_position:absolute;right:0;"><a href="https://www.sitelock.com/verify.php?site=gandaancestry.com" onclick="window.open('https://www.sitelock.com/verify.php?site=gandaancestry.com','SiteLock','width=600,height=600,left=160,top=170');return false;" ><img alt="malware removal and website security" title="SiteLock"  src="//shield.sitelock.com/sshield/gandaancestry.com"/></a></div>
+<?php } ?>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

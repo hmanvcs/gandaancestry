@@ -1,0 +1,99 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$person = new Person();
+	$person->populate($session->getVar('personid'));
+	
+	$thecontroller = $request->getControllerName();
+	$theaction = $request->getActionName();
+	$publiccontrollers = array("announcement","index", "signup","aboutus","contact","howitworks","benefits","news","help","user","clans","amasiga","kabaka","tbd", "donation", "lugandadictionary");
+	if(isEmptyString($userid)){
+		$publiccontrollers[] = 'contactus';
+		$publiccontrollers[] = 'proverb';
+	}
+	
+	$logopath = $this->baseUrl('images/logowhite.png');
+	if (in_array($thecontroller, $publiccontrollers)){
+		$logopath = $this->baseUrl('images/logogrey.png');
+	}
+	$uninvited = $person->getUnInvitedPeople();
+	$no_uninvited = $uninvited->count();
+	$caninvite = false;
+	if($no_uninvited > 0){
+		$caninvite = true;
+	}
+	$allowinvite = false;
+?>
+
+<style>
+ul#headeractions li#account .btn-group .dropdown-toggle {
+	color:#FFFFFF;
+	background:none;
+	box-shadow: none;
+	padding-left: 5px;
+    padding-right: 5px;
+	text-align:right;
+	width:140px;
+	text-decoration:none;	
+}
+</style>
+<div class="container">
+  <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+    <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+  </a>
+  <a class="brand" id="thelogo" href="<?php echo $this->baseUrl('index'); ?>"><img src="<?php echo $logopath; ?>" /></a>
+  <a id="betalogo" href="javascript:void(0);<?php //echo $this->baseUrl('launch'); ?>"><img src="<?php echo $this->baseUrl('images/beta-logo.png'); ?>" /></a>
+  <?php //if($thecontroller == "announcement" && $theaction == "index"){ ?>
+  	
+  <?php //} ?>
+  <div class="nav-collapse">
+   
+    <ul class="nav pull-right" id="headeractions" style="max-width:500px; float:right;">    	
+        <?php if(!isEmptyString($userid)){ ?>
+            <li class="dropdown" id="account">
+				<div class="btn-group" style="margin-top:18px;">
+                    <a class="dropdown-toggle" data-toggle="dropdown" id="accountrigger" href="<?php echo $this->baseUrl("person/view"); ?>"><?php echo $person->getFirstName()." ".$person->getLastName(); ?>&nbsp;<span class="caret blockcaret"></span></a>
+                    <ul class="dropdown-menu span2" id="myaccountlist">                    
+                        <li class="hovered"><a href="<?php echo $this->baseUrl("person/view"); ?>" title="My Profile">My Profile</a></li>
+                        <li class="hovered"><a href="<?php echo $this->baseUrl("person/index/id/".encode($person->getID()).'/tab/privacy'); ?>" title="Privacy Settings">Privacy Settings</a></li>
+                        <li class="hovered"><a href="<?php echo $this->baseUrl("person/index/id/".encode($person->getID()).'/tab/settings'); ?>" title="Account Settings">Account Settings</a></li>
+                        <?php if(isAdmin()){ ?>
+                        	<!--<li class="hovered"><a href="javascript: void(0)<?php //echo $this->baseUrl("appconfig/overview"); ?>" title="System Settings">System Settings</a></li>          -->      	
+                        <?php } ?>
+                        <li class="divider"></li>
+                        <li class="hovered"><a href="<?php echo $this->baseUrl("help"); ?>" title="Help Center">Get Help</a></li>
+                        <li class="hovered"><a href="<?php echo $this->baseUrl("contact"); ?>" title="Contact Us">Contact Us</a></li>
+                        <li class="divider"></li>
+                        <li class="hovered"><a href="<?php echo $this->baseUrl("user/logout"); ?>" title="Logout">Logout</a></li>
+                    </ul>
+                </div>               
+            </li>
+            <?php if(isSubscriber() && $allowinvite){ ?>
+            	<li id="invite"><a id="inviterelative" class="multipleinvite <?php echo $caninvite == false ? 'disableinvite' : ''; ?>" style="margin-top:7px;" href="<?php echo $this->baseUrl('person/invite/pgc/true'); ?>" title="Invite Relatives" rel="Invite Relatives to Family Tree">Invite Relatives</a></li>
+            <?php } ?>
+        <?php } else { ?>
+        	<li id="loginheader">
+            	<form class="form-horizontal" id="loginform" action="<?php echo $this->baseUrl('user/checklogin'); ?>" method="post" style="margin:0; float:right;">
+            	<table class="table-login">
+                	<tr>
+                        <td class="headerlabel">Email</td>
+                        <td width="5"></td>
+                        <td class="headerlabel">Password&nbsp; <label id="forgotlabel"><a href="<?php echo $this->baseUrl("user/recoverpassword")?>">Forgot your password?</a></label></td>
+                        <td width="30"></td>
+                	</tr>
+                	<tr id="inputrow">
+                        <td><input name="email" class="input-medium" id="email" type="text" /></td>
+                        <td></td>
+                        <td><input name="password" id="password" class="input-medium" type="password" /></td>
+                        <td style="padding-left:5px;"><button class="btn btn-primary btn-gold disabled margin0" id="headersignin" type="submit">Signin</button></td>
+                	</tr>
+                </table>
+                </form>
+            </li>
+        <?php } ?>
+    </ul>
+  </div>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

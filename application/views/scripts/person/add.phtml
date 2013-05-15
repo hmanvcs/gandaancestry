@@ -1,0 +1,989 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$person = new Person(); 
+	
+	// default title is to enable adding a new organisation
+	$title = $this->translate("person_pagetitle_new"); 
+	$posturl = $this->baseUrl("person/create");
+	$button_title = $this->translate("person_button_new"); 
+	
+	// load the person adding this person profile - to make sure the parents are not added twice
+	$focusid = $personid;
+	if(!isEmptyString($request->focusid)){
+		$focusid = decode($request->focusid);
+	}
+	if(!isEmptyString($request->focustreeid)){
+		$focusid = $request->focustreeid;
+	} 
+	
+	// focus person
+	$focus = new Person();
+	$focus->populate($focusid);
+	
+	if(!isEmptyString($request->rel)){
+		$rel = $request->rel;
+		// debugMessage($rel);
+	} 
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$person->processPost($session->getVar(FORM_VALUES));	
+	}
+	
+	$relationshiplookup = new LookupType();
+	$relationshiplookup->setName("RELATIONSHIP_TYPE");
+	$relationshipvalues = $relationshiplookup->getOptionValuesAndDescription();
+	if(isEmptyString($request->rel)){
+		// remove the relationship to the person - Me used when showing the list of people
+		unset($relationshipvalues['0']);
+		ksort($relationshipvalues);
+		// check the parents
+		if ($focus->hasFather()) {
+			// remove the father relationship
+			unset($relationshipvalues['1']);
+		}
+		if ($focus->hasMother()) {
+			// remove the mother relationship
+			unset($relationshipvalues['2']);
+		}
+	}
+	//}
+	$this->headTitle($title);
+	
+	// default values
+	if(isEmptyString($person->getLifeStatus())){
+		$person->setLifeStatus('1');
+	}
+	
+	$mothersarray = getAllFemalePartnersForPerson($focusid);
+	$fathersarray = getAllMalePartnersForPerson($focusid);
+	$dmothersarray = array(); $dfathersarray = array(); 
+	if(!isEmptyString($focus->getFatherID()) && !isEmptyString($focus->getFamilyID())){
+		$dmothersarray = getOtherFemalePartnersForPerson($focus->getFatherID(), $focus->getFamilyID());	
+	}
+	if(!isEmptyString($focus->getMotherID()) && !isEmptyString($focus->getFamilyID())){
+		$dfathersarray = getOtherMalePartnersForPerson($focus->getMotherID(), $focus->getFamilyID());
+	}
+	// debugMessage($dmothersarray);
+?>
+<div class="pageerrors span6"></div>
+<form class="form-horizontal well span6" id="personform" action="<?php echo $posturl; ?>" method="post" style="margin-top:4px;">
+	<input type="hidden" name="entityname" value="Person" />
+    <input type="hidden" id="id" name="id" value="<?php echo encode($person->getID()); ?>" />
+    <input type="hidden" id="ownerid" name="ownerid" value="<?php echo $userid; ?>" />
+    <input type="hidden" id="focusid" name="focusid" value="<?php echo $focusid; ?>" />
+    <input type="hidden" id="addedbyid" name="addedbyid" value="<?php echo $personid; ?>" />
+    <input type="hidden" name="focusfamilyid" id="focusfamilyid" value="<?php echo $focus->getFamilyID(); ?>" />
+    <input type="hidden" name="focusfatherid" id="focusfatherid" value="<?php echo $focus->getFamily()->getFatherID(); ?>" />
+    <input type="hidden" name="focusmotherid" id="focusmotherid" value="<?php echo $focus->getFamily()->getMotherID(); ?>" />
+    <input type="hidden" name="focustreeid" id="focustreeid" value="<?php echo $focus->getFocusTreeLine()->getID(); ?>" />    
+    <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl('person/add/focusid/'.encode($person->getID()))); ?>" />
+    <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('person/addsuccess')); ?>" />
+    <table class="table">
+		<?php if($sessionhaserror) { ?>
+	        <tr>
+	        	<td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+	        </tr>
+        <?php } ?>
+        <tr>
+           <td colspan="2"><span class="requiredmark"><?php echo $this->translate("global_required_field_info"); ?></span></td>
+       </tr>
+        <?php if(isEmptyString($rel)){ ?>
+        <tr>
+            <td style="width:100px;"><label class="control-label" for="relationship"><?php echo $this->translate("person_relationship_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+            <?php
+                $relationshipdropdown = new Zend_Form_Element_Select('relationshiptype',
+                    array(
+                      'multiOptions' => array_merge_maintain_keys(array('' => $this->translate('global_select_selectone')), $relationshipvalues ),
+                      'view' => new Zend_View(),
+                      'decorators' => array(array('ViewHelper')),
+                      'class' => array('hastooltip'),
+					  'title' => $this->translate("person_relationshiptype_tooltip")
+                    )
+                );
+          
+                $relationshipdropdown->setValue($person->getRelationshipType());
+                echo $relationshipdropdown->render(); 
+            ?> <?php echo $focus->getID() == $personid ? '' : ' of '.$focus->getFirstName(); ?>
+            <div id="relationshiptype_error"></div></td>
+        </tr>
+        <?php } else { ?>
+        	<input type="hidden" name="relationshiptype" id="relationshiptype" value="<?php echo $rel; ?>" />
+        <?php } ?>
+        <tr id="sibling" class="hide">
+            <td colspan="2" style="padding-left:45px;">
+            	<?php						  
+					  $psiblingradio = new Zend_Form_Element_Radio('siblingtype',
+							  array(
+									  'multiOptions' => array('1'=>'Same Parents', '2' => 'Different Father', '3' => 'Different Mother'), 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $psiblingradio->setValue('1');
+					  echo $psiblingradio->render();
+				  ?><div id="psiblingradio_error"></div>
+              </td>
+        </tr>
+        <tr id="new_mother_type" class="hide hasradio">
+            <td width="30%;"><label class="control-label">Mother:</label></td>
+            <td><?php
+					  $nmvalues = array('1'=>'Already exists', '2' => 'Add New');	
+					  $nmtyperadio = new Zend_Form_Element_Radio('nmothertype',
+							  array(
+									  'multiOptions' => $nmvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $nmtyperadio->setValue(1);
+					  echo $nmtyperadio->render();
+				  ?>
+              </td>
+        </tr>
+        <tr id="new_father_type" class="hide hasradio">
+            <td width="30%;"><label class="control-label">Father:</label></td>
+            <td><?php
+					  $nfvalues = array('1'=>'Already exists', '2' => 'Add New');	
+					  $nftyperadio = new Zend_Form_Element_Radio('nfathertype',
+							  array(
+									  'multiOptions' => $nfvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $nftyperadio->setValue(1);
+					  echo $nftyperadio->render();
+				  ?>
+              </td>
+        </tr>
+        <tr id="new_mother_row" class="hide">
+            <td width="30%;"><label class="control-label" for="mother"><?php echo "Select Mother"; ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+			<?php
+				$dmotherdropdown = new Zend_Form_Element_Select('childfamilyid',
+					array(
+					  'multiOptions' => $dmothersarray,
+					  'view' => new Zend_View(),
+					  'decorators' => array(array('ViewHelper')),
+					  'class' => array('span3', 'hastooltip'),
+					  'title' => $this->translate("person_mother_tooltip")
+					)
+				);
+		  
+				$dmotherdropdown->setValue('');
+				echo $dmotherdropdown->render(); 
+			?></td>
+        </tr>
+        <tr id="new_father_row" class="hide">
+            <td width="30%;"><label class="control-label" for="father"><?php echo "Select Father"; ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+			<?php
+				$dfatherdropdown = new Zend_Form_Element_Select('childfamilyid',
+					array(
+					  'multiOptions' => $dfathersarray,
+					  'view' => new Zend_View(),
+					  'decorators' => array(array('ViewHelper')),
+					  'class' => array('span3', 'hastooltip'),
+					  'title' => $this->translate("person_father_tooltip")
+					)
+				);
+		  
+				$dfatherdropdown->setValue('');
+				echo $dfatherdropdown->render(); 
+			?></td>
+        </tr>
+        <tr class="showfornew">
+            <td width="30%;"><label class="control-label" for="firstname"><?php echo $this->translate("person_firstname_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input type="text" name="firstname" id="firstname" class="span3 hastooltip" value="<?php echo $person->getFirstname(); ?>" title="<?php echo $this->translate("person_firstname_tooltip"); ?>"  /><div id="firstname_error"></div></td>
+        </tr>
+        <tr class="showfornew">
+            <td width="30%;"><label class="control-label" for="lastname"><?php echo $this->translate("person_lastname_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input type="text" name="lastname" id="lastname" class="span3 hastooltip" value="<?php echo $person->getlastname(); ?>" title="<?php echo $this->translate("person_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>
+        </tr>
+        <tr id="persontype" class="showfornew hide">
+        	<td><label class="control-label ethinicity"><?php echo $this->translate("person_ethinicity_label"); ?>:</label></td>
+            <td>
+            	<?php						  
+					  $typeradio = new Zend_Form_Element_Radio('type',
+							  array(
+									  // 'multiOptions' => array('1'=>'Muganda', '2'=>'Mujjwa', '3'=>'Other'), 
+									  'multiOptions' => array('1'=>'Muganda', '2'=>'Non Muganda'),
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $typeradio->setValue('1');
+					  echo $typeradio->render();
+				  ?><div id="type_error"></div>
+              </td>
+        </tr>
+        <tbody id="muganda">
+	        <tr class="showfornew">
+	            <td><label class="control-label" for="clanname"><?php echo $this->translate("person_clanname_other_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+	            <td><input type="text" name="clanname" id="clanname" class="span3 hastooltip" value="<?php echo $person->getClanname(); ?>" title="<?php echo $this->translate("person_clanname_tooltip"); ?>" /><div id="clanname_error"></div></td>
+	        </tr>
+	        <tr class="showfornew" id="clanrow">
+	            <td><label class="control-label" for="clanid"><?php echo $this->translate("person_clan_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+	            <td><?php
+                          $clanlookup = new LookupType();
+                          $clanlookup->setName("ALL_CLANS");
+						  $allclans = array_merge_maintain_keys(array('' => '<Select One>'), $clanlookup->getOptionValuesFromQuery());
+                          $clandropdown = new Zend_Form_Element_Select('clanid',
+                                  array(
+                                          'multiOptions' => $allclans,
+                                          'view' => new Zend_View(),
+                                          'decorators' => array(array('ViewHelper')),
+                                          'class' => array('span3', 'hastooltip'),
+                                          'title' => $this->translate("person_clanid_tooltip")
+                                  )
+                          );
+                          
+                          $clandropdown->setValue($person->getClanID());
+                          echo $clandropdown->render();
+                      ?><div id="clanid_error"></div><input type="hidden" name="theclanid" id ="theclanid" value="" />
+                   
+               </td>
+	        </tr>
+        </tbody>
+        <tr class="gender hide">
+        	<td><label class="control-label" for="gender"><?php echo $this->translate("person_gender_label"); ?>:</label></td>
+            <td><?php
+                  $genderlookup = new LookupType();
+                  $genderlookup->setName("GENDER");
+                  $genderradio = new Zend_Form_Element_Radio('gender',
+                          array(
+                                  'multiOptions' => $genderlookup->getOptionValuesAndDescription(), 
+                                  'view' => new Zend_View(),
+                                  'disableLoadDefaultDecorators' => true,
+                                  'separator' => '&nbsp;',
+                                  'decorators' => array('ViewHelper',
+                                                      array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery 
+                                                  )
+                          )
+                  );
+                  $genderradio->setValue($person->getGender());
+                  echo $genderradio->render();
+              ?></td>
+		</tr>
+        <tr class="showfornew">
+            <td><label class="control-label" for="lifestatus"><?php echo $this->translate("person_lifestatus_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><?php
+                  $lifestatuslookup = new LookupType();
+                  $lifestatuslookup->setName("LIFE_STATUS");
+				  $statuses = $lifestatuslookup->getOptionValuesAndDescription();
+				  ksort($statuses);
+				  // unset($statuses['3']);
+                  $lifestatusradio = new Zend_Form_Element_Radio('lifestatus',
+                          array(
+                                  'multiOptions' => $statuses, 
+                                  'view' => new Zend_View(),
+                                  'disableLoadDefaultDecorators' => true,
+                                  'separator' => '&nbsp;',
+                                  'decorators' => array('ViewHelper',
+                                                      array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+                                                  )
+                          )
+                  );
+                  $lifestatusradio->setValue($person->getLifeStatus());
+                  echo $lifestatusradio->render();
+              ?><div id="lifestatus_error"></div>
+              </td>
+        </tr>
+        <?php $islive = false; if($islive){ ?>
+        <tbody id="invite">
+	        <tr class="showfornew">
+	            <td><label class="control-label" for="email" style="margin-top:-25px;"><?php echo $this->translate("person_email_label"); ?>: </label></td>
+	            <td><input type="text" name="email" id="email" value="<?php echo $person->getEmail(); ?>" class="hastooltip span3" title="<?php echo $this->translate("person_inviteemail_tooltip"); ?>" />
+                <?php
+					  $invite_options = array("1"=>"Invite now", "0"=>"Invite later");
+					  $inviteradio = new Zend_Form_Element_Radio('isinvited',
+							  array(
+									  'multiOptions' => $invite_options, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;',
+									  'title' => $this->translate("person_invite_tooltip"),
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $inviteradio->setValue('');
+					  echo $inviteradio->render();
+			      ?><div id="email_error"></div>
+                </td>
+	        </tr>  
+        </tbody>
+        <?php } ?>
+        <tr id="child_mother_type" class="hide hasradio">
+           	<td><label class="control-label"><?php echo $rel == 5 ? "Son's" : "Daughter's"; ?> Mother:</label></td>
+            <td><?php
+					  $cmvalues = array('2' => 'Add New', '3' => 'Is unknown');
+					  $cmdefault = '2';
+					  if(count($mothersarray) > 0){
+					  	$cmvalues = array('1'=>'Already exists', '2' => 'Add New', '3' => 'Is unknown');	
+						 $cmdefault = '1';
+					  }
+					  			  
+					  $cmtyperadio = new Zend_Form_Element_Radio('cmothertype',
+							  array(
+									  'multiOptions' => $cmvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $cmtyperadio->setValue($cmdefault);
+					  echo $cmtyperadio->render();
+				  ?>
+              </td>
+       </tr> 
+       <tr id="child_father_type" class="hide hasradio">
+            <td><label class="control-label"><?php echo $rel == 5 ? "Son's" : "Daughter's"; ?> Father:</label></td>
+            <td><?php
+					  $cfvalues = array('2' => 'Add New', '3' => 'Is unknown');
+					  $cfdefault = '2';
+					  if(count($fathersarray) > 0){
+					  	$cfvalues = array('1'=>'Already exists', '2' => 'Add New', '3' => 'Is unknown');	
+						 $cfdefault = '1';
+					  }
+					  			  
+					  $cftyperadio = new Zend_Form_Element_Radio('cfathertype',
+							  array(
+									  'multiOptions' => $cfvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $cftyperadio->setValue($cfdefault);
+					  echo $cftyperadio->render();
+				  ?>
+              </td>
+       </tr> 
+       <tr id="sibling_mother_type" class="hide hasradio">
+            <td><label class="control-label">Mother:</label></td>
+            <td><?php
+					  $smvalues = array('2' => 'Add New', '3' => 'Is unknown');
+					  $smdefault = '2';
+					  if(count($mothersarray) > 0){
+					  	$smvalues = array('1'=>'Already exists', '2' => 'Add New', '3' => 'Is unknown');	
+						 $smdefault = '1';
+					  }
+					  			  
+					  $smtyperadio = new Zend_Form_Element_Radio('pmothertype',
+							  array(
+									  'multiOptions' => $smvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $smtyperadio->setValue($smdefault);
+					  echo $smtyperadio->render();
+				  ?>
+              </td>
+        </tr>
+        <tr id="mother" class="hide">
+            <td><label class="control-label" for="mother"><?php echo "Select Mother"; ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+			<?php
+				// debugMessage($mothersarray);
+				$motherdropdown = new Zend_Form_Element_Select('childfamilyid',
+					array(
+					  'multiOptions' => $mothersarray,
+					  'view' => new Zend_View(),
+					  'decorators' => array(array('ViewHelper')),
+					  'class' => array('span3', 'hastooltip'),
+					  'title' => $this->translate("person_mother_tooltip")
+					)
+				);
+		  
+				$motherdropdown->setValue('');
+				echo $motherdropdown->render(); 
+			?></td>
+        </tr>
+        <tr id="father" class="hide">
+            <td><label class="control-label" for="father"><?php echo "Select Father"; ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+			<?php
+				// debugMessage($mothersarray);
+				$fatherdropdown = new Zend_Form_Element_Select('childfamilyid',
+					array(
+					  'multiOptions' => $fathersarray,
+					  'view' => new Zend_View(),
+					  'decorators' => array(array('ViewHelper')),
+					  'class' => array('span3', 'hastooltip'),
+					  'title' => $this->translate("person_father_tooltip")
+					)
+				);
+		  
+				$fatherdropdown->setValue('');
+				echo $fatherdropdown->render(); 
+			?></td>
+        </tr>
+        <tr id="diff_father_type" class="hide hasradio">
+            <td><label class="control-label">Father:</label></td>
+            <td><?php
+					  $dfvalues = array('2' => 'Add New', '3' => 'Is unknown');
+					  $dfdefault = '2';
+					  if(count($dfathersarray) > 0){
+					  	$dfvalues = array('1'=>'Already exists', '2' => 'Add New', '3' => 'Is unknown');	
+						 $dfdefault = '1';
+					  }
+					  			  
+					  $dftyperadio = new Zend_Form_Element_Radio('pfathertype',
+							  array(
+									  'multiOptions' => $dfvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $dftyperadio->setValue($dfdefault);
+					  echo $dftyperadio->render();
+				  ?>
+              </td>
+        </tr>
+        <tr id="diff_father_row" class="hide">
+            <td><label class="control-label" for="father"><?php echo $this->translate("person_father_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+			<?php
+				$dfatherdropdown = new Zend_Form_Element_Select('fsiblingfamilyid',
+					array(
+					  'multiOptions' => $dfathersarray,
+					  'view' => new Zend_View(),
+					  'decorators' => array(array('ViewHelper')),
+					  'class' => array('span3', 'hastooltip'),
+					  'title' => $this->translate("person_father_tooltip")
+					)
+				);
+		  
+				$dfatherdropdown->setValue('');
+				echo $dfatherdropdown->render(); 
+			?></td>
+        </tr>
+        <tr id="diff_mother_type" class="hide hasradio">
+            <td><label class="control-label">Mother:</label></td>
+            <td><?php
+					  $dmvalues = array('2' => 'Add New', '3' => 'Is unknown');
+					  $dmdefault = '2';
+					  if(count($dmothersarray) > 0){
+					  	$dmvalues = array('1'=>'Already exists', '2' => 'Add New', '3' => 'Is unknown');	
+						 $dmdefault = '1';
+					  }
+					  		  
+					  $dmtyperadio = new Zend_Form_Element_Radio('pmothertype',
+							  array(
+									  'multiOptions' => $dmvalues, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $dmtyperadio->setValue($dmdefault);
+					  echo $dmtyperadio->render();
+				  ?>
+              </td>
+        </tr>
+        <tr id="diff_mother_row" class="hide">
+            <td><label class="control-label" for="mother"><?php echo $this->translate("person_mother_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+			<?php
+				$dmotherdropdown = new Zend_Form_Element_Select('msiblingfamilyid',
+					array(
+					  'multiOptions' => $dmothersarray,
+					  'view' => new Zend_View(),
+					  'decorators' => array(array('ViewHelper')),
+					  'class' => array('span3', 'hastooltip'),
+					  'title' => $this->translate("person_mother_tooltip")
+					)
+				);
+		  
+				$dmotherdropdown->setValue('');
+				echo $dmotherdropdown->render(); 
+			?></td>
+        </tr>    
+        <tr id="pfirstname_row" class="hide">
+            <td>
+            	<?php if($focus->isMale()){ ?>
+                	<label class="control-label" for="pfirstname" id="label_pfirstname"><?php echo $this->translate("person_mother_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } else { ?>
+                	<label class="control-label" for="pfirstname" id="label_pfirstname"><?php echo $this->translate("person_father_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } ?>
+            </td>
+            <td><input type="text" name="pfirstname" id="pfirstname" class="span3 hastooltip" value="" title="<?php echo $this->translate("person_firstname_tooltip"); ?>"  /><div id="pfirstname_error"></div></td>
+        </tr>
+        <tr id="plastname_row" class="hide">
+            <td>
+            	<?php if($focus->isMale()){ ?>
+                	<label class="control-label" for="plastname" id="label_plastname"><?php echo $this->translate("person_mother_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } else { ?>
+                	<label class="control-label" for="plastname" id="label_plastname"><?php echo $this->translate("person_father_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } ?>
+            </td>
+            <td><input type="text" name="plastname" id="plastname" class="span3 hastooltip" value="" title="<?php echo $this->translate("person_lastname_tooltip"); ?>" /><div id="plastname_error"></div></td>
+        </tr>
+        <tr id="parenttype" class="hide">
+        	<td>
+            	<?php if($focus->isMale()){ ?>
+                	<label class="control-label" for="ptype" id="label_ptype">Mother is: </label>
+                <?php } else { ?>
+                	<label class="control-label" for="ptype" id="label_ptype">Father is: </label>
+                <?php } ?>
+            </td>
+            <td>
+            	<?php						  
+					  $typeradio = new Zend_Form_Element_Radio('ptype',
+							  array(
+									  'multiOptions' => array('1'=>'Muganda', '2'=>'Non Muganda'), 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;&nbsp;',	
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $typeradio->setValue('1');
+					  echo $typeradio->render();
+				  ?><div id="ptype_error"></div>
+              </td>
+        </tr>
+       	<tbody id="pmuganda">
+	        <tr id="pclanname_row" class="hide">
+	            <td>
+                <?php if($focus->isMale()){ ?>
+                	<label class="control-label" for="pclanname" id="label_pclanname"><?php echo $this->translate("person_mother_clanname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } else { ?>
+                	<label class="control-label" for="pclanname" id="label_pclanname"><?php echo $this->translate("person_father_clanname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } ?>                
+                </td>
+	            <td><input type="text" name="pclanname" id="pclanname" class="span3 hastooltip" value="" title="<?php echo $this->translate("person_clanname_tooltip"); ?>" /><div id="pclanname_error"></div></td>
+	        </tr>
+	        <tr id="pclanid_row" class="hide">
+	            <td>
+                <?php if($focus->isMale()){ ?>
+                	<label class="control-label" for="pclanid" id="label_pclanid"><?php echo $this->translate("person_mother_clanid_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } else { ?>
+                	<label class="control-label" for="pclanid" id="label_pclanid"><?php echo $this->translate("person_father_clanid_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php } ?>        
+                </td>
+	            <td><?php
+                          $pclandropdown = new Zend_Form_Element_Select('pclanid',
+                                  array(
+                                          'multiOptions' => $allclans,
+                                          'view' => new Zend_View(),
+                                          'decorators' => array(array('ViewHelper')),
+                                          'class' => array('span3', 'hastooltip'),
+                                          'title' => $this->translate("person_clanid_tooltip")
+                                  )
+                          );
+                          
+                          $pclandropdown->setValue('');
+                          echo $pclandropdown->render();
+                      ?><div id="pclanid_error"></div><input type="hidden" name="thepclanid" id ="thepclanid" value="" />
+                   
+               </td>
+	        </tr>
+        </tbody>
+  </table>
+</form>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+	$(document).ready(function() {
+		$("#personform").validate({		
+			// define the validation rules one field at a time
+			rules: {
+			    relationshiptype: "required", 
+				firstname: "required",
+				lastname: "required",		
+				clanname: "required",
+				pclanname: "required",
+				pfirstname: "required",
+				plastname: "required",		
+				lifestatus: "required",
+				clanid: "required",
+				pclanid: "required",
+				email: {
+					"required": false, 
+					email: true
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				relationshiptype: "<?php echo $this->translate("person_relationshiptype_error"); ?>", 
+				firstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("person_lastname_error"); ?>",		
+				pfirstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				plastname: "<?php echo $this->translate("person_lastname_error"); ?>",		
+				clanname: "<?php echo $this->translate("person_clanname_error"); ?>",
+				pclanname: "<?php echo $this->translate("person_clanname_error"); ?>",				
+				lifestatus: "<?php echo $this->translate("person_lifestatus_error"); ?>",
+				clanid: "<?php echo $this->translate("person_clanid_error"); ?>",
+				pclanid: "<?php echo $this->translate("person_clanid_error"); ?>",
+				email: {
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+
+		$("tr.gender").addClass('hide');
+		var gender = '<?php echo $focus->getGender(); ?>';
+		var rel = '<?php echo $rel; ?>';
+		var focusclan = '<?php echo $focus->getClanID(); ?>';
+		var focusclanlabel = '<?php echo $focus->getClan()->getFullName(); ?>';
+		var focustype = '<?php echo $focus->getType(); ?>';
+		// allow the selection of the gender for new person
+		if(rel == 1 || rel == 3 || rel == 5 || (gender == 2 && rel == 7)){				
+			$("#gender-1").prop('checked', 'checked'); 
+		}
+		if(rel == 2 || rel == 4 || rel == 6 || (gender == 1 && rel == 7)){	
+			$("#gender-2").prop('checked', 'checked');
+		} 
+		
+		// enable father and mother for children
+		if(gender == '1'){ 
+			// show/hide selection for mother when adding a child for a male parent
+			if(rel == 5 || rel == 6){					
+				multipleEnableContainerByID('mother, child_mother_type');
+				//multipleDisableContainerByID('father, child_father_type');
+				
+				if($("input[name=cmothertype]").val() == '1'){
+					multipleEnableContainerByID('mother');
+					multipleDisableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+				}
+				$("#cmothertype-1").click(function() {
+					multipleEnableContainerByID('mother');
+					multipleDisableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+				});
+				if($("input[name=cmothertype]").val() == '2'){
+					multipleEnableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+					multipleDisableContainerByID("mother");
+				}
+				$("#cmothertype-2").click(function() {
+					multipleEnableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+					multipleDisableContainerByID("mother");
+				});
+				$("#cmothertype-3").click(function() {
+					multipleDisableContainerByID("mother, pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+				});
+			} else {
+				multipleDisableContainerByID('mother, child_mother_type');
+			}					
+		}
+		if(gender == '2'){
+			// show/hide selection for mother when adding a child for a male parent
+			if(rel == 5 || rel == 6){					
+				multipleEnableContainerByID('father, child_father_type');
+				multipleDisableContainerByID('mother, child_mother_type');
+				
+				if($("input[name=cfathertype]").val() == '1'){
+					multipleEnableContainerByID('father');
+					multipleDisableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+				}
+				$("#cfathertype-1").click(function() {
+					multipleEnableContainerByID('father');
+					multipleDisableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+					multipleEnableContainerByID("clanrow");
+					$('#theclanid, #clanid').val('');
+					$('#personform #clanid').attr('readonly', false).attr('disabled', false).show();
+					$('#persontype').show();
+					$("#father #childfamilyid").change();
+				});
+				if($("input[name=cfathertype]").val() == '2'){
+					multipleEnableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+					multipleDisableContainerByID("father");
+				}
+				$("#cfathertype-2").click(function() {
+					multipleEnableContainerByID("pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+					multipleDisableContainerByID("father");
+					$('#theclanid, #clanid').val('');
+					$('#personform #clanid').attr('readonly', false).attr('disabled', false);
+					
+					multipleDisableContainerByID("clanrow");
+				});
+				$("#cfathertype-3").click(function() {
+					multipleDisableContainerByID("father, pfirstname_row, plastname_row, parenttype, pclanname_row, pclanid_row");
+					multipleEnableContainerByID("clanrow");
+					$('#theclanid, #clanid').val('');
+					$('#personform #clanid').attr('readonly', false).attr('disabled', false).show();
+					$('#persontype').show();
+				});
+				
+				// auto populate sibling father
+				$("#father #childfamilyid").change(function(){
+					$.get("<?php echo $this->baseUrl('person/clan'); ?>", 
+					   {familyid: $(this).val(),				
+						// parameters for the request along with a cachebuster to stop IE from caching the request
+						cachebuster: new Date().getTime()}, 			   
+						function(data){			
+							// alert(data);
+							data = jQuery.parseJSON(data);
+							$('#theclanid, #clanid').val('');
+							$('#personform #clanid').attr('readonly', false).attr('disabled', false);
+							$('#persontype').show();
+							if(data.clanid != '' && data.type == 1){
+								$('#theclanid, #clanid').val(data.clanid);
+								$('#personform #clanid').attr('readonly', true).attr('disabled', 'disabled');
+								$('#persontype').hide();	
+							}
+							if(data.type != 1){
+								$('#theclanid, #clanid').val('');
+								$('#personform #clanid').attr('readonly', false).attr('disabled', false);
+								$('#persontype').show();
+								if((rel == 5 || rel == 6)){
+									if(data.gender == 1){
+										$("#persontype div.radio label:contains('Muganda')").remove();
+									}
+									if(data.type == 2 && data.gender == 1){
+										$("#type-2").click();
+									}
+									if(data.type == 3 && data.gender == 1){
+										$("#type-3").click();
+									}
+									if(data.gender == 2){
+										$("#type-1").click();
+									}
+									$('#type').val(focustype);
+								}
+							}
+						}
+					);
+				});
+				if(!isEmptyString($("#father #childfamilyid").val())){
+					$("#father #childfamilyid").change();
+				}
+			} else {
+				multipleDisableContainerByID('mother, child_mother_type');
+			}
+		}
+			
+		// on type change
+		$("#type-1").click(function() {
+			enableContainerByID("muganda");
+		});
+		$("#type-2, #type-3").click(function() {
+			disableContainerByID("muganda");
+		});
+		$("#ptype-1").click(function() {
+			enableContainerByID("pmuganda");
+		});
+		$("#ptype-2, #ptype-3").click(function() {
+			disableContainerByID("pmuganda");
+		});
+			
+		// default clan
+		$('#personform #clanid').attr('readonly', false).attr('disabled', false);
+		if((gender == '1' && focustype == 1 && (rel == 1 || rel == 3 || rel == 4 || rel == 5 || rel == 6)) || (gender == '2' && focustype == 1 && (rel == 1 || rel == 3 || rel == 4)) ){
+			$('#personform #theclanid, #personform #clanid').val(focusclan);
+			$('#personform #clanid').attr('readonly', true).attr('disabled', 'disabled');
+		}
+		
+		// tooltips in popup
+		$(".hastooltip").each(function(){		
+			var theid = $(this).attr('id');
+			var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
+			if($(this).attr('title') != "undefined" || $(this).attr('title') != ""){
+				$('<a href="javascript: void(0);" class="qcontainer" id="q_'+theid+'"><img src="'+thepath+'" /></a>').insertAfter(this);
+				$("#q_"+theid).attr('title', $(this).attr('title')).addClass('qtooltip');
+			}	    
+		}); 
+		$('.qtooltip').tipsy({fade: true, gravity: 'w', html: true, trigger: 'hover', offset: -5});
+    	$(".hastooltip").attr('title','');
+		
+		// reset tab index
+		var tabindex = 1;
+		$('input,select').each(function() {
+			if (this.type != "hidden") {
+				var $input = $(this);
+				$input.attr("tabindex", tabindex);
+				tabindex++;
+			}
+		});
+		
+		// hide invite if deceased
+		// on type change
+		$("#lifestatus-1").click(function() {
+			enableContainerByID("invite");
+		});
+		$("#lifestatus-2, #lifestatus-3").click(function() {
+			disableContainerByID("invite");
+		});	
+		
+		$("#isinvited-1").attr('checked', false);
+		$("#isinvited-2").attr('checked', false);
+		
+		$("#nmothertype-1").click(function() {
+			multipleEnableContainerByID("new_mother_row");
+			$("#new_mother_row").removeClass("hide");
+			multipleDisableContainerByClass("showfornew");
+			$("#personform").attr('action', "<?php echo $this->baseUrl("person/updatefamily"); ?>");
+		});
+		$("#nfathertype-1").click(function() {
+			multipleEnableContainerByID("new_father_row");
+			$("#new_father_row").removeClass("hide");
+			multipleDisableContainerByClass("showfornew");
+			$("#personform").attr('action', "<?php echo $this->baseUrl("person/updatefamily"); ?>");
+		});
+		$("#nmothertype-2").click(function() {
+			$("#new_mother_row").addClass("show");
+			multipleDisableContainerByID("new_mother_row");
+			multipleEnableContainerByClass("showfornew");
+			$("#personform").attr('action', "<?php echo $this->baseUrl("person/create"); ?>");
+		});
+		$("#nfathertype-2").click(function() {
+			$("#new_father_row").addClass("show");
+			multipleDisableContainerByID("new_father_row");
+			multipleEnableContainerByClass("showfornew");
+			$("#personform").attr('action', "<?php echo $this->baseUrl("person/create"); ?>");
+		});
+		
+		<?php if($rel == 2 && count($dmothersarray) > 0){ ?>
+			multipleEnableContainerByID("new_mother_type, new_mother_row");
+			$("#new_mother_type, #new_mother_row").removeClass("hide");
+			multipleDisableContainerByClass("showfornew");
+			$("#personform").attr('action', "<?php echo $this->baseUrl("person/updatefamily"); ?>");
+		<?php } ?>
+		
+		<?php if($rel == 1 && count($dfathersarray) > 0){ ?>
+			multipleEnableContainerByID("new_father_type, new_father_row");
+			$("#new_father_type, #new_father_row").removeClass("hide");
+			multipleDisableContainerByClass("showfornew");
+			$("#personform").attr('action', "<?php echo $this->baseUrl("person/updatefamily"); ?>");
+		<?php } ?>
+		
+		// set the default clan
+		$('#persontype').hide();
+		if(rel == 2 || rel == 7 || (gender == '2' && focustype == 1 && (rel == 5 || rel == 6))){
+			$('#persontype').show();
+			$("#type-1").click();
+		}
+		
+		if(focustype != 1){
+			$('#theclanid, #clanid').val('');
+			$('#personform #clanid').attr('readonly', false).attr('disabled', false);
+			if((rel == 5 || rel == 6)){
+				$('#persontype').show();
+				if(gender == 1){
+					$("#persontype div.radio label:contains('Muganda')").remove();
+				}
+				if(focustype == 2 && gender == 1){
+					$("#type-2").click();
+				}
+				if(focustype == 3 && gender == 1){
+					$("#type-3").click();
+				}
+				if(gender == 2){
+					$("#type-1").click();
+				}
+				$('#type').val(focustype);
+			}
+			if((rel == 1 || rel == 2)){
+				$('#persontype').show();
+				if(gender == 1){
+					$("#persontype div.radio label:contains('Muganda')").remove();
+				}
+				$("#type-3").click();
+				$('#type').val(focustype);
+			}
+		}
+		
+		if(focustype == 1 && gender == 2){
+			if((rel == 5 || rel == 6)){
+				disableContainerByID("pclanid_row");
+			}
+		}
+	}); 
+</script>
+<style>
+body {
+	overflow:hidden;
+}
+.form-horizontal.well {
+	margin:0;
+	padding-top:0;
+	padding-bottom:0;
+	width:93%;
+}
+.form-horizontal .control-label {
+	font-size: 11px;
+	padding-top:3px;
+	width: 130px;
+}
+.form-horizontal .control-label.gender {
+	width: 60px;
+	display:inline-block;
+}
+.form-horizontal input {
+	height:15px;
+}
+.form-horizontal select {
+	height:25px;
+	font-size: 12px;
+}
+.form-horizontal .table td {
+	vertical-align: middle;
+}
+.form-horizontal .table tr:last-child td {
+	height:10px;
+}
+.form-horizontal .table tbody {
+	border-top:none;
+}
+.radio.inline, .checkbox.inline {
+	display:inline-block;
+	margin-bottom: 1px;
+    padding-top: 0;
+}
+.radio input[type="radio"], .checkbox input[type="checkbox"] {
+	margin-top:1px;
+}
+#dialog .zendradio label {
+	margin-right: 8px;
+	margin-top:5px;
+}
+</style>

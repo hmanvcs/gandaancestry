@@ -1,0 +1,166 @@
+<?php 
+	require_once APPLICATION_PATH.'/includes/header.php';
+
+	$title = $this->translate("companyname");
+	
+	$this->headMeta()->appendName('keywords', '');
+	$this->headMeta()->appendName('description', $title);
+	
+	$this->headTitle("Welcome to ".$title);  
+	
+?>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('.slideshow').cycle({
+		fx: 'fade', 
+		delay: 4000,
+		speed: 1000
+	});
+	
+	// set hidden field for the alphabet and submit the form
+	$(".alphabet").click(function(){
+		var letter = $(this).attr('id');
+		// alert(letter);
+		$('#letter').val(letter);
+		window.location.href = '<?php echo $this->baseUrl('baganda/index/letter/'); ?>'+letter;
+	});
+	
+	// remove well class from contentwrapper
+	$("#contentwrapper").removeClass('well');
+	
+	$("h2#build").css("margin","0 0 5px -2px");
+	
+	
+});
+</script>
+<style>
+#betalogo {
+	/*display:none;*/
+}
+.table#homesignup td {
+	padding:5px;
+	padding-left:0;
+}
+.table#homesignup td input {
+	margin-bottom:0;
+	padding:3px;
+}
+h2#build {
+	display:block; 
+	margin:0 0 12px -2px; 
+	padding:0; 
+	text-align:left; 
+	font-size:36px; 
+	font-weight:bold;
+	margin-bottom:10px;
+	color:#303030;
+	font-family:'calibri','Telex',sans-serif;
+}
+#intromsg {
+	display:block; 
+	margin:0; 
+	padding:0 40px 0 0; 
+	text-align:left; 
+	color:#494949; 
+	font-size:17px;
+}
+#startnow {
+	display:block; 
+	margin:10px 0 10px 0;
+	padding:0; 
+	text-align:left;
+	font-weight:normal;
+	color:#000000;
+	font-size:26px;
+}
+#timetaken {
+	display:block; 
+	margin:12px 0; 
+	padding:0; 
+	text-align:left;
+	font-size:14px;
+}
+.slidelinks {
+	display:inline-block;
+	width:90px;
+	margin-right:5px;
+	text-align:left;
+	font-size:16px;
+}
+#homeshow {
+	padding-left:0; 
+	padding-top:5px;
+	background-image: url("<?php echo $this->baseUrl('images/slidebg.jpg'); ?>");
+	background-repeat:no-repeat;
+	background-position:top left;
+}
+.slideshow a img {
+	/*width:300px;*/
+}
+</style>
+<div class="row marginleft0" style="padding-top: 20px;">
+    <table class="table noborder" id="hometable">
+    	<tr>
+        	<td>&nbsp;</td>
+            <td colspan="3" style="padding-left:0; padding-bottom:0;"><h2 id="build">Celebrate your Baganda family ancestry.</h2></td>
+        </tr>
+        <tr>
+        	<td style="padding:0;"></td>
+            <td style="padding:0; padding-top:10px;" colspan="2"><label id="intromsg">Build your family tree and share it with friends and relatives.</label></td>
+            <td rowspan="2" style="padding-top:20px;"><h3 id="startnow">Start now - its free.</h3><label id="timetaken">Registration takes less than 3 minutes.</label></td>
+        </tr>
+        <tr>
+        	<td></td>
+            <td colspan="2" style="padding:25px 0 0 0;">
+            	<a class="slidelinks" href="<?php echo $this->baseUrl('howitworks'); ?>">How it works </a>
+                <a class="slidelinks" style="margin-left:38px;" href="<?php echo $this->baseUrl('howitworks'); ?>">Benefits</a> 
+                <a class="slidelinks pull-right" style="margin-right:20px;" href="<?php echo $this->baseUrl('howitworks'); ?>">News</a>
+            </td>
+        </tr>
+        <tr>
+        	<td style="padding:0; width:140px;"></td>
+        	<td style="padding:0; width:320px;">
+                <div id="homeshow">
+                	<div class="slideshow">
+                        <a href="<?php echo $this->baseUrl('News'); ?>"><img src="<?php echo $this->baseUrl('images/slide_3.jpg'); ?>" /></a>
+                        <a href="<?php echo $this->baseUrl('howitworks'); ?>"><img src="<?php echo $this->baseUrl('images/slide_1.jpg'); ?>" /></a>
+                        <a href="<?php echo $this->baseUrl('benefits'); ?>"><img src="<?php echo $this->baseUrl('images/slide_2.jpg'); ?>" /></a>
+                        <a href="javascript:void(0)"><img src="<?php echo $this->baseUrl('images/slide_4.jpg'); ?>" /></a>
+                    </div>
+                </div>
+            </td>
+            <td style="width:20px;"></td>
+            <td style="padding-top:0;">                
+                <form class="form-horizontal well" style="width:330px; padding-bottom:30px;" id="joinform" action="<?php echo $this->baseUrl('signup/homejoin'); ?>" method="post">
+                <table class="table noborder" id="homesignup">
+                	<tr>
+                    	<td><label class="control-label leftalign"><?php echo $this->translate("person_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                        <input name="firstname" id="firstname" type="text" class="span4" /></td>
+                    </tr>
+                    <tr>
+                    	<td><label class="control-label leftalign"><?php echo $this->translate("person_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <input name="lastname" id="lastname" type="text" class="span4" /></td>
+                    </tr>
+                    <tr>
+                    	<td><label class="control-label leftalign"><?php echo $this->translate("person_email_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               		<input class="span4" name="email" id="email" type="text" /></td>
+                    </tr>
+                    <tr>
+                       <td><label class="control-label leftalign"><?php echo $this->translate("useraccount_password_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <input name="password" id="password" type="password" class="span3 password" /></td>
+                   </tr>
+                   <tr>
+                       <td><button type="submit" id="submitjoin" class="btn btn-primary btn-large btn-gold">Join Now</button>
+                       <input type="hidden" name="<?php echo URL_SUCCESS; ?>" id="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('signup')); ?>" />
+                       </td>
+                   </tr>
+                </table>
+                </form>
+            </td>
+        </tr>
+    </table>
+    
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

@@ -1,0 +1,139 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Online Luganda Dictionary";
+	$this->headTitle($this->translate("appname")." | Luganda Dictionary"); 
+
+?>
+<script language="JavaScript">
+function popWin(URL){
+	aWindow=window.open(URL,"pron_window","toolbar=no,scrollbars=no,status=no,resizable=no,menubar=no,width=400,height=250");
+}
+function showWords(word, language) {
+	//alert("Am called");
+	//alert(word);
+	//alert(language);
+	frames['isearch_words'].location.href = "<?php echo $this->baseUrl('lugandadictionary/searchwordsresults/word/');?>" + document.getElementById(word).value + "/from/" + language;
+}
+</script>
+<script>
+$(document).ready(function(){
+	$('#englishword').keydown(function (event) {
+	   var keycode = (event.keyCode ? event.keyCode : event.which);
+		if (keycode == '13') {
+			$('#englishgo').click();
+		}
+    });
+	
+	$('#lugandaword').keydown(function (event) {
+	   var keycode = (event.keyCode ? event.keyCode : event.which);
+		if (keycode == '13') {
+			$('#lugandago').click();
+		}
+    });
+});
+</script>
+<style>
+	.iframestyle {
+		position: absolute;
+		visibility: hidden;
+		height: 0px;
+		width: 0px;
+		overflow: hidden;
+	}
+	hr{
+		margin-bottom: 5px;
+	}
+	.heading{
+		padding-top: 5px;
+	}
+	.smallheading h2{
+		line-height: 0;
+	}
+</style>
+<div class="row marginleft0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+        <div class="content">
+        	<h1><?php echo $title; ?></h1> 
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                     
+							<tr> 
+                        <td class="heading1"><h2>How it Works</h2></td>
+                        <td rowspan="3" valign="top" align="center">
+									<?php //require '../app/adsense.htm' ?>
+								</td>
+							</tr>
+                     <tr> 
+                        
+                        <td class="bodytext">
+                  
+                  <p>Enter the word (or part of the word) 
+                  that you wish to be translated into the appropriate field, then 
+                  click <b>Go</b> (<a href="<?php echo $this->baseUrl('aboutus/termsofservice');?>" target="_blank" class=infoAnchor>Terms of 
+                  Use</a>).</p>
+                  
+                  <p>If you are searching for an English word, the  results of the word in the Talking Dictionary are also displayed. Click on any of the Talking Dictionary near matches to search for a near match.</p></td>
+                     </tr>
+                     <tr>
+                        <td class="bodytext">&nbsp;</td>
+                     </tr>
+                     <tr> 
+                        <td colspan="2"></td>
+                     </tr>
+                     
+                     <tr> 
+                        <td colspan="2" class="error">&nbsp;</td>
+                     </tr>
+                     <tr> 
+                        <td colspan="2">
+								      <table border="0" cellspacing="2" cellpadding="2">
+                                 <tr> 
+                                    <td colspan="2"  align="left" valign="top" class="heading1" nowrap><span class="smallheading"><h2>English 
+                        to Luganda</h2></span></td>
+                                    <td>&nbsp;</td>
+                                    <td rowspan="2">&nbsp;&nbsp;&nbsp;</td>
+                                    <td rowspan="2"><img src="<?php echo $this->baseUrl('/images/bck_tan.gif');?>" width="2" style="height:50px;" ></td>
+                                    <td rowspan="2">&nbsp;&nbsp;&nbsp;</td>
+                                    <td colspan="2"  valign="top" nowrap class="heading1"> 
+                        <span class="smallheading"><h2>Luganda to English</h2></td>
+                                    <td>&nbsp;</td>
+                                    <td width="99%">&nbsp;</td>
+                                 </tr>
+                                 <tr> 
+                                    <td align="right" valign="top" class="heading" nowrap><b>English Word</b></td>
+                                    <td><input type="text" name="englishword" onClick="focusOnEnglish()" id="englishword" onKeyDown="keyDownHandler('englishgo')">
+											</td>
+                                    <td><input name="englishgo" id="englishgo" type="button" value="Go" class="button" onClick="document.getElementById('lugandaword').value = '';return isNotNullOrEmptyString('englishword', 'Enter an English word') && showWords('englishword', 'english')" tabindex="2"></td>
+                                    <td  align="right"  valign="top" class="heading" nowrap><b>Luganda Word</b></td>
+                                    <td><input type="text" name="lugandaword" onClick="focusOnLuganda()" id="lugandaword" onKeyDown="keyDownHandler('lugandago')"></td>
+                                    <td><input name="lugandago" id="lugandago" type="button" value="Go" class="button" onClick="document.getElementById('englishword').value = '';return isNotNullOrEmptyString('lugandaword', 'Enter a Luganda word') && showWords('lugandaword', 'luganda')"></td>
+                                    <td>&nbsp;</td>
+                                 </tr>
+                                 <tr>
+                              <td colspan="6" height="15"></td></tr>
+                    
+                              </table>
+						</td>
+                        
+                     </tr>
+				         <tr> 
+                        <td valign="top"><iframe class="iframestyle" src="<?php echo $this->baseUrl('lugandadictionary/searchwordsresults');?>" name="isearch_words" id="isearch_words" onload="transferHTML('search_words')"></iframe>
+                           <span id="search_words" style="height:340px;"></span></td>
+                        <td valign="top">&nbsp;</td>
+				         </tr>
+							<tr><td>&nbsp;
+							<script type="text/javascript">
+								focusOnEnglish();
+							</script></td>
+							   <td>&nbsp;</td>
+							</tr>
+             
+            </table>
+        </div>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+

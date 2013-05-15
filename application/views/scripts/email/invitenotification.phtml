@@ -1,0 +1,17 @@
+<?php include(APPLICATION_PATH.'/views/scripts/email/emailheader.phtml'); ?>
+
+Dear <?php echo $this->firstname; ?>,<br /><br />
+
+You have been invited by <b>'<?php echo $this->inviter; ?>'</b> to Join <?php echo $this->appname; ?> to view your family tree.<br /><br />
+
+In order to view your family tree, you will have to activate your account first by clicking on link below:<br /><br />
+
+<?php echo $this->invitelink; ?><br /><br />
+
+If the page fails to open, copy the activation link and paste it in the address window of the browser.<br />
+
+After activating your account, you should be able to login using your email address and password.<br /><br />
+
+If you need any further assistance or have any question, please feel free to <a href="<?php echo $this->serverUrl($this->baseUrl('contactus')); ?>" title="Contact us">Contact us</a><br /><br />
+
+<?php include(APPLICATION_PATH.'/views/scripts/email/emailfooter.phtml'); ?>

@@ -1,0 +1,56 @@
+<?php if($isadmin){ ?>
+            	<a href="<?php echo $this->baseUrl('clan/add/pgc/true/type/2/clanid/'.encode($clan->getID())); ?>" style="margin-bottom:10px;" class="addclan btn btn-primary btn-mini" title="Add New Ssiga" rel="New Ssiga"><i class="icon-plus icon-white"></i> Add Ssiga</a>
+            <?php } ?>
+			<?php if($totalssigas == 0) { ?>
+                <div class="alert alert-info">There are currently no Ssigas for <?php echo $clan->getFullName(); ?></div>
+            <?php } else { ?>                
+                <label class="labeldescription">Viewing <?php echo $totalssigas; ?> Massiga from <?php echo $clan->getFullName()." Clan"; ?></label>
+                <ul class="nav ssiga" id="clans">
+                <?php foreach($ssigas as $ssiga) { ?>
+                <li class="well" style="height:180px;">
+                    <table class="table clanlist">
+                        <thead>
+                            <tr>
+                                <td colspan="2" class="nowrapping">                          	
+								<?php if($isadmin){ ?>
+                                    <a class="clanpopup" id="ssiga_<?php echo $ssiga->getID(); ?>" href="<?php echo $this->baseUrl('clan/view/id/'.encode($ssiga->getID())); ?>" style="width:100%; display:block;" title="View <?php echo $ssiga->getFullName(); ?>"><h3><?php echo snippet($ssiga->getFullName(), 32, '...') ; ?></h3></a>
+                                <?php } else { ?>    
+                                    <h3 class="well-legend"><?php echo snippet($ssiga->getFullName(), 32, '...') ; ?></h3>
+                                <?php } ?>
+                                <?php if($isadmin){ ?>
+                                    <a href="<?php echo $this->baseUrl('clan/index/id/'.encode($ssiga->getID())); ?>" title="Edit Ssiga" class="button directedit pull-right"><i class="icon-pencil"></i> Edit</a>
+                                <?php } ?>
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody>                        
+                            <tr>
+                                <td width="115" style="padding:0;">
+                                    <div class="profileinfo clantotem_thumb">
+                                    	<?php if($isadmin){ ?>
+                                        	<a href="<?php echo $this->baseUrl('clan/view/id/'.encode($ssiga->getID())); ?>" class="edittotem" title="Details of <?php echo $ssiga->getName(); ?>"><img id="coverlogo" src="<?php echo $clan->getTotemThumbnailPath(); ?>" /></a>
+                                        <?php } else { ?>
+                                        	<img id="coverlogo" src="<?php echo $clan->getTotemThumbnailPath(); ?>" />
+                                        <?php } ?>    
+                                    </div>
+                                </td>
+                                <td valign="top" style="padding:0; padding-left:5px;">
+                                    <table style="width:100%;">
+                                    	<tr>
+                                            <td class="field">Obutaka</td>
+                                            <td class="value"><?php echo $ssiga->getObutakaSsaza(); ?> </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="field" style="width:30%;">Omukulu we Ssiga</td>
+                                            <td class="value"><?php echo $ssiga->getHeadTitle(); ?></td>
+                                        </tr>
+                                        
+                                    </table>                          	
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </li>
+            	<?php } ?>
+        	</ul>
+        <?php } ?>

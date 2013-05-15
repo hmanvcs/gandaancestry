@@ -1,0 +1,990 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	# Page title
+	$showfocus = true;
+	if(isEmptyString($request->range)){
+		$request->setParam('range', '2');
+	}
+	if(!isEmptyString($request->range)){
+		switch($request->range){
+			case 1:
+				$title = "All People";
+				// $showfocus = false;
+				break;
+			case 2:
+				$title = "My Relatives";
+				break;
+			case 3:
+				$title = "Immediate Family";
+				break;
+			case 4:
+				$title = "Added by me";
+				break;
+			case 5:
+				$title = "Managed by me";
+				break;
+			default:
+				$title = $this->translate('person_pagetitle_list');
+				break;
+		}
+	}
+	
+	# instance of loggedin user 
+	$loggedinperson = new Person();
+	$loggedinperson->populate($personid);
+
+	# person in focus
+	$person = new Person();
+	$focuspersonid = $personid;
+	if(!isEmptyString($request->focusid)){
+		$focuspersonid = $request->focusid;	
+	}
+	$person->populate($focuspersonid);
+	$person->getPartners();
+	# the family under focus
+	$thefamilyid = isEmptyString($familyid) ? $person->getFamilyID() : $familyid;
+	if(!isEmptyString($request->familyid)){
+		$thefamilyid = $request->familyid;	
+	}
+	
+	$allrelationships = getRelationShips();
+	// debugMessage($allrelationships);
+	# custom query
+	$custom_bro_query = '';
+	if($focuspersonid == $personid){
+		$thefamilyid = $person->getFamilyID();
+		$custom_bro_query = " AND p.id <> '".$personid."' ";
+	}
+	if($focuspersonid != $personid){
+		$thefamilyid = $person->getFamilyID();
+		if(!$loggedinperson->isBrother($focuspersonid)){
+			$custom_bro_query = " AND p.id <> '".$focuspersonid."' ";
+		}
+		if($loggedinperson->isBrother($focuspersonid)){
+			$custom_bro_query = " OR p.id = '".$personid."' ";
+		}
+	}
+	
+	$relations_query = " ";
+	$where_query = " WHERE p.id <> '' AND p.statusflag <> 2 AND p.id <> 1 AND p.addedbyid = '".$focuspersonid."' ";
+	$order_query = " ORDER BY p.firstname, p.lastname, p.clanname ";
+	$group_query = " ";
+	$nested_query = " 
+			INNER JOIN useraccount as u ON (p.ownerid = u.id) 
+			LEFT JOIN address as a on (a.personid = p.id)
+			LEFT JOIN contact as c on (c.personid = p.id)
+			LEFT JOIN event as e on (e.personid = p.id)
+			LEFT Join relationship AS r ON (f.relationshipid = r.id)
+			LEFT Join organisation AS o ON o.id = p.clanid
+			LEFT Join place AS t ON (a.village = t.id AND a.village <> '')
+			Left Join family AS fm ON (p.familyid = fm.id)
+			Left Join person AS pf ON (fm.fatherid = pf.id)
+			Left Join person AS pm ON (fm.motherid = pm.id)
+		";
+	
+	# custom queries
+	if(!isEmptyString($request->searchterm)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->searchterm."%' OR p.lastname LIKE '%".$request->searchterm."%' OR p.clanname LIKE '%".$request->searchterm."%' OR p.othernames LIKE '%".$request->searchterm."%' OR p.screenname LIKE '%".$request->searchterm."%' ) ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->gender)){
+		$where_query .= " AND p.gender = '".$request->gender."' ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->type)){
+		$where_query .= " AND p.type = '".$request->type."' ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->lifestatus)){
+		$where_query .= " AND p.lifestatus = '".$request->lifestatus."' ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->clanid)){
+		$where_query .= " AND p.clanid = '".$request->clanid."' ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->isactive)){
+		if($request->isactive == '1'){
+			$where_query .= " AND p.userid <> '' ";
+		} else {
+			$where_query .= " AND p.userid = '' ";
+		}
+		$showfocus = false;
+	}
+	
+	# advanced search
+	if(!isEmptyString($request->firstname)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->firstname."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->lastname)){
+		$where_query .= " AND (p.lastname LIKE '%".$request->lastname."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->clanname)){
+		$where_query .= " AND (p.clanname LIKE '%".$request->clanname."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->othernames)){
+		$where_query .= " AND (p.othernames LIKE '%".$request->othernames."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->screenname)){
+		$where_query .= " AND (p.screenname LIKE '%".$request->screenname."%') ";
+	}
+	if(!isEmptyString($request->alias)){
+		$where_query .= " AND (p.alias LIKE '%".$request->alias."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->pclanid)){
+		$where_query .= " AND (p.clanid = '".$request->pclanid."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->pssigaid)){
+		$where_query .= " AND (p.ssigaid = '".$request->pssigaid."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->bssaza)){
+		$where_query .= " AND (a.county = '".$request->bssaza."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->bparish)){
+		$where_query .= " AND (a.town = '".$request->bparish."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->bvillage)){
+		$where_query .= " AND (a.village = '".$request->bvillage."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->pcountry)){
+		$where_query .= " AND (a.country = '".$request->pcountry."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->pssaza)){
+		$where_query .= " AND (a.county = '".$request->pssaza."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->pcity)){
+		$where_query .= " AND (a.city = '".$request->pcity."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->pvillage)){
+		$where_query .= " AND (a.village = '".$request->pvillage."') ";
+		$showfocus = false;
+	}
+	
+	if(!isEmptyString($request->bssaza)){
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->hasparent)){
+		if($request->hasparent == '1'){
+			$where_query .= " AND (p.familyid <> '') ";
+		} else {
+			$where_query .= " AND (p.familyid = '') ";
+		}
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->p_parentsname)){
+		$parents_query = " SELECT group_concat(pp.id separator ',') as pids from person p INNER  ";
+		$where_query .= " AND (p.firstname LIKE '%".$request->p_parentsname."%' OR p.lastname LIKE '%".$request->p_parentsname."%' OR p.clanname LIKE '%".$request->p_parentsname."%') ";$showfocus = false;
+		
+	}
+	if(!isEmptyString($request->p_spousename)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->p_spousename."%' OR p.lastname LIKE '%".$request->p_spousename."%' OR p.clanname LIKE '%".$request->p_spousename."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->p_siblingname)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->p_siblingname."%' OR p.lastname LIKE '%".$request->p_siblingname."%' OR p.clanname LIKE '%".$request->p_siblingname."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->p_childname)){
+		$where_query .= " AND (p.firstname LIKE '%".$request->p_childname."%' OR p.lastname LIKE '%".$request->p_childname."%' OR p.clanname LIKE '%".$request->p_childname."%') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->plifestatus)){
+		$where_query .= " AND (p.lifestatus = '".$request->plifestatus."') ";
+		$showfocus = false;
+	}
+	if(!isEmptyString($request->age)){
+		// $where_query .= " AND (p.lifestatus = '".$request->plifestatus."') ";
+		$showfocus = false;
+	}
+	
+	# determine query from range selected
+	if($request->range == '2' || $request->range == '3' || $request->range == '4' || $request->range == '5'){
+		# 1 - All, 2 - My Relatives, 3 - Immediate Family, 4 - Added By Me, 5 - Managed By me
+		if($request->range == '4' && $focuspersonid == $personid){
+			$where_query .= " AND p.addedbyid = '".$personid."' ";
+		}
+		if($request->range == '5' && $focuspersonid == $personid){
+			$where_query .= " AND p.ownerid = '".$userid."' ";
+		}
+		$group_query = ' GROUP BY f.relativeid ';
+	}
+	# if viewing all people
+	if($request->range == '1'){
+		$group_query = ' GROUP BY p.id ';
+	}
+	
+	# Create an instance of the class to handle the pagination
+	$paginate = new Pagination();	
+	$paginate->setView($this);
+	$paginate->setItemCountPerPage("50");
+	
+	$paginate->processPost($request->getParams());
+	
+	if($request->range == '2' || $request->range == '4' || $request->range == '5'){
+		$all_results_query = "select p.id,
+p.userid,
+p.ownerid,
+p.addedbyid,
+p.familyid,
+p.type,
+p.firstname,
+p.lastname,
+p.clanname,
+p.othernames,
+p.maidenname,
+p.screenname,
+p.gender,
+p.lifestatus,
+p.email,
+p.isinvited,
+p.hasacceptedinvite,
+p.invitedbyid,
+p.dateofbirth,
+p.clanid,
+p.datecreated,
+p.createdby,
+p.statusflag,
+u.type AS usertype,
+u.username,
+u.email,
+u.gender,
+u.isactive,
+u.createdby,
+u.datecreated,
+f.id AS focuslineid,
+r.addenabled as addenabled,
+r.ename,
+r.lname,
+f.relationshipid,
+o.fullname AS clan,
+a.country,
+a.village,
+t.name as villagename,
+p.photo,
+fm.fatherid,
+pf.type AS ftype,
+pf.firstname AS ffirstname,
+pf.lastname AS flastname,
+pf.clanname AS fclanname,
+pf.othernames AS fothernames,
+pf.maidenname AS fmaidenname,
+pf.screenname AS fscreenname,
+pf.gender AS fgender,
+pf.lifestatus AS flifestatus,
+pf.clanid AS fclanid,
+fm.motherid,
+pm.type AS mtype,
+pm.firstname AS mfirstname,
+pm.lastname AS mlastname,
+pm.clanname AS mclanname,
+pm.othernames AS mothernames,
+pm.maidenname AS mmaidenname,
+pm.screenname AS mscreenname,
+pm.gender AS mgender,
+pm.lifestatus AS mlifestatus,
+pm.clanid AS mclanid
+	".$relations_query."
+			from person p left join familytree f on (f.relativeid = p.id AND f.focusid = '".$focuspersonid."' AND p.addedbyid = '".$focuspersonid."') 
+			".$nested_query."".$where_query."".$group_query."".$order_query.""
+		;
+	}
+	if($request->range == '1'){
+		$all_results_query = "select p.id ".$relations_query."
+			from person p ".$nested_query."".$where_query."".$group_query."".$order_query.""
+		;
+	}
+	// debugMessage($all_results_query);
+	
+	$paginate->setItemCountFromSQLQuery($all_results_query);
+	
+	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
+	// echo $current_results_query;
+	$session->setVar(ALL_RESULTS_QUERY, $all_results_query);
+	$session->setVar(CURRENT_RESULTS_QUERY, $current_results_query);
+	# the query string to be appended to the return to list URL
+	$session->setVar('list_query_string'.$request->getControllerName(), $request->getParams());
+	
+	$conn = Doctrine_Manager::connection(); 
+	$result = $conn->fetchAll($current_results_query);
+	$has_no_data = (count($result) == 0) ? true : false; 
+	
+	$clanlookup = new LookupType();
+	$clanlookup->setName("ALL_CLANS");
+	$clans = $clanlookup->getOptionValuesFromQuery();
+	
+	$ssigalist = new LookupType(); 
+	$ssigalist->setName("ALL_MASIGA");
+	$ssigas = $ssigalist->getOptionValuesFromQuery();						
+	
+	$ssazalist = new LookupType(); 
+	$ssazalist->setName("ALL_SSAZAS");		
+	$massaza = $ssazalist->getOptionValuesFromQuery();
+	
+	$placelist = new LookupType(); 
+	$placelist->setName("ALL_PLACES");
+	$places = $placelist->getOptionValuesFromQuery();
+	
+	$countries = getCountries(); 
+						  
+	$this->headTitle($title);
+?>
+<script>
+	$(document).ready(function() {
+		// disable advanced searching by default
+		disableContainerByID("advanced_row");
+		$("tr#advanced_row").addClass('advanced_off');
+		<?php if(!isEmptyString($request->firstname) || !isEmptyString($request->lastname) || !isEmptyString($request->clanname) || !isEmptyString($request->othername) || !isEmptyString($request->screenname) || !isEmptyString($request->alias)){ ?>
+			$("h3#head_names").click();
+			enableContainerByID("advanced_row");
+		<?php } ?>
+		<?php if(!isEmptyString($request->pclanid) || !isEmptyString($request->pssiga) || !isEmptyString($request->bssaza) || !isEmptyString($request->bparish)  || !isEmptyString($request->bvillage)){ ?>
+			$("h3#head_ancestry").click();
+			enableContainerByID("advanced_row");
+		<?php } ?>
+		<?php if(!isEmptyString($request->pcountry) || !isEmptyString($request->pssaza) || !isEmptyString($request->pcity) || !isEmptyString($request->pvillage)  || !isEmptyString($request->pphonenumber)){ ?>
+			$("h3#head_contacts").click();
+			enableContainerByID("advanced_row");
+		<?php } ?>
+		
+		$("#advanced").click(function(){
+			if($("tr#advanced_row").hasClass("advanced_off")){
+				enableContainerByID("advanced_row");
+				$("tr#advanced_row").removeClass('advanced_off').addClass('advanced_on');
+			} else {
+				disableContainerByID("advanced_row");
+				$("tr#advanced_row").removeClass('advanced_on').addClass('advanced_off');
+			}
+		});
+		
+		// date filter 
+		disableContainerByID("b_ends");		
+		disableContainerByClass("deathrow");
+		$("#bstarttype").change(function() {
+			if($(this).val() == '2' || $(this).val() == '3'){
+				enableContainerByID("b_ends");
+				if($(this).val() == '3'){
+					$("#bendtype").val('8').attr('selected', true);
+				}
+				if($(this).val() == '2'){
+					$("#bendtype").val('9').attr('selected', true);
+				}
+				$("#eventtitles").css({'width':'280'});
+			} else {
+				disableContainerByID("b_ends");
+				$("#eventtitles").css({'width':'160'});
+			}
+			
+		});
+		// date of death is a range
+		$("#dstarttype").change(function() {
+			if($(this).val() == '2' || $(this).val() == '3'){
+				enableContainerByID("d_ends");
+				if($(this).val() == '3'){
+					$("#dendtype").val('8').attr('selected', true);
+				}
+				if($(this).val() == '2'){
+					$("#dendtype").val('9').attr('selected', true);
+				}
+				$("#eventtitles").css({'width':'280'});
+			} else {
+				disableContainerByID("d_ends");
+				$("#eventtitles").css({'width':'160'});
+			}
+			
+		});
+		// if deceased
+		$("#lifestatus").change(function() {
+			if($(this).val() == '2'){
+				enableContainerByClass("deathrow");
+				disableContainerByID("d_ends");		
+			} else {
+				disableContainerByClass("deathrow");
+			}
+		});
+		
+		// set hidden fields when changing focus and resubmit form
+		$(".focustrigger").click(function() {
+			$("#focusid").val($("span."+$(this).attr('id')).html());
+			$("#family").val($("label."+$(this).attr('id')).html());
+			$("#personsearchform").submit(); 
+		});
+		// on range change
+		$("#range").change(function(e) {
+			// if searching all, empty values of focusid and familyid
+			if($(this).val() == '1'){
+				e.preventDefault;
+				$("#focusid").val('');
+				$("#family").val('');
+				// alert($("#focusid").val()+' and '+$("#family").val());
+				// $("#personsearchform").submit(); 
+				window.location.href = "<?php echo $this->baseUrl('baganda/index/'); ?>";
+			} else {
+				$("#personsearchform").submit(); 
+			}
+		});
+		
+		$("select.nullindexone option:eq(0)").val('');
+		
+		// set hidden field for the alphabet and submit the form
+		$(".alphabet").click(function(){
+			var letter = $(this).attr('id');
+			// alert(letter);
+			$('#letter').val(letter);
+			$("#searchform").submit();
+		});
+		
+		$(".directrelationship").change(function(){									
+			var relationship = $(this).val();
+			var id = $(this).attr('theid');
+			var relativeid = $(this).attr('therelative');
+			/*var focusid = $(this).attr('thefocus');
+			*/
+			var label = $('option:selected', this).html();
+			
+			$("#loading_rel_"+relativeid).show();
+			$(this).css({'border':'1px solid #E1E1E1','color':'#E1E1E1'});
+			
+			$.get("<?php echo $this->baseUrl('person/updaterelation'); ?>", 
+			   {id: id, relationship: relationship, 
+				cachebuster: new Date().getTime()}, 			   
+				function(data){			
+					// alert(data);
+					if (data == "yes") {
+						$("#loading_rel_"+relativeid+", #directrelationship_"+relativeid+", #confirm_rel_"+relativeid).hide();
+						$("#rel_label_"+relativeid).html(label).show();
+						$("#corner_"+relativeid).removeClass("hide").show();
+					}						
+				}
+			);
+		});	
+		
+		/* Change relationship using corner option */
+		$("a.changerel").click(function(){									
+			var relationship = $(this).attr('id');
+			var id = $(this).attr('theid');
+			var relativeid = $(this).attr('therelative');			
+			var label = $(this).html();
+			// alert(relationship+' - '+id+' -'+relativeid+' - '+label);
+			$("#loading_rel_"+relativeid).show();
+			$(this).css({'border':'1px solid #E1E1E1','color':'#E1E1E1'});
+			
+			$.get("<?php echo $this->baseUrl('person/updaterelation'); ?>", 
+			   {id: id, relationship: relationship, 
+				cachebuster: new Date().getTime()}, 			   
+				function(data){			
+					// alert(data);
+					if (data == "yes") {
+						$("#loading_rel_"+relativeid+", #directrelationship_"+relativeid+", #confirm_rel_"+relativeid).hide();
+						$("#rel_label_"+relativeid).html(label).show();
+					}						
+				}
+			);
+		});
+	}); 
+</script>
+<style>
+select, select.agerange {
+	width:auto;
+}
+select.yesnoselect {
+	width:70px;
+}
+select.gender, select.lifestatus, select.type, select.starttype {
+	width:95px;
+}
+select.isactive {
+	width:115px;
+}
+select.range, select.clan, select.ssiga, select.ssazas, select.country  {
+	width:150px;
+}
+.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited {
+	color:inherit;
+}
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+    background: none;
+}
+#contentcolumn {
+	width:auto;
+}
+#advanced_row {
+	display:none;
+}
+select.span2.directrelationship {
+	width:80px;
+	font-size:11px;
+}
+.span2.invite {
+	width:150px;
+	color:#e1e1e1;
+	border:1px solid #e1e1e1;
+}
+span.rel_label {
+	display:block; 
+	margin-bottom:8px;
+	padding-top:0;
+}
+ul.dropdown-menu.rel_dropdown {
+	max-height:275px;
+	overflow-y:scroll;
+}
+ul.dropdown-menu.rel_dropdown li a {
+	padding:2px 6px;
+}
+.btn-group.btn-mini.dropdown-toggle.buttondrop {
+	padding-bottom:7px;
+}
+.table tr#focusrow td {
+	background-color:#EFEFEF;
+	border:solid 1px #E3E3E3;
+	
+}
+.ui-accordion-content.ui-accordion-content-active.clicked {
+	border: 1px solid #A3B9D8;
+}
+</style>
+
+<h1><?php echo $title; ?></h1>
+<div class="row" style="margin-left:0;">
+<form action="<?php echo $this->baseUrl("person/listsearch"); ?>" method="get" id="personsearchform" class="form-search">
+<div class="well" style="padding:10px;">
+	<table class="table filtertable">
+    	<tr>
+        	<td width='75%'>
+            	<table class="filters">
+                	<tr>
+                    	<td width="90">
+							<label class="control-label">Gender:</label>
+                            <?php
+								$allgenders = array('' => 'All','1'=>'Male','2'=>'Female');
+								$genderdropdown = new Zend_Form_Element_Select('gender',
+													array(
+														'multiOptions' => $allgenders,
+														'view' => new Zend_View(),
+														'decorators' => array('ViewHelper'),
+														'class' => array('gender','span2','autofilter'),
+														'title' => 'Filter People By Gender'		
+													)
+								);  
+								$genderdropdown->setValue($request->getParam('gender')); 
+								echo $genderdropdown->render();
+							?>
+						</td>
+                        <td width="100">
+							<label class="control-label">Life Status:</label>
+                            <?php
+								$allstatuses = array('' => 'All', '1'=>'Living', '2'=>'Deceased', '3'=>'Unknown');
+								$statusdropdown = new Zend_Form_Element_Select('lifestatus',
+													array(
+														'multiOptions' => $allstatuses,
+														'view' => new Zend_View(),
+														'decorators' => array('ViewHelper'),
+														'class' => array('lifestatus','span2','autofilter'),
+														'title' => 'Filter People By Life Status'		
+													)
+								);  
+								$statusdropdown->setValue($request->getParam('lifestatus')); 
+								echo $statusdropdown->render();
+							?>
+						</td>
+                        <td width="110">
+							<label class="control-label">Ethinicity:</label>
+                            <?php
+								$ethinicities = array('' => 'All', '1'=>'Muganda', '2'=>'Non Muganda');
+								$ethindropdown = new Zend_Form_Element_Select('type',
+													array(
+														'multiOptions' => $ethinicities,
+														'view' => new Zend_View(),
+														'decorators' => array('ViewHelper'),
+														'class' => array('type','span2','autofilter'),
+														'title' => 'Filter People By Ethinicity'		
+													)
+								);  
+								$ethindropdown->setValue($request->getParam('type')); 
+								echo $ethindropdown->render();
+							?>
+						</td>
+                        <td width="100">
+							<label class="control-label">Clan:</label>
+                            <?php
+								  $clans = array_merge_maintain_keys(array('' => 'All'), $clans);
+								  $clandropdown = new Zend_Form_Element_Select('clanid',
+										  array(
+												  'multiOptions' => $clans,
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('clan','autofilter'),
+												  'title' => 'Filter People By Clan'
+										  )
+								  );
+								  
+								  $clandropdown->setValue($request->getParam('clanid')); 
+								  echo $clandropdown->render();
+							  ?>
+						</td>
+                        <td width="100">
+							<label class="control-label">Member:</label>
+                            <?php
+								$isactive_values = array('' => 'All', '1'=>'Subscriber', '2'=>'Non-subscriber');
+								$isactivedropdown = new Zend_Form_Element_Select('isactive',
+													array(
+														'multiOptions' => $isactive_values,
+														'view' => new Zend_View(),
+														'decorators' => array('ViewHelper'),
+														'class' => array('isactive','span2','autofilter'),
+														'title' => 'Filter People By Registration Status'		
+													)
+								);  
+								$isactivedropdown->setValue($request->getParam('isactive')); 
+								echo $isactivedropdown->render();
+							?>
+						</td>
+                        <td></td>
+                    </tr>
+                </table>
+            </td>
+            <td style="padding-right:6px;">
+            	<table style="width:100%;">
+                	<tr>
+                    	<td>
+                        	<span class="pull-right">
+                                <b>Search:</b>
+                                <?php
+                                    $range_array = array("1"=>"All GandaAncestry", "2"=>"My Relatives", "3"=>"Immediate Family", "4"=>"Added by me", "5"=>"Managed by me"/*, "6"=>"Ancestors", "7"=>"Decendants", "10"=>"Blood relatives", "11"=>"Inlaws"*/);
+                                    $rangedropdown = new Zend_Form_Element_Select('range',
+                                                        array(
+                                                            'multiOptions' => $range_array,
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('range','span2','filter'),
+                                                            'title' => 'Filter List By'		
+                                                        )
+                                    );  
+                                    $rangedropdown->setValue($request->getParam('range'));
+                                    echo $rangedropdown->render();
+                                ?>
+                            </span>
+                        </td>
+                    </tr>
+                	<tr>
+                    	<td>
+                            <span class="pull-right">
+                                <input name="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium xsearch-query" placeholder="Search people">
+                                <button type="submit" class="btn btn-primary"><i class="icon-search icon-white"></i>&nbsp;</button>
+                            </span></td>  
+                    </tr>
+                    <tr>
+                    	<td style="padding:0;">
+                        	<table class="table" style="margin-bottom:0;">
+                            	<tr>
+                                	<td width="30%">
+                                    	<a href="<?php echo $this->baseUrl('person/list/range/2'); ?>" id="reset" class="btn btn-primary btn-mini pull-right" title="Reset list or clear all filters">Reset</a>
+                                    </td>
+                                    <td>
+                                    	<a href="javascript: void(0)" id="advanced" class="btn btn-primary btn-mini pull-right" title="Advanced Search">Advanced Search <span class="caret"></span></a>
+                                        <input type="hidden" name="advanced" id="advanced" value="<?php echo $request->getParam('advanced'); ?>" />
+                                        <input type="hidden" name="focusid" id="focusid" value="<?php echo $request->getParam('focusid'); ?>" />
+                                        <input type="hidden" name="familyid" id="familyid" value="<?php echo $request->getParam('familyid'); ?>" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <!--Include code for add relatives widget-->
+        <?php require_once APPLICATION_PATH."/views/scripts/person/searchwidget.phtml"; ?>
+    </table>
+</div>
+<?php if(!isEmptyString($session->getVar("demo_success")) ){ ?>
+	<div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("demo_success"); ?></div>
+<?php } ?>
+<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+	<div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+<?php } ?>	
+<?php // show a message that there are no items to display
+	if ($has_no_data) {
+?>
+  	<div class="alert alert-info"><?php echo $this->translate("person_list_norecords"); ?></div>
+  <?php } else { ?>
+  	<div style="margin-bottom:15px;"><?php echo sprintf($this->translate("person_list_counter"), $paginate->getItemCounterText()); ?><?php echo $this->listcountdropdown; ?></div>
+      <table class="table table-striped table-bordered list">
+        <thead>
+          <tr>
+            <td width="60" align="center"><?php echo $this->translate('person_photo_label'); ?></td>
+            <td><?php echo $paginate->getSortLinkForColumn('p.firstname', $this->translate('person_name_label')); ?></td>
+            <td width="160"><?php echo $this->translate("person_relationship_label"); ?></td>
+            <td width="130"><?php echo $this->translate("person_clan_label"); ?></td>
+            <td width="130"><?php echo $this->translate("person_location_label"); ?></td>
+            <td width="110"><?php echo $this->translate("person_managedby_label"); ?></td>
+            <td width="90"><?php echo $this->translate("global_action_label"); ?></td>
+          </tr>
+        </thead>
+        <tbody>
+			<?php 
+                $currentprofile = $person;
+				$line = array();
+				$id = $currentprofile->getID();	
+				$name = $currentprofile->getName();
+				$firstname = $currentprofile->getFirstName();
+				$showadd = true;
+				$listname = $currentprofile->getListName();
+	
+				$firstname = $currentprofile->getFirstName();
+				$treeline = $currentprofile->getFocusTreeLine();
+				$focuslineid = $treeline->getID();
+				$enabled = $treeline->getRelationShip()->getAddEnabled();
+				$line['ownerid'] = $ownerid = $currentprofile->getOwnerID();
+				$line['addenabled'] = $enabled;
+				$line['fatherid'] = $currentprofile->getFatherID();
+				$line['motherid'] = $currentprofile->getMotherID();
+				$line['ffirstname'] = $currentprofile->getFather()->getFirstName();
+				$line['flastname'] = $currentprofile->getFather()->getLastName();
+				$line['fclanname'] = $currentprofile->getFather()->getClanName();
+				$line['ftype'] = $currentprofile->getFather()->getType();
+				$line['fclanid'] = $currentprofile->getFather()->getClanID();
+				$line['fscreenname'] = $currentprofile->getFather()->getscreenname();
+				$line['mfirstname'] = $currentprofile->getMother()->getFirstName();
+				$line['mlastname'] = $currentprofile->getMother()->getLastName();
+				$line['mclanname'] = $currentprofile->getMother()->getClanName();
+				$line['mtype'] = $currentprofile->getMother()->getType();
+				$line['mclanid'] = $currentprofile->getMother()->getClanID();
+				$line['mscreenname'] = $currentprofile->getMother()->getscreenname();
+				
+				$hasprofileimage = false;
+				$photo_path = '';
+				if($currentprofile->hasProfileImage() ){
+					$photo_path = $currentprofile->getThumbnailPicturePath();
+				}
+				// debugMessage($photo_path);
+						
+				if($showfocus){
+            ?>	
+            <tr id="focusrow">
+                <td align="center">
+                    <div id="thumbinfo" class="<?php echo $currentprofile->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>"> 
+                        <a href="<?php echo $this->baseUrl("person/view/id/".encode($focuspersonid)); ?>" title="<?php echo $this->translate("person_button_view_profile"); ?>"><img class="profileimage" src="<?php echo $currentprofile->getThumbnailPicturePath(); ?>" /></a>
+                    </div>
+                </td>
+                <td>
+                	<b><a href="<?php echo $this->baseUrl("person/view/id/".encode($focuspersonid)); ?>" title="<?php echo "View ".$currentprofile->getFirstName()."'s Profile"; ?>"><?php echo $currentprofile->getListName(); ?></a></b>
+                    <?php if($currentprofile->getOwner()->getPersonID() == $personid && isEmptyString($currentprofile->getUserID()) && $currentprofile->getIsInvited() !=  '1' && $currentprofile->isAlive()){ ?>
+                        <?php if($request->range != '1' && $allowinvite){ ?>
+                        <span class="inv_before" id="inv_before_<?php echo $focuspersonid; ?>">
+                            <input type="text" name="email_<?php echo $focuspersonid; ?>" id="email_<?php echo $focuspersonid; ?>" placeholder="enter email" title="Invite <?php echo $firstname; ?> to Family Tree" value="<?php echo $currentprofile->getEmail(); ?>" class="span2 invite invite_<?php echo $focuspersonid; ?>" style="width:150px; color:#e1e1e1; border:1px solid #e1e1e1;" /><a href="javascript:void(0);" style="margin-top:5px; opacity:0.3;" class="btn btn-primary btn-mini btn-gold  disable" id="invite_<?php echo $focuspersonid; ?>" title="Invite <?php echo $firstname; ?> to Family Tree"><i class="icon-envelope"></i> <?php echo $this->translate('person_button_invite'); ?></a>
+                            <label class="hide invite_<?php echo $focuspersonid; ?>" title="<?php echo $personid; ?>"><?php echo $focuspersonid; ?></label>                            
+                            <div id="invite_<?php echo $focuspersonid; ?>_error" style="margin-top:4px;"></div>
+                        </span>
+                        <span class="inv_after" id="inv_after_<?php echo $focuspersonid; ?>">
+                            <a id="loading_<?php echo $focuspersonid; ?>" class="hidden"><img style="margin-left:0" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a>
+                        </span>
+                        <?php } ?>   
+                    <?php } ?>   
+                </td>
+                <td><b>Myself</b></td>
+                <td><b><?php 
+                        switch($currentprofile->getType()){
+                            case 1:
+                                $clan = $currentprofile->getClan()->getFullName();
+                                break;
+                            case 2:
+                            case 3:
+                                $clan = 'Not muganda';
+                                break;
+                            default:
+                                $clan = '--';
+                                break;
+                        }
+                        echo $clan; 
+                    ?></b></td>
+                <td><b><?php echo $currentprofile->getPrimaryLocation(); ?></b></td>
+                <td><b><?php echo $currentprofile->getOwner()->getPerson()->getName(); ?></b></td>
+                <td>
+                    <?php if($currentprofile->getOwner()->getPersonID() == $personid || $currentprofile->getAddedByID() == $personid || $currentprofile->geCreatedBy() == $userid){ ?>
+                    	<?php if($request->range !=1){ ?>
+                        <a style="margin-bottom:10px; display:block;" href="javascript: void(0)" title="Add Relative using <?php echo $focuspersonid == $personid ? "Myself" : $firstname; ?> as the Focus Person" rel="<?php echo $focuspersonid == $personid ? "Add My Relative" : "Add Relative of ".$name; ?>" id="add_<?php echo $focuspersonid; ?>" class="addpreview pull-right">Add Relative</a><br />
+                        <?php } ?>
+                    <?php } ?>
+                    <?php if(($focuspersonid != $focuspersonid) && ($currentprofile->getAddedByID() == $personid  || $currentprofile->getCreatedBy() == $userid || $currentprofile->getOwner()->getPersonID() == $personid)){ ?>
+                        <a style="margin-bottom:10px; display:block;" href="javascript: void(0)" id="list_<?php echo $focuspersonid; ?>" class="focustrigger pull-right" title="List people with <?php echo "'".$name."'"; ?> as Focus Person">List as Focus</a><br />
+                    <?php } ?>
+                    <span class="hide list_<?php echo $focuspersonid; ?> add_<?php echo $focuspersonid; ?>"><?php echo $focuspersonid; ?></span>
+                    <label class="hide list_<?php echo $focuspersonid; ?>"><?php echo $thefamilyid; ?></label>
+                    <?php if($currentprofile->getOwner()->getPersonID() == $personid){ ?>
+                        <a style="margin-bottom:10px; display:block;" href="<?php echo $this->baseUrl("person/index/id/".encode($focuspersonid)); ?>" class="pull-right" title="Update <?php echo $focuspersonid == $personid ? "My" : $firstname."'s "; ?> Profile">Update Profile</a><br />
+                    <?php } ?>
+                    <!--Include code for add relatives widget-->
+                    <?php if($request->range !=1){ ?>
+						<?php require APPLICATION_PATH."/views/scripts/person/addwidget.phtml"; ?>
+                    <?php } ?>
+                 </td>
+            </tr>
+          <?php } ?>  
+          <?php 				  		
+                foreach($result as $line){		
+					// debugMessage($line);			
+                    /*$currentprofile = new Person();
+                    $currentprofile->populate($line['id']);	*/
+					$id = $line['id'];
+					// name
+					$clanname = '';
+					if($line['type'] == 1 && !isEmptyString($line['clanid']) && $line['clanname'] != $line['lastname']){
+						$clanname = "(".$line['clanname'].")";
+					}
+					$name = isEmptyString($line['screenname']) ? $line['firstname']." ".$line['lastname']." ".$clanname : $line['screenname'];
+					// listname
+					$clanname = '';
+					if($line['type'] == 1 && !isEmptyString($line['clanid'])){
+						$clanname = "(".$line['clanname'].")";
+					}
+					$listname = isEmptyString($line['screenname']) ? $line['firstname']." ".$line['lastname']." ".$clanname : $line['screenname'];
+		
+					$firstname = $line['firstname'];
+					$focuslineid = $line['focuslineid'];
+					$ownerid =  $line['ownerid'];
+					
+					$showadd = true;
+					if(isEmptyString($line['addenabled'])){
+						$showadd = false;
+					}
+					
+					if($id != $focuspersonid){/**/
+						$hasprofileimage = false;
+						$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+						$real_path = $real_path.$id.DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."large_".$line['photo'];
+						if(file_exists($real_path) && !isEmptyString($line['photo'])){
+							$hasprofileimage = true;
+						}
+						$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
+						$photo_path = '';
+						if($line['gender'] == 1){
+							$photo_path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_male.jpg';
+						}  
+						if($line['gender'] == 2){
+							$photo_path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_female.jpg'; 
+						}
+						if($hasprofileimage){
+							$photo_path = $baseUrl.'/uploads/user_'.$id.'/avatar/thumbnail_'.$line['photo'];
+						}
+						// debugMessage($photo_path);
+            ?>
+                <tr>
+                    <td align="center">
+                        <div id="thumbinfo" class="<?php echo $hasprofileimage ? 'new_pic' : 'default_pic'; ?>"> 
+                            <a href="<?php echo $this->baseUrl("person/view/id/".encode($id)); ?>" title="<?php echo $this->translate("person_button_view_profile"); ?>"><img class="profileimage" src="<?php echo $photo_path; ?>" /></a>
+                        </div>
+                    </td>
+            		<td>
+                    	<a href="<?php echo $this->baseUrl("person/view/id/".encode($id)); ?>" title="<?php echo "View ".$firstname."'s Profile"; ?>"><?php echo $listname; ?></a>
+                       
+                    </td>
+                    <td>
+                    	<div style="position:relative; width:100%; min-height:70px;">
+                    	<?php 
+							// $currentprofile->getRelationShipText($personid);
+							$rel = "";
+							$relid = "";
+							$therelid =  "";
+							if($request->range != 1){
+								$rel = 'Relative';
+								if(!isEmptyString($line['lname'])){
+									$rel = $line['ename']."<br /> (".$line['lname'].")";
+								} else {
+									$rel = $line['ename'];
+								}
+								
+								$relid = $line['relationshipid'];
+								$therelid = $line['relationshipid'];
+								// debugMessage('cur is '.$relid." with id ".$therelid);
+								echo '<span class="rel_label" id="rel_label_'.$id.'">'.$rel.'</span>';
+							}
+						 ?>
+                        </div>
+                    </td>
+                    <td>
+                    	<?php 
+							switch($line['type']){
+								case 1:
+									$clan = $line['clan'];
+									break;
+								case 2:
+								case 3:
+									$clan = 'None';
+									break;
+								default:
+									$clan = '--';
+									break;
+							}
+							echo $clan; 
+						?>
+                    </td>
+                    <td><?php 
+							$location = '';
+							$country = "";
+							if(isEmptyString($line['country'])){
+								$country = "";
+							}
+							if($line['country'] == 'XX'){
+								$country =  "Buganda";
+							} else {
+								if(!isEmptyString($line['country'])){
+									$countries[$line['country']];
+								}
+							}
+							
+							if(!isEmptyString($line['country'])){
+								$location .= $line['villagename'].", ";
+							}
+							if(!isEmptyString($line['country'])){
+								$location .= $country." ";
+							}
+							
+							echo $location; ?>
+                    </td>
+                	<td><?php echo $currentprofile->getOwner()->getPerson()->getName(); ?></td>
+                    <td>
+                    	<?php if($ownerid == $userid || $line['addedbyid'] == $personid || $line['createdby'] == $userid){ ?>
+                        	<?php if($personid == $person->getID() && $request->range !=1 && $showadd){ ?>
+                            <a style="margin-bottom:10px; display:block;" href="javascript: void(0)" title="Add Relative using <?php echo $id == $personid ? "Myself" : $firstname; ?> as the Focus Person" rel="<?php echo $id == $personid ? "Add My Relative" : "Add Relative of ".$name; ?>" id="add_<?php echo $id; ?>" class="addpreview pull-right">Add Relative</a><br />
+                        	<?php } ?>  
+                            <span class="hide list_<?php echo $id; ?> add_<?php echo $id; ?>"><?php echo $id; ?></span>
+                            <label class="hide list_<?php echo $id; ?>"><?php echo $line['familyid']; ?></label>
+                            <?php if($ownerid == $userid){ ?>
+                                <a style="margin-bottom:10px; display:block;" href="<?php echo $this->baseUrl("person/index/id/".encode($id)); ?>" class="pull-right" title="Update <?php echo $id == $personid ? "My" : $firstname."'s "; ?> Profile">Update Profile</a><br />
+                            <?php } ?> 
+                        <?php } ?>
+                        <!--Include code for add relatives widget-->
+                        <?php if($request->range !=1){ ?>
+                        	<?php require APPLICATION_PATH."/views/scripts/person/addwidget.phtml"; ?>
+                        <?php } ?>
+                    </td>
+            <?php } }  ?>
+          </tbody>  
+      </table>
+  <?php			
+	} // end check that there are results    	
+?>
+  <?php echo $paginate->getPaginationLinks(); ?>  
+</form>
+</div>
+<label class="hide" id="targetposition">leftTop</label>
+<label class="hide" id="tipposition">rightTop</label>
+<span id="waitcontent" class="hide"><a id="loading"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a></span>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

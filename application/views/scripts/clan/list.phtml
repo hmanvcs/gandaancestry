@@ -1,0 +1,173 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	# Page title
+	$title = $this->translate('clan_pagetitle_list');
+	$this->headTitle($title);
+	
+	# Create an instance of the class to handle the pagination
+	$paginate = new Pagination();	
+	$paginate->setView($this);
+	
+	# set the search columns to be used on this list
+	$paginate->setSearchColumns(array("c.shortname","c.fullname","c.engname","c.omubala","c.akabbiro","c.leader"));
+	$paginate->setDefaultSortBy("c.fullname");	
+	$paginate->setDefaultSortOrder("ASC");
+	$paginate->setItemCountPerPage("ALL");
+	
+	$paginate->processPost($request->getParams());
+	$all_results_query = "SELECT c.id, c.shortname, c.fullname as `Clan Name`, c.omubala, c.akabbiro, c.leader, c.bio c FROM organisation c WHERE c.type = '1' ".$paginate->getSearchAndFilterSQL()." ".$paginate->getSortSQL();
+	// debugMessage($all_results_query);
+	
+	$paginate->setItemCountFromSQLQuery($all_results_query);	
+	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
+	
+	$session->setVar(ALL_RESULTS_QUERY, $all_results_query);
+	$session->setVar(CURRENT_RESULTS_QUERY, $current_results_query);
+	// debugMessage($current_results_query);
+	
+	# the query string to be appended to the return to list URL
+	$session->setVar('list_query_string'.$request->getControllerName(), $request->getParams());
+	
+	$conn = Doctrine_Manager::connection(); 
+	$result = $conn->fetchAll($current_results_query);
+	$has_no_data = (count($result) == 0) ? true : false; 
+	
+	$isadmin = false;
+	if(isAdmin()){
+		$isadmin = true;
+	}
+	// exit();
+?>
+<script>
+	$(document).ready(function() {
+		
+	}); 
+</script>
+<style>
+#contentcolumn {
+	width:97%;
+}
+.table.list {
+	width:100%;
+}
+.table.list thead {
+	background: -moz-linear-gradient(top, #284A77 0%, #335E99 47%, #3969AA 100%); 
+	color:#fff;
+}
+.table.list thead tr td a {
+	color:#fff;
+}
+</style>
+<h1><?php echo $title; ?></h1>
+<form action="<?php echo $this->baseUrl("clan/listsearch"); ?>" method="get" id="clanlistform" class="form-search">
+	<span class="pull-left" id="searcharea" style="margin-left:0; width:98%;">
+        <div class="well" style="padding:10px; width:100%">
+            <table class="table filtertable">
+                <tr>
+                    <td width="67%">
+                        <table class="filters">
+                        <?php if($isadmin){ ?>
+                            <a href="<?php echo $this->baseUrl('clan/add/pgc/true/type/1'); ?>" id="reset" class="btn btn-primary btn-mini addclan" rel="New Clan" title="New Clan"><i class="icon-plus icon-white"></i> New Clan</a>
+                        <?php } ?>
+                        </table>
+                    </td>
+                    <td style="padding-right:6px;">
+                        <table style="width:100%;">
+                            <tr>
+                                <td>
+                                    <span class="pull-right">
+                                       <input name="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium span3 xsearch-query" placeholder="Search clans" />
+                                        <button type="submit" class="btn btn-primary"><i class="icon-search icon-white"></i>&nbsp;</button>
+                                    </span>
+                                </td>  
+                            </tr>
+                            <tr>
+                                <td style="padding:0;">
+                                    <table class="table" style="margin-bottom:0;">
+                                        <tr>
+                                            <td width="25%">
+                                            <?php if(!isEmptyString($request->searchterm)){ ?>
+                                                <a href="<?php echo $this->baseUrl('clan/list'); ?>" id="reset" class="btn btn-primary btn-mini pull-right" title="Reset list or clear all filters">Reset</a>
+                                            <?php } ?>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </span>
+    <span class="pull-left" id="searcharea" style="margin-left:0; width:100%;">    
+		<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+        <?php } ?>	
+        <?php // show a message that there are no items to display
+            if ($has_no_data) {
+        ?>
+            <div class="alert alert-info"><?php echo $this->translate("clan_list_norecords"); ?></div>
+        <?php } else { ?>
+            <div style="margin-bottom:15px;"><?php echo sprintf($this->translate("clan_list_counter"), $paginate->getItemCounterText()); ?><?php echo $this->listcountdropdown; ?></div>
+            
+            <ul class="nav" id="clans" >
+            <?php 
+				foreach($result as $line) { 
+					$clan = new Clan();
+					$clan->populate($line['id']);
+					
+					if($clan->getName() != 'Mmamba Kakoboza'){
+			?>
+				<li class="well">
+					<table class="table clanlist">
+						<thead>
+							<tr>
+								<td colspan="2" class="nowrapping">                          	
+								<a class="clanpopup" id="clan_<?php echo $clan->getID(); ?>" href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>" style="width:100%; display:block;" title="Details of <?php echo $clan->getName(); ?>"><h3><?php echo snippet($clan->getName(), 32, '...'); ?></h3></a>
+								<?php if($isadmin){ ?>
+									<a href="<?php echo $this->baseUrl('clan/index/id/'.encode($clan->getID())); ?>" title="Edit Clan" class="button directedit pull-right"><i class="icon-pencil"></i> Edit</a>
+								<?php } ?>
+								</td>
+							</tr>
+						</thead>
+						<tbody>                        
+							<tr>
+								<td width="130" style="padding:0;">
+									<div class="profileinfo clantotem_thumb">
+										<a href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>" title="Details of <?php echo $clan->getName(); ?>"><img id="coverlogo" src="<?php echo $clan->getTotemThumbnailPath(); ?>" /></a>
+									</div>
+								</td>
+								<td valign="top" style="padding:0;">
+									<table style="width:100%;">
+										<tr>
+											<td class="field">Clan Head:</td>
+											<td class="value"><?php echo $clan->getHeadTitle(); ?></td>
+										</tr>
+										<tr>
+											<td class="field"><?php echo $this->translate("clan_obutaka_label"); ?>:</td>
+											<td class="value"><?php echo $clan->getObutakaSsaza(); ?></td>
+										</tr>
+										<tr>
+											<td class="field">Akabiro:</td>
+											<td class="value"><?php echo isEmptyString($clan->getAkabbiro()) ? '--': $clan->getAkabbiro(); ?></td>
+										</tr>
+										<tr>
+											<td class="field">Omubala:</td>
+											<td class="value"><?php echo $clan->getOmubala(); //echo isEmptyString($clan->getOmubala()) ? '--': nl2br(snippet($clan->getOmubala()), 90, '<a href="'.$this->baseUrl('clan/view/id/'.encode($clan->getID())).'">...more</a>'); ?></td>
+										</tr>
+									</table>                          	
+								</td>
+							</tr>                               
+						</tbody>
+					</table>
+				</li>
+			<?php }} ?>
+            </ul>
+        <?php } ?>    
+	</span>            
+</form>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

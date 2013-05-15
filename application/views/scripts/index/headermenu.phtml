@@ -1,0 +1,196 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$person = new Person();
+	$person->populate($session->getVar('personid'));
+	
+	$loggedinclan = $person->getClan()->getName();
+	$loggedinclan_id = $person->getClanID();
+	$partners = $person->getPartners();
+	$spouse1clan = ""; $spouse2clan = "";
+	$spouse1clan_id = ""; $spouse2clan_id = "";
+	$motherclan = ""; $motherclan_id = "";
+	
+	if($partners){
+		$spouse1clan = $partners->get(0)->getClan()->getName();
+		$spouse1clan_id = $partners->get(0)->getClanID();
+	}
+	if(!isEmptyString($person->getFamily()->getMotherID())){
+		$motherclan = $person->getFamily()->getMother()->getClan()->getName();
+		$motherclan_id = $person->getFamily()->getMother()->getClanID();
+	}
+	
+	// invite config
+	$uninvited = $person->getUnInvitedPeople();
+	$no_uninvited = $uninvited->count();
+	$caninvite = false;
+	if($no_uninvited > 0){
+		$caninvite = true;
+	}
+?>
+
+<div class="container">
+    <ul class="mainnav" id="middlebar">
+        <li id="home">
+            <a href="<?php echo $this->baseUrl('dashboard'); ?>" title="Home"><span>Home</span></a>	
+        </li>
+        <li id="profile">
+            <a href="<?php echo $this->baseUrl('person/view'); ?>" title="My Profile"><span>Profile</span></a>
+            <ul class="submenu nav nav-pills nav-stacked dropdown-menu">            
+                <li><a title="View My Profile" href="<?php echo $this->baseUrl('person/view'); ?>">View My Profile</a></li>                
+                <li><a title="Edit My Profile" href="<?php echo $this->baseUrl('person/index'); ?>">Edit My Profile</a></li>
+                <?php if(isSubscriber()){ ?>
+                	<!--<li><a title="Invite My Relatives to Family Tree" rel="Invite Relatives to Family Tree" class="multipleinvite <?php //echo $caninvite == false ? 'disableinvite' : ''; ?>" href="<?php //echo $this->baseUrl('person/invite/pgc/true'); ?>">Invite My Relatives</a></li>-->
+                <?php } ?>
+            </ul>			
+        </li>
+        <li id="family">
+            <a href="<?php echo $this->baseUrl('family/list/range/2'); ?>" title="Family Tree"><span>Family Tree</span></a>
+            <ul class="submenu nav nav-pills nav-stacked dropdown-menu">  
+                <?php if(isSubscriber()){ ?>      
+                    <li><a title="My Immediate Family" href="<?php echo $this->baseUrl('family/view'); ?>">My Immediate Family</a></li>
+                    <li><a title="My Families" href="<?php echo $this->baseUrl('family/list/range/2'); ?>">My Families</a></li>
+                <?php } ?>
+            </ul>
+        </li>
+        <li id="people">
+            <a href="<?php echo $this->baseUrl('person/list/range/2'); ?>" title="People"><span>People</span></a>	
+            <ul class="submenu nav nav-pills nav-stacked dropdown-menu">
+				<?php if(isSubscriber()){ ?>      
+                	<li><a title="My Relatives" href="<?php echo $this->baseUrl('person/list/range/2'); ?>">My Relatives</a></li>
+                <?php } ?>
+                <li><a title="All People" href="<?php echo $this->baseUrl('baganda/index'); ?>">All People</a></li>    
+                <li class="divider"></li>
+				<?php if(isSubscriber()){ ?>
+					<?php if(!isEmptyString($loggedinclan)){ ?>
+                        <li><a title="Abe <?php echo $loggedinclan; ?>" href="<?php echo $this->baseUrl('person/list/range/2/clanid/'.$loggedinclan_id); ?>">Abe <?php echo $loggedinclan; ?></a></li>
+                    <?php } ?>
+                    <?php if(!isEmptyString($motherclan)){ ?>
+                        <li><a title="Abe <?php echo $motherclan; ?>" href="<?php echo $this->baseUrl('person/list/range/2/clanid/'.$motherclan_id); ?>">Abe <?php echo $motherclan; ?></a></li>
+                    <?php } ?>
+                    <?php if(!isEmptyString($spouse1clan)){ ?>
+                        <li><a title="Abe <?php echo $spouse1clan; ?>" href="<?php echo $this->baseUrl('person/list/range/2/clanid/'.$spouse1clan_id); ?>">Abe <?php echo $spouse1clan; ?></a></li>
+                    <?php } ?>
+                    <?php if(!isEmptyString($spouse2clan)){ ?>
+                        <li><a title="Abe <?php echo $spouse2clan; ?>" href="<?php echo $this->baseUrl('person/list/range/2/clanid/'.$spouse2clan_id); ?>">Abe <?php echo $spouse2clan; ?></a></li>
+                    <?php } ?>
+                <?php } ?>
+                <li><a title="Kabaka Mutebi" href="<?php echo $this->baseUrl('kabaka'); ?>">Kabaka Mutebi</a></li>
+            </ul>				
+        </li>
+        <li id="clan">					
+            <a href="<?php echo $this->baseUrl('clan/list'); ?>" title="Buganda Clans"><span>Clans</span></a>	
+            <ul class="submenu nav nav-pills nav-stacked dropdown-menu">
+                <li><a title="Buganda Clans" href="<?php echo $this->baseUrl('clan/list'); ?>">Buganda Clans</a></li>
+                <!--<li><a title="Amasiga" href="<?php //echo $this->baseUrl('clan/ssiga'); ?>">Amasiga</a></li>    -->            
+            </ul>
+        </li>
+        <li id="more">					
+            <a href="javascript: void(0);" title="More"><span>More</span></a>	
+            <ul class="submenu nav nav-pills nav-stacked dropdown-menu">
+                <li><a title="Help Center" href="<?php echo $this->baseUrl('help'); ?>">Help Center</a></li>
+                <li><a title="Suggestion Box" href="<?php echo $this->baseUrl('contactus'); ?>">Suggestion Box</a></li>
+                <li><a title="Donate" href="<?php echo $this->baseUrl('donation'); ?>">Donate</a></li>
+                <li class="divider"></li>
+                <li><a title="Luganda Dictionary" href="<?php echo $this->baseUrl('lugandadictionary'); ?>">Luganda Dictionary</a></li>                
+                <li><a title="Baganda Registration Project" href="javascript: void(0);<?php //echo $this->baseUrl('regproject'); ?>">Baganda Registration Project</a></li>
+            </ul>
+        </li>
+    </ul>
+    <div id="menuright" class="pull-right">
+        <table class="table noborder margin0 nobg padding0">
+            <form class="form-search" id="menusearch" method="post" action="<?php echo $this->baseUrl('person/search'); ?>">
+                <tr>
+                    <td class="padding0">
+                        <div id="searchcontainer">
+                            <select class="chzn-select" id="searcharea" name="searcharea" style="width:95px;">
+                                <option label="Baganda" value="1" <?php echo $session->getVar('currentsearcharea') == 1 ? 'selected="selected"' : ''; ?>>Baganda</option>
+                                <option label="Families" value="2" <?php echo $session->getVar('currentsearcharea') == 2 ? 'selected="selected"' : ''; ?>>Families</option>
+                                <option label="Clans" value="3" <?php echo $session->getVar('currentsearcharea') == 3 ? 'selected="selected"' : ''; ?>>Clans</option>
+                                <option label="Amasiga" value="4" <?php echo $session->getVar('currentsearcharea') == 4 ? 'selected="selected"' : ''; ?>>Amasiga</option>
+                            </select>
+                        </div>
+                    </td>
+                	<td class="padding0">
+                        <div class="input-append" id="appendsearch">
+                        	<!--<button data-dismiss="modal" id="clearheadersearch" class="close" type="button btn" title="Clear search">×</button>       -->     	
+                            <input type="text" id="gsearchterm" name="gsearchterm" class="search-queryx" value="<?php echo $session->getVar('gsearchterm'); ?>" />
+                            <button type="submit" id="globalsearch" class="btn"><i class="icon-search"></i></button>
+                        </div>
+                	</td>
+                </tr>
+            </form>
+        </table>
+    </div>
+</div>
+<style>
+#menuright {
+	display: block; 
+	margin-bottom: 15px; 
+	width: 330px;
+}
+#appendsearch {
+	margin:0; 
+	margin-top:10px; 
+	padding:0; 
+	float:left; 
+	display:inline-block;
+	position:relative;
+}
+#appendsearch .close {
+	position:absolute;
+	right:35px;
+	top:3px;
+}
+#globalsearch {
+	margin:0 0 0 -4px; 
+	padding:6px;
+}
+#gsearchterm {
+	margin:0; 
+	height:20px;
+	width:175px;
+	border:1px solid #2c2c2c;
+}
+#searchcontainer {
+	float:left; 
+	padding-top:10px; 
+	padding-left:11px;
+}
+#searcharea_chzn {
+	color:#444444;
+}
+.chzn-container#searcharea_chzn {
+	width:95px;
+	min-width:0;
+	border:none;
+	background:none;
+	background-image:url('<?php echo $this->baseUrl('images/searchlist.png'); ?>');
+}
+#searcharea_chzn a.chzn-single {
+	background:none;	
+	background-image:url('<?php echo $this->baseUrl('images/searchlist.png'); ?>');
+	height:30px;
+	border:none;
+}
+#searcharea_chzn .chzn-search {
+	display:none;
+}
+.chzn-container-active .chzn-single {
+	border:none;
+	border-radius:0;
+	color:#FFFFFF;
+}
+#searcharea_chzn.chzn-container-single#searcharea_chzn a.chzn-single {
+	color:#FFFFFF;
+}
+.chzn-container-single .chzn-single div {
+	border:none;
+	background:none;
+	border-radius:0;
+}
+#searcharea_chzn.chzn-container .chzn-drop {
+    border: 6px solid #3E3E3E;
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.15);
+}
+</style>

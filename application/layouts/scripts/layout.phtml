@@ -1,0 +1,912 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<?php
+   require_once APPLICATION_PATH.'/includes/commonfunctions.php';
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="<?php echo $this->baseUrl('favicon.ico'); ?>" rel="shortcut icon" type="image/x-icon" /> 
+<?php echo $this->headTitle(); ?>
+<?php echo $this->headMeta(); ?>
+<?php
+  $request = Zend_Controller_Front::getInstance()->getRequest();
+  $config = Zend_Registry::get("config"); 
+  $session = SessionWrapper::getInstance();
+  $isloggedin = false; 
+  $userid = ""; 
+  if (!isEmptyString($session->getVar("userid"))) {
+	$isloggedin = true; 
+	$userid = $session->getVar("userid");  
+	$acl = getACLInstance(); 
+  }
+	   
+  $jsfiles = glob("javascript/*.js");
+  $cssfiles = glob("stylesheets/*.css");
+  
+  foreach ($cssfiles as $css) {
+	// use baseURL() to output the full URL of the cached file and use it as normal with headLink()
+	$this->minifyHeadLink()->appendStylesheet($css);
+  } 
+  echo $this->minifyHeadLink(); 
+  
+  foreach ($jsfiles as $js) {
+	// use baseURL() to output the full URL of the cached file and use it as normal with headLink(). also use setFile so that each file is added
+	$this->minifyHeadScript()->appendFile($js);
+  }  
+  echo $this->minifyHeadScript(); 
+  
+?>
+<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+<!--[if lt IE 9]>
+<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+<script type="text/javascript">
+var datepickerOpts = {
+		showOn: 'both', 
+		buttonImage: '<?php echo $this->baseUrl('images/calendar.png'); ?>', 
+		buttonImageOnly: true,
+		changeMonth: true,
+		changeYear: true,
+		minDate: '-<?php echo $config->dateandtime->mindate; ?>Y',
+		maxDate: '+<?php echo $config->dateandtime->maxdate; ?>Y',
+		dateFormat: '<?php echo $config->dateandtime->javascriptmediumformat; ?>',
+		hideIfNoPrevNext: true,
+		showButtonPanel: true, 
+		currentText: 'Now'		
+	}; 
+var dialogOpts = {
+		width: 400,
+		height: 300,
+		resizable: false,
+		modal: true,
+		autoOpen: false
+	};
+$(document).ready(function() {
+	// auto grow textareaa with class expanding
+	$(".expanding").elastic();
+	$(".expanding").trigger('update');
+	
+	// make the datefields readonly
+	$(".datefield, .invite").attr('readOnly', 'true');
+
+	// turn select controls to chosen type selects
+	// IE browser effects only
+	if ($.browser.msie) {
+		// remove the hidden property
+		$(".chzn-select").removeClass('chzn-select'); 
+	} else {
+		// turn select controls to chosen type selects
+		$(".chzn-select").chosen();  
+	  	// if a select field with chosen changes, revalidate the field 
+		$("select.chzn-select").chosen().change(function(){
+			// $("form").validate().element(this);
+		});
+	}
+	
+	$(".datefield").change(function(){
+		$("form").validate().element(this);
+	});
+
+	// UI tabs
+	$("#tabs").tabs();
+	
+	// initialise the accordion
+	$("#accordion, .accordion").accordion();
+	
+	// custom accordion functionality to allow collapsing more than one container at a time
+	$("#notaccordion, .notaccordion").addClass("ui-accordion ui-widget ui-helper-reset ui-accordion-icons")
+.find("h3")
+        .addClass("ui-accordion-header ui-helper-reset ui-corner-all ui-state-default")
+        .prepend('<span class="ui-icon ui-icon-triangle-1-e"/>')
+        .click(function() {
+            $(this).toggleClass("ui-accordion-header-active").toggleClass("ui-state-active")
+                        .toggleClass("ui-state-default").toggleClass("ui-corner-bottom")
+                .find("> .ui-icon").toggleClass("ui-icon-triangle-1-e").toggleClass("ui-icon-triangle-1-s")
+                .end().next().slideToggle(function() {
+						// resize content column height when toggle is completed
+						/*if($("#notaccordion").height() < 500 ){
+							$("#contentcolumn").css({'height': 1000});							
+						} else {
+							$("#contentcolumn").css({'height': $("#notaccordion").height() + 500});						
+						}*/
+					}).toggleClass("ui-accordion-content-active clicked");
+            return false;
+        })
+        .next().addClass("ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom").hide();
+		
+	// temporaly hide menus
+	$("ul.nav li#tree a, ul.nav li#research a, ul.nav li#billing a").attr('href', 'javascript: doNothing();');
+	// dynamically add dropdown icon on the family menu 
+	$('#mainmenu li#family a.dropdown-toggle').html('Lists <b class="caret"></b>').attr('href', '#');
+	
+	// copy the classes to html radio labels from the containing div elements
+	// this is a work around since Zend_Form_Element_Radio generation does not support adding labels to the labels around the containing elements 
+	$('div.radio > label').each(function(){
+		$(this).addClass($(this).parent().attr('class')); 
+	});
+	// select all checkboxes with a class Y
+	$("input:checkbox.Y, input:checkbox.1, input:radio.Y, input:radio.1").attr('checked', true); 
+			
+	// If there are any errors in validating a form, make form height and content column equal
+	$(":submit").click(function(){
+		if(!($("form.form-horizontal, form.form-vertical").valid())){
+			resizeContentForm();
+		} 
+	});	
+	
+	// auto submit for list filters with the specified class, and all selects in a container with class filter 
+	$(".autosubmitsearchform, .filtercontainer select, #itemcountperpage, select.autofilter").not(".autosubmitsearchform").each(function(){
+		$(this).change(function(){
+			// clear the values in the search field
+			clearValue("searchterm"); 
+			// submit the form containing the dropdown
+			$(this).parents("form:first").submit(); 
+		});
+	});
+	
+	$("div.alert-error").css({'background': 'url("<?php echo $this->baseUrl('images/cross.png'); ?>") no-repeat #EDDBE3 5px 8px'});
+	$("div.alert-success").css({'background': 'url("<?php echo $this->baseUrl('images/tick.png'); ?>") no-repeat #FEF0B6 5px 8px'});
+	
+	// return to previous page for cancel buttons
+	$('a.cancel').click(function(){
+        parent.history.back();
+        return false;
+    });
+
+	// reset tab index
+    var tabindex = 1;
+    $('input,select,textarea').each(function() {
+        if (this.type != "hidden") {
+            var $input = $(this);
+            $input.attr("tabindex", tabindex);
+            tabindex++;
+        }
+    });
+	
+    $("img.ui-datepicker-trigger").attr('title','You may use calendar to select a date');
+	// set drop down date from date picker
+	$("#dateofbirth").change(function() {
+		var thedate = $(this).val();
+		if(!isEmptyString(thedate)){
+			var d = new Date(thedate);
+			// alert(d.getFullYear()+" - "+d.getMonth()+1+" - "+d.getDate());
+			$("#birthyear").val(d.getFullYear());
+			$("#birthmonth").val(d.getMonth()+1);
+			$("#birthday").val(d.getDate());
+		}
+	});
+
+	$("img.ui-datepicker-trigger").each(function(){
+    	var theid = $(this).attr('id');
+	    var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
+	    $('<a href="javascript: void(0);" class="qcontainer"><img src="'+thepath+'" /></a>').insertAfter(this);
+    });
+
+	$(".hastooltip").each(function(){		
+	    var theid = $(this).attr('id');
+	    var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
+		if($(this).attr('title') != "undefined" || $(this).attr('title') != ""){
+			$('<a href="javascript: void(0);" class="qcontainer" id="q_'+theid+'"><img src="'+thepath+'" /></a>').insertAfter(this);
+		    $("#q_"+theid).attr('title', $(this).attr('title')).addClass('qtooltip');
+		}	    
+	});
+	$(".hastooltip_custom").each(function(){		
+	    var theid = $(this).attr('id');
+	    var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
+		if($(this).attr('title') != "undefined" || $(this).attr('title') != ""){
+			$("span#tooltip_"+theid).html('<a href="javascript: void(0);" class="qcontainer" id="q_'+theid+'"><img src="'+thepath+'" /></a>').css({'display':'inline-block','margin-left':'5px'});
+		    $("#q_"+theid).attr('title', $(this).attr('title')).addClass('qtooltip');
+		}	    
+	}); 
+
+	// $('.hastooltip').tipsy({fade: true, gravity: 'w', html: true, trigger: 'focus', offset: 15});
+    $('.qtooltip, label:has(input#type-1), label:has(input#type-2)').tipsy({fade: true, gravity: 'w', html: true, trigger: 'hover', offset: -5});
+    $(".hastooltip").attr('title','');
+	
+	$('#dialog').modal({
+		keyboard: false,
+		backdrop: 'static'
+	});
+	$('#dialog').modal('hide');
+	
+	$('.addperson').click(function(e){
+		e.preventDefault();
+		
+		// popup title
+		$(".modal-header h3").html($(this).attr('rel'));
+		// load content
+		$("#dialogcontent").html($("#dialogbody #loading").html());
+		$("#dialogcontent").load($(this).attr('href'));  	
+		// then show it after the changes have been made
+		$('#dialog').modal('toggle');
+
+		// save dialog
+		$('#save').on('click', function(e){
+			// $('#dialog').modal('hide');
+			if ($("#personform").valid() == true) {
+				$(".pageerrors").html('').hide();
+				// disable buttons
+				$(".modelcancel").hide();
+				$(this).hide();
+				// post form
+				$.post(  
+					"<?php echo $this->baseUrl("person/create"); ?>",  
+					$("#personform").serialize(),  
+					function(data){
+						// alert(data);
+						location.reload(true);
+					}  
+				); // close the $.post
+				$("#dialogcontent").hide(); 										
+				$("#dialogbody #loading").show();
+			} else {
+				$(".pageerrors").html('<label class="error">Please complete all fields marked with * </label>').show();
+			}
+		});
+		// cancel model
+		$(".modelcancel").on('click', function(e){
+			$("#dialog").modal('hide');
+		});		
+		$('#dialog').on('hidden', function () {
+			// location.reload(true);
+			$(".dialog, body").css("overflow", "auto");
+		});
+		$(".dialog, body").css("overflow", "hidden");
+		 
+		return false;
+	});
+	
+	$('.addpreview').each(function(){
+		var id = $("span."+$(this).attr('id')).html();
+		var idparam = $(this).attr('id');
+		var targetpos = $("#targetposition").html();
+		var tippos = $("#tipposition").html();
+		// alert(targetpos+" - "+tippos);			
+		$(this).qtip({
+			content: {
+				text: '<a id="loading"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a>',
+				title: {
+					text: $(this).attr('rel')
+				}
+			},
+			hide: { when: 'mouseout', fixed: true },
+			show: { solo: true, effect: 'slide'},
+			position: {adjust: { x: -5, y: 0} },
+			position: {
+				corner: {target: targetpos, tooltip: tippos}
+			},
+			style: { 
+				name: 'blue', width: 430, height: 260, padding: 5, background: '#F9F9F9',
+				tip: {corner: tippos, size: {x: 10, y : 10 }},
+				border:{width: 2,radius: 4, color: '#999999'},
+				title: { 'color': '#fff', 'background': '#338AB0 '}
+			},
+			api: {
+				onShow: function(){
+					// tooltip content
+					$(".qtip-content").html($("#addimage_"+id).html()).css({'background-image': $("#addimage_"+id).css("background-image")});
+					$('.addperson.disabledadd').removeAttr('href').removeClass("addperson").css({'color':'#B3D6F4','text-decoration':'none'}).attr('title','Add atleast one parent to enable');
+					
+					$('.addperson').click(function(e){
+						$("#"+idparam).qtip("hide");
+						e.preventDefault();
+						
+						// popup title
+						$(".modal-header h3").html($(this).attr('rel'));
+						// load content
+						$("#dialogcontent").html($("#dialogbody #loading").html());
+						$("#dialogcontent").load($(this).attr('href'));  	
+						// then show it after the changes have been made
+						$('#dialog').modal('toggle');
+				
+						// save dialog
+						$('#save').on('click', function(e){
+							var action = $("#personform").attr('action'); 
+							// alert(action);
+							// $('#dialog').modal('hide');
+							if ($("#personform").valid() == true) {
+								$(".pageerrors").html('').hide();
+								// disable buttons
+								$(".modelcancel").hide();
+								$(this).hide();
+								// post form
+								$.post(  
+									action,  
+									$("#personform").serialize(),  
+									function(data){
+										// alert(data); return false; 
+										location.reload(true);
+									}  
+								); // close the $.post
+								$("#dialogcontent").hide(); 										
+								$("#dialogbody #loading").show();
+							} else {
+								$(".pageerrors").html('<label class="error">Please complete all fields marked with a * </label>').show();
+							}
+						});
+						// cancel model
+						$(".modelcancel").on('click', function(e){
+							$("#dialog").modal('hide');
+						});		
+						$('#dialog').on('hidden', function () {
+							// location.reload(true);
+							$(".dialog, body").css("overflow", "auto");
+						});
+						$(".dialog, body").css("overflow", "hidden");
+						 
+						return false;
+					});
+				}
+			}
+		});
+	});
+    
+	$(".xinvitetrigger, .invite").attr('title', 'Invitations not available in Beta');
+	// invite one person
+	$("a.invitetrigger").click(function(){
+		var id = $(this).attr('id');
+		var personid = $("label."+id).html();
+		var email = $("input."+id).val();
+		var invitedby = $("label."+id).attr('title');
+		/*alert('id is '+id);
+		alert('email is '+);
+		alert('invited by '+$("label."+id).html());*/
+		if(isEmptyString(email)) {
+			$("div#invite_"+personid+"_error").html('<div class="alert alert-error">Please enter email to invite</div>');
+			$("div.alert-error").css({'background': 'url("<?php echo $this->baseUrl('images/cross.png'); ?>") no-repeat #EDDBE3 5px 8px'});
+		}
+		if(!isEmptyString(email) && !validateEmail(email)) {
+			$("div#invite_"+personid+"_error").html('<div class="alert alert-error">Please enter a valid email</div>');
+			$("div.alert-error").css({'background': 'url("<?php echo $this->baseUrl('images/cross.png'); ?>") no-repeat #EDDBE3 5px 8px'});
+		}
+		// check that email is provided
+		if(!isEmptyString(email) && validateEmail(email)) {
+			$("div#invite_"+personid+"_error").html('');
+			$("span#inv_before_"+personid).hide(); 
+			$("span#inv_after_"+personid+" a").show(); 
+			// post 
+			$.post(  
+				"<?php echo $this->baseUrl("person/inviteone"); ?>", {id: personid, email: email},  
+				function(data){
+					// alert(data);
+					if(data.search("Success") != -1){								
+						// reload parent on close				
+						$("span#inv_after_"+personid).html(data);	
+						$("span#inv_hide_"+personid).hide(); 			
+					} else {
+						var err = 'An error occured while inviting user. Try again later';
+						$("span#inv_after_"+personid).html(err);
+					}
+					// location.reload(true);
+					$("span#inv_after_"+personid+" a").hide(); 
+					$("div.alert-success").css({'background': 'url("<?php echo $this->baseUrl('images/tick.png'); ?>") no-repeat #FEF0B6 5px 8px'});
+				}  
+			); // close the $.post
+		}
+	});
+	
+	$(".xinvitetrigger").click(function(e){
+		bootbox.alert('<label class="blockcontainer bolded">Invitation of relatives shall be available after Beta.</label>');
+	});
+	
+	$('.addclanpeople').click(function(e){
+		// $("#"+idparam).qtip("hide");
+		e.preventDefault();
+		
+		// popup title
+		$(".modal-header h3").html($(this).attr('title'));
+		// load content
+		$("#dialogcontent").html($("#dialogbody #loading").html());
+		$("#dialogcontent").load($(this).attr('href'));  	
+		// then show it after the changes have been made
+		$('#dialog').modal('toggle');
+
+		// save dialog
+		$('#save').on('click', function(e){
+			// $('#dialog').modal('hide');
+			if ($("#personform").valid() == true) {
+				// disable buttons
+				$(".modelcancel").hide();
+				$(this).hide();
+				// post form
+				$.post(  
+					"<?php echo $this->baseUrl("person/processother"); ?>",  
+					$("#personform").serialize(),  
+					function(data){
+						// alert(data);
+						location.reload(true);
+					}  
+				); // close the $.post
+				$("#dialogcontent").hide(); 										
+				$("#dialogbody #loading").show();
+			}
+		});
+		// cancel model
+		$(".modelcancel").on('click', function(e){
+			$("#dialog").modal('hide');
+		});		
+		$('#dialog').on('hidden', function () {
+			// location.reload(true);
+			$(".dialog, body").css("overflow", "auto");
+		});
+		$(".dialog, body").css("overflow", "hidden");
+		 
+		return false;
+	});
+	
+	// add new name for clan people
+	$('.addclanname').click(function(e){
+		// $("#"+idparam).qtip("hide");
+		e.preventDefault();
+		
+		// popup title
+		$(".modal-header h3").html($(this).attr('rel'));
+		// load content
+		$("#dialogcontent").html($("#dialogbody #loading").html());
+		$("#dialogcontent").load($(this).attr('href'));  	
+		// then show it after the changes have been made
+		$('#dialog').modal('toggle');
+
+		// save dialog
+		$('#save').on('click', function(e){
+			// $('#dialog').modal('hide');
+			if ($("#nameform").valid() == true) {
+				// disable buttons
+				$(".modelcancel").hide();
+				$(this).hide();
+				// post form
+				$.post(  
+					"<?php echo $this->baseUrl("clan/processaddname"); ?>",  
+					$("#nameform").serialize(),  
+					function(data){
+						// alert(data);
+						location.reload(true);
+					}  
+				); // close the $.post
+				$("#dialogcontent").hide(); 										
+				$("#dialogbody #loading").show();
+			}
+		});
+		// cancel model
+		$(".modelcancel").on('click', function(e){
+			$("#dialog").modal('hide');
+		});		
+		$('#dialog').on('hidden', function () {
+			// location.reload(true);
+			$(".dialog, body").css("overflow", "auto");
+		});
+		$(".dialog, body").css("overflow", "hidden");
+		 
+		return false;
+	});
+	
+	// add new name for clan people
+	$('.addclan').click(function(e){
+		// $("#"+idparam).qtip("hide");
+		e.preventDefault();
+		
+		// popup title
+		$(".modal-header h3").html($(this).attr('rel'));
+		// load content
+		$("#dialogcontent").html($("#dialogbody #loading").html());
+		$("#dialogcontent").load($(this).attr('href'));  	
+		// then show it after the changes have been made
+		$('#dialog').modal('toggle');
+
+		// save dialog
+		$('#save').on('click', function(e){
+			// $('#dialog').modal('hide');
+			if ($("#clanform").valid() == true) {
+				// disable buttons
+				$(".modelcancel").hide();
+				$(this).hide();
+				// post form
+				$.post(  
+					"<?php echo $this->baseUrl("clan/processcreate"); ?>",  
+					$("#clanform").serialize(),  
+					function(data){
+						// alert(data);
+						location.reload(true);
+					}  
+				); // close the $.post
+				$("#dialogcontent").hide(); 										
+				$("#dialogbody #loading").show();
+			}
+		});
+		// cancel model
+		$(".modelcancel").on('click', function(e){
+			$("#dialog").modal('hide');
+		});		
+		$('#dialog').on('hidden', function () {
+			// location.reload(true);
+			$(".dialog, body").css("overflow", "auto");
+		});
+		$(".dialog, body").css("overflow", "hidden");
+		 
+		return false;
+	});
+	
+	// change password
+	$('.changepassword').click(function(e){
+		// $("#"+idparam).qtip("hide");
+		e.preventDefault();
+		
+		// popup title
+		$(".modal-header h3").html($(this).attr('rel'));
+		// load content
+		$("#dialogcontent").html($("#dialogbody #loading").html());
+		$("#dialogcontent").load($(this).attr('href'));  	
+		// then show it after the changes have been made
+		$('#dialog').modal('toggle');
+
+		// save dialog
+		$('#save').on('click', function(e){
+			// $('#dialog').modal('hide');
+			if ($("#indexform").valid() == true) {
+				bootbox.confirm('<label class="blockcontainer">Are you sure you want to change your Password? <br /><br />Click <b>OK</b> to proceed, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+					if(confirmed){
+						// disable buttons
+						$(".modelcancel").hide();
+						$(this).hide();
+						// post form
+						$.post(  
+							"<?php echo $this->baseUrl("profile/changepassword"); ?>",  
+							$("#indexform").serialize(),  
+							function(data){
+								// alert(data);
+								location.reload(true);
+							}  
+						); // close the $.post
+						$("#dialogcontent").hide(); 										
+						$("#dialogbody #loading").show();
+					} else {
+						return false;
+					}
+				});
+			}
+		});
+		// cancel model
+		$(".modelcancel").on('click', function(e){
+			$("#dialog").modal('hide');
+		});		
+		$('#dialog').on('hidden', function () {
+			// location.reload(true);
+			$(".dialog, body").css("overflow", "auto");
+		});
+		$(".dialog, body").css("overflow", "hidden");
+		 
+		return false;
+	});
+	
+	$('.disableinvite').removeClass("multipleinvite").removeAttr('href');
+	// add new name for clan people
+	$('.multipleinvite').click(function(e){
+		// $("#"+idparam).qtip("hide");
+		e.preventDefault();
+		
+		// popup title
+		$(".modal-header h3").html($(this).attr('rel'));
+		$(".modal-footer #new").hide();
+		// load content
+		$("#dialogcontent").html($("#dialogbody #loading").html());
+		$("#dialogcontent").load($(this).attr('href'));  	
+		// then show it after the changes have been made
+		$('#dialog').modal('toggle');
+
+		// cancel model
+		$(".modelcancel").on('click', function(e){
+			$("#dialog").modal('hide');
+		});		
+		$('#dialog').on('hidden', function () {
+			// location.reload(true);
+			$(".dialog, body").css("overflow", "auto");
+		});
+		$(".dialog, body").css("overflow", "hidden");
+		 
+		return false;
+	});
+	
+	$("#loginheader #loginform #email, #loginheader #loginform #password").keyup(function(){
+		if($("#loginheader #loginform #email").val() != '' && $("#loginheader #loginform #password").val() != '' ){
+			$("#headersignin").removeClass('disabled');
+		} else {
+			$("#headersignin").addClass('disabled');
+		}
+	});
+	
+	$(".mainnav li ul").hide();
+	$(".mainnav li").hover(function(){
+		$("ul", this).show();
+	}, function() {
+    	$("ul", this).hide();
+	});
+	$(".mainnav li a").attr('title', '');
+	
+	$("ul#myaccountlist").hide();
+	$("#account").hover(function(){
+		$("ul#myaccountlist").show();
+	}, function() {
+    	$("ul#myaccountlist").hide();
+	});
+	
+	$("#searcharea").change(function(){
+		var tosearch = $(this).val();
+		// alert(tosearch);
+		switch(tosearch){
+			case '1':
+				$("#gsearchterm").attr('placeholder', 'Search Baganda...');
+				break;
+			case '2':
+				$("#gsearchterm").attr('placeholder', 'Search Families...');
+				break;
+			case '3':
+				$("#gsearchterm").attr('placeholder', 'Search Clans...');
+				break;
+			case '4':
+				$("#gsearchterm").attr('placeholder', 'Search Amasiga...');
+				break;
+			default:
+				$("#gsearchterm").attr('placeholder', 'Search...');
+				break;
+		}
+		
+	});
+	$("#searcharea").change();
+	
+	$("#menusearch").submit(function(e){		
+		if($("#gsearchterm").val() == ''){
+			return false;
+		} else {
+			return true;
+		}
+	});
+	
+	$("#searcharea_chzn .chzn-search").remove();
+	$("#searcharea_chzn.chzn-container-single .chzn-single div").html('<span class="caret blockcaret" style="margin-top:12px; margin-left:-5px"></span>');
+	
+	$(".privacytrigger").click(function(e){
+		e.preventDefault();
+	});	
+	
+	$("a.levelchange").click(function(e){
+		var sectgrp = $(this).attr('wrapper'); // alert(sectgrp);
+		var thesection = $(this).attr('sector'); // alert(thesection);
+		var thesecuritylevel = $(this).attr('id');
+		var theid = $(this).attr('theid');
+		var letter = $(this).attr('rel');
+		var currenttitle = '';
+		var currentlistlabel = '';
+		
+		$("#"+sectgrp+" .loading").show();
+		$("#"+sectgrp+" button").addClass('disabled');
+		
+		switch(letter){
+			case 'P':
+				currenttitle = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_public_label"); ?>";
+				currentlistlabel = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_public_label"); ?> <?php echo $this->translate("privacy_current_isactive_label"); ?>";
+				break;
+			case 'S':
+				currenttitle = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_subscriber_label"); ?>";
+				currentlistlabel = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_subscriber_label"); ?> <?php echo $this->translate("privacy_current_isactive_label"); ?>";
+				break;
+			case 'R':
+				currenttitle = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_relative_label"); ?>";
+				currentlistlabel = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_relative_label"); ?> <?php echo $this->translate("privacy_current_isactive_label"); ?>";
+				break;
+			case 'F':
+				currenttitle = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_family_label"); ?>";
+				currentlistlabel = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_family_label"); ?> <?php echo $this->translate("privacy_current_isactive_label"); ?>";
+				break;
+			case 'M':
+				currenttitle = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_me_label"); ?>";
+				currentlistlabel = "<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $this->translate("privacy_level_me_label"); ?> <?php echo $this->translate("privacy_current_isactive_label"); ?>";
+				break;
+			default:
+				break;
+		}
+		
+		$.get("<?php echo $this->baseUrl('person/privacy'); ?>", 
+		   {section: thesection, securitylevel: thesecuritylevel, id: theid,
+			cachebuster: new Date().getTime()}, 			   
+			function(data){			
+				// alert(data);
+				if (data == "yes") {
+					$("#"+sectgrp+" .loading").hide();
+					$("#"+sectgrp+" button").removeClass('disabled');
+					$("#"+sectgrp+" .privacylabel").html(''+letter+':');		
+					$("#"+sectgrp+" .privacytrigger").attr("title", currenttitle);
+					$("#"+sectgrp+" a#"+thesecuritylevel+" span").removeClass('hidden');
+					$("#"+sectgrp+" a:not(#"+thesecuritylevel+") span").addClass('hidden');			
+				}						
+			}
+		);
+	});
+	// trigger change on default privacy
+	$(".defaultprivacy").click(function(e){
+		var changeto = $(this).attr('placeholder');
+		var level = $(this).attr('value');
+		var id = $(this).attr('person');
+		bootbox.confirm('<label class="blockcontainer">Are you sure you want to change your default privacy settings? <br /><br /> By confirming to this, your profile privacy will be reset to <b>'+changeto+'</b> <br /><br />Click <b>OK</b> to confirm, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('person/resetprivacy'); ?>/id/"+id+"/securitylevel/"+level;
+			} else {
+				return false;
+			}
+		});
+	});
+	
+	// trigger change on default privacy
+	$(".demoflag").click(function(e){
+		var changeto = $(this).attr('placeholder');
+		var changetovalue = $(this).val(); // alert(changetovalue);
+		var id = $(this).attr('person');
+		bootbox.confirm('<label class="blockcontainer">Are you sure you want to '+changeto+' updates to this family tree? <br /><br />Click <b>OK</b> to confirm, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('person/demoupdate'); ?>/id/"+id+"/demoflag/"+changetovalue;
+			} else {
+				return false;
+			}
+		});
+	});
+	// hover on privacy default
+	$("#private_default ul.defaultlist li").hover(function(){
+		$(this).addClass('wellblock');
+	}, function() {
+    	$(this).removeClass('wellblock');
+	});
+	
+	// trigger change on default privacy
+	$(".resettree").click(function(e){
+		var id = $(this).attr('id');
+		bootbox.confirm('<label class="blockcontainer">Are you sure you want to delete all your relatives<br /> from your family tree? <br /><br /> Click <b>OK</b> to confirm, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('person/reset'); ?>/id/"+id;
+			} else {
+				return false;
+			}
+		});
+	});
+	
+	// trigger change on default privacy
+	$(".delete").click(function(e){
+		var id = $(this).attr('id');
+		bootbox.confirm('<label class="blockcontainer">Are you sure you want to erase your account and family tree from GandaAncestry? <br /><br /> Click <b>OK</b> to confirm, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('person/deactivate'); ?>/id/"+id;
+			} else {
+				return false;
+			}
+		});
+	});
+	
+	$('input, textarea').placeholder();
+	
+	$('.slide-out-div').tabSlideOut({
+		tabHandle: '.handle',                     //class of the element that will become your tab
+		pathToTabImage: '<?php echo $this->baseUrl('images/slide_links.jpg'); ?>', //path to the image for the tab //Optionally can be set using css
+		imageHeight: '122px',                     //height of tab image           //Optionally can be set using css
+		imageWidth: '30px',                       //width of tab image            //Optionally can be set using css
+		tabLocation: 'right',                      //side of screen where tab lives, top, right, bottom, or left
+		speed: 300,                               //speed of animation
+		action: 'click',                          //options: 'click' or 'hover', action to trigger animation
+		topPos: '240px',                          //position from the top/ use if tabLocation is left or right
+		leftPos: '20px',                          //position from left/ use if tabLocation is bottom or top
+		fixedPosition: true                      //options: true makes it stick(fixed position) on scroll
+	});
+	
+	// refresh captcha
+	$('img#refresh').click(function() { 			
+		change_captcha();
+	});
+	
+	$('img#refresh').click();
+	function change_captcha(){
+		$("#code").val(''); 
+		$.get("<?php echo $this->baseUrl('signup/getcaptcha'); ?>", 
+			// parameters for the request along with a cachebuster to stop IE from caching the request
+			{cachebuster: new Date().getTime()}, 			   
+			function(data){			
+				//alert(data);
+				$("#validcode").val(data); 
+				$("#captcha").html(data).css({'font-size':'20px'});			
+			}
+		);
+	}
+}); 
+//Use window.load and not document.ready for effective equal heights
+$(window).load(function() {
+	//Make columns equal
+	// equalHeight($("#leftcolumn, #rightcolumn, #contentcolumn"));
+	//alert('<?php //echo $this->baseUrl("stylesheets/5.ie.css"); ?>');
+}); 
+</script>
+
+</head>
+<?php if(detectIE()) { ?>
+    <link rel="stylesheet" type="text/css" href="<?php echo $this->baseUrl('uploads/ie.css'); ?>" />
+<?php } ?>
+<?php 
+	$thecontroller = $request->getControllerName();
+	$theaction = $request->getActionName();
+	$publiccontrollers = array("announcement","index", "signup","aboutus","contact","howitworks","benefits","news","help","user","clans","amasiga","kabaka","tbd", "donation", "lugandadictionary"); 
+	if(isEmptyString($userid)){
+		$publiccontrollers[] = 'contactus';
+		$publiccontrollers[] = 'proverb';
+	}
+	
+	$bodyclass = '';
+	$isInnerPage = false;
+	if (in_array($thecontroller, $publiccontrollers)){
+		$bodyclass = ' class="publicbody"';
+	} else {
+		$isInnerPage = true;
+	}
+?>
+<body data-spy="scroll" data-target=".subnav" data-offset="50"<?php echo $bodyclass; ?>>
+<!--Header Container-->
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner" id="headertop">
+		<?php require_once APPLICATION_PATH.'/views/scripts/index/header.phtml'; ?>
+    </div>
+    <?php if($isInnerPage){ ?>
+    <div class="subnavbar">
+        <div class="subnavbar-inner">
+            <?php require_once APPLICATION_PATH.'/views/scripts/index/headermenu.phtml'; ?>
+        </div>
+    </div>
+    <?php } ?>
+</div>
+
+<!--Main Container-->
+<div class="container prettyprint linenums" id="maincontainer">
+	<div class="row-fluid well nobg" id="contentwrapper">
+		<div id="contentcolumn"><?php echo $this->layout()->content; ?></div>
+    </div>    
+</div>
+<footer class="footer well"><?php require_once APPLICATION_PATH.'/views/scripts/index/footer.phtml'; ?></footer>
+<div class="modal hide" id="dialog">
+    <div class="modal-header">
+    	<button type="button btn" class="close" data-dismiss="modal">&times;</button>
+    	<h3><?php echo $this->translate("person_pagetitle_newrelative"); ?></h3>
+    </div>
+	<div class='modal-body' id="dialogbody">
+        <a id="loading" class="hidden"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a>
+        <div id="dialogcontent"></div>
+	</div>
+	<div class="modal-footer">
+    	<div id="new">
+		<a href="javascript:doNothing();" class="btn modelcancel" data-dismiss="modal" title="<?php echo $this->translate('global_button_cancel'); ?>"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+		<button type="submit" class="btn btn-primary" id="save" onclick="javascript:doNothing();"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save'); ?></button>
+        </div>
+        <div id="view" class="hide">
+            <a href="javascript:doNothing();" class="btn modelcancel" data-dismiss="modal" title="<?php echo $this->translate('global_button_close'); ?>"><i class="icon-remove"></i> <?php echo $this->translate('global_button_close'); ?></a>
+            <button type="submit" class="btn btn-primary" id="save" onclick="javascript:doNothing();"><i class="icon-pencil icon-white"></i> <?php echo $this->translate('global_button_edit'); ?></button>
+        </div>
+	</div>
+</div>
+<div class="slide-out-div well" style="height:200px;">
+    <a class="handle btn" href="javascript:void(0);">Contact</a>
+    <h3 style="margin-top:-15px; padding-top:10px; font-size:14px;">Contact GandaAncestry</h3>
+    <p>Thank you for being apart of the new GandaAncestry.</p>
+    <p>If You have any queries, questions or feedback please contact us</p>
+    <table class="table noborder margin0">
+        <tr>
+            <td style="padding:0; padding-top:5px; text-align:center;">
+                <a href="<?php echo $this->baseUrl('contactus');?>" class="btn btn-primary btn-gold btn-mini" style="">Contact Us</a>&nbsp;
+                
+            </td>
+        </tr>
+    </table>
+    <h3 style="margin-top:10px; padding-top:8px; font-size:14px; text-align:center;">Quick Links</h3>
+    <table class="table noborder margin0">
+        <tr>
+            <td style="padding:0; padding-top:5px; text-align:center;">
+                <a href="<?php echo $this->baseUrl('donation');?>" class="btn btn-primary btn-gold btn-mini" style="padding-right:8px">Donate</a>
+                <a href="<?php echo $this->baseUrl('contactus/tellfriend');?>" class="btn btn-primary btn-gold btn-mini" style="">Tell a Friend</a>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

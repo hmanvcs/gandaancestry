@@ -1,0 +1,26 @@
+<?php include(APPLICATION_PATH.'/views/scripts/email/emailheader.phtml'); ?>
+
+    Dear <?php echo $this->firstname; ?>,<br /><br />
+    
+    On behalf of the <?php echo $this->appname; ?> team, am happy to inform you that your application to be one of the beta users has been successfully approved. You can now get started by activating your account and setting a password.<br /><br />
+    
+    In order to activate your account click on link below:<br />
+    <?php echo $this->invitelink; ?><br /><br />
+    
+    If the page fails to open, copy the activation link and paste it in the address window of the browser.<br />
+        
+    After activating your account, you should be able to login using your email address and password.<br /><br />
+    
+    If you need any further assistance or have any question, please feel free to <a href="<?php echo $this->serverUrl($this->baseUrl('contactus')); ?>" title="Contact us">Contact us</a><br /><br />
+    
+    Alexandra Nakazzi<br />
+    President, <?php echo $this->appname; ?>.<br />
+    <?php echo $this->serverUrl($this->baseUrl()); ?>
+    </td>
+</tr>
+<tr>
+    <td colspan="2" style="padding:10px 0 10px 0; text-align:center; border-top: 3px solid #E2E2E2; background:none repeat scroll 0 0 #F4F4F4;">
+       &nbsp;Copyright &copy; 2012 <?php echo $this->appname; ?>. All Rights Reserved.
+    </td>
+</tr>
+</table>

@@ -1,0 +1,238 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$person = new Person();
+	
+	$clan = new Clan(); 
+	$clanid = $request->clanid;
+	if(!isEmptyString($clanid)){
+		$clan->populate(decode($clanid));
+	}
+	
+	// default title is to enable adding a new organisation
+	$title = "Add Clan People"; 
+	$posturl = $this->baseUrl("person/processother");
+	$button_title = $this->translate("person_button_new"); 
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$person->processPost($session->getVar(FORM_VALUES));	
+	}
+	
+	$roleslookup = new LookupType();
+	$roleslookup->setName("ALL_CLAN_ROLES");
+	$rolesvalues = $roleslookup->getOptionValuesAndDescription();
+	
+	if(!isEmptyString($clan->getHeadPerson())){
+		// remove the head relationship
+		unset($rolesvalues['1']);
+	}
+	if(!isEmptyString($clan->getVicePerson())){
+		// remove the vice relationship
+		unset($rolesvalues['2']);
+	}
+	/*if(!isEmptyString($clan->getVicePerson())){
+		// remove the muwandisi
+		unset($rolesvalues['2']);
+	}*/
+	$this->headTitle($title);
+	
+?>
+<div id="popupdiv">
+<form class="form-horizontal well span6" id="personform" action="<?php echo $posturl; ?>" method="post">
+    <table class="table">
+		<?php if($sessionhaserror) { ?>
+	        <tr>
+	        	<td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+	        </tr>
+        <?php } ?>
+        <tr>
+            <td style="width:100px;"><label class="control-label" for="role"><?php echo $this->translate("clan_role_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+            <?php
+                $roledropdown = new Zend_Form_Element_Select('role',
+                    array(
+                      'multiOptions' => array_merge_maintain_keys(array('' => $this->translate('global_select_selectone')), $rolesvalues ),
+                      'view' => new Zend_View(),
+                      'decorators' => array(array('ViewHelper')),
+                      'class' => array('hastooltip'),
+					  'title' => $this->translate("clan_role_tooltip")
+                    )
+                );
+          
+                $roledropdown->setValue($person->getRelationshipType());
+                echo $roledropdown->render(); 
+            ?>
+            <div id="role_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label" for="firstname"><?php echo $this->translate("person_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input type="text" name="firstname" id="firstname" class="span3 hastooltip" value="<?php echo $person->getFirstname(); ?>" title="<?php echo $this->translate("person_firstname_tooltip"); ?>"  /><div id="firstname_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label" for="lastname"><?php echo $this->translate("person_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input type="text" name="lastname" id="lastname" class="span3 hastooltip" value="<?php echo $person->getlastname(); ?>" title="<?php echo $this->translate("person_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label" for="clanname"><?php echo $this->translate("person_clanname_other_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input type="text" name="clanname" id="clanname" class="span3 hastooltip" value="<?php echo $person->getClanname(); ?>" title="<?php echo $this->translate("person_clanname_tooltip"); ?>" /><div id="clanname_error"></div></td>
+        </tr>
+        <tr class="gender">
+        	<td><label class="control-label" for="gender"><?php echo $this->translate("person_gender_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><?php
+                  $genderlookup = new LookupType();
+                  $genderlookup->setName("GENDER");
+                  $genderradio = new Zend_Form_Element_Radio('gender',
+                          array(
+                                  'multiOptions' => $genderlookup->getOptionValuesAndDescription(), 
+                                  'view' => new Zend_View(),
+                                  'disableLoadDefaultDecorators' => true,
+                                  'separator' => '&nbsp;',
+                                  'decorators' => array('ViewHelper',
+                                                      array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery 
+                                                  )
+                          )
+                  );
+                  $genderradio->setValue($person->getGender());
+                  echo $genderradio->render();
+              ?><div id="gender_error"></div></td>
+		</tr>
+        <tr>
+            <td><label class="control-label" for="lifestatus"><?php echo $this->translate("person_lifestatus_label"); ?>:</label></td>
+            <td><?php
+                  $lifestatuslookup = new LookupType();
+                  $lifestatuslookup->setName("LIFE_STATUS");
+				  $statuses = $lifestatuslookup->getOptionValuesAndDescription();
+				  ksort($statuses);
+				  // unset($statuses['3']);
+                  $lifestatusradio = new Zend_Form_Element_Radio('lifestatus',
+                          array(
+                                  'multiOptions' => $statuses, 
+                                  'view' => new Zend_View(),
+                                  'disableLoadDefaultDecorators' => true,
+                                  'separator' => '&nbsp;',
+                                  'decorators' => array('ViewHelper',
+                                                      array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+                                                  )
+                          )
+                  );
+                  $lifestatusradio->setValue($person->getLifeStatus());
+                  echo $lifestatusradio->render();
+              ?><div id="lifestatus_error"></div>
+              	<input type="hidden" name="entityname" value="Person" />
+			    <input type="hidden" id="id" name="id" value="<?php echo encode($person->getID()); ?>" />
+			    <input type="hidden" id="type" name="type" value="1" />
+                <input type="hidden" id="clanid" name="clanid" value="<?php echo $clan->getID(); ?>" />
+			    <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl('person/other/clanid/'.encode($clan->getID()))); ?>" />			   				<input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('person/othersuccess')); ?>" />
+              </td>
+        </tr>
+        <tbody id="invite">
+	        <tr>
+	            <td><label class="control-label" for="email"><?php echo $this->translate("person_email_label"); ?>: </label></td>
+	            <td><input type="text" name="email" id="email" value="<?php echo $person->getEmail(); ?>" class="hastooltip span3" title="<?php echo $this->translate("person_inviteemail_tooltip"); ?>" />
+                <?php
+					  $invite_options = array("1"=>"Invite now", "0"=>"Invite later");
+					  $inviteradio = new Zend_Form_Element_Radio('isinvited',
+							  array(
+									  'multiOptions' => $invite_options, 
+									  'view' => new Zend_View(),
+									  'disableLoadDefaultDecorators' => true,
+									  'separator' => '&nbsp;',
+									  'title' => $this->translate("person_invite_tooltip"),
+									  'decorators' => array('ViewHelper',
+														  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+													  )
+							  )
+					  );
+					  $inviteradio->setValue('');
+					  echo $inviteradio->render();
+			      ?><div id="email_error"></div>
+                </td>
+	        </tr>  
+        </tbody>
+  </table>
+</form>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+	$(document).ready(function() {
+		$("#personform").validate({		
+			// define the validation rules one field at a time
+			rules: {
+			    role: "required", 
+				firstname: "required",
+				lastname: "required",		
+				clanname: "required",
+				lifestatus: "required",
+				clanid: "required",
+				gender: "required",
+				email: {
+					"required": false, 
+					email: true
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				role: "<?php echo $this->translate("clan_role_error"); ?>", 
+				firstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("person_lastname_error"); ?>",		
+				clanname: "<?php echo $this->translate("person_clanname_error"); ?>",
+				lifestatus: "<?php echo $this->translate("person_lifestatus_error"); ?>",
+				clanid: "<?php echo $this->translate("person_clanid_error"); ?>",
+				gender: "<?php echo $this->translate("person_gender_error"); ?>",
+				email: {
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		// tooltips in popup
+		$(".hastooltip").each(function(){		
+			var theid = $(this).attr('id');
+			var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
+			if($(this).attr('title') != "undefined" || $(this).attr('title') != ""){
+				$('<a href="javascript: void(0);" class="qcontainer" id="q_'+theid+'"><img src="'+thepath+'" /></a>').insertAfter(this);
+				$("#q_"+theid).attr('title', $(this).attr('title')).addClass('qtooltip');
+			}	    
+		}); 
+		$('.qtooltip').tipsy({fade: true, gravity: 'w', html: true, trigger: 'hover', offset: -5});
+    	$(".hastooltip").attr('title','');
+		
+		// reset tab index
+		var tabindex = 1;
+		$('input,select').each(function() {
+			if (this.type != "hidden") {
+				var $input = $(this);
+				$input.attr("tabindex", tabindex);
+				tabindex++;
+			}
+		});
+		
+		// hide invite if deceased
+		// on type change
+		$("#lifestatus-1").click(function() {
+			enableContainerByID("invite");
+		});
+		$("#lifestatus-2, #lifestatus-3").click(function() {
+			disableContainerByID("invite");
+		});	
+		
+		$("#isinvited-1").attr('checked', false);
+		$("#isinvited-2").attr('checked', false);
+	}); 
+</script>
+<style>
+body {
+	overflow:hidden;
+}
+</style>

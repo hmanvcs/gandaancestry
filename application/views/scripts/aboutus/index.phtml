@@ -1,0 +1,30 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "About ".$this->translate("appname");
+	$this->headTitle($this->translate("appname")." | About"); 
+
+?>
+<div class="row marginleft0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+        <div class="content">
+        	<h1><?php echo $title; ?></h1>
+            <h2>Mission</h2>
+            
+            <p><span style="font-size:15px; color:#333333; font-weight:bold;">Ubiquitous online cultural and social networking ecosystem for people of Baganda ancestry</span>.</p>
+            
+            <h2>History</h2>
+            <p>GandaAncestry was first created in 2004, to allow Baganda to create and display simple family trees. The site also offered a Luganda-English talking dictionary as well as a Luganda cross-word puzzle and other Buganda related online resources. The original GandaAncestry was the brainchild of Dr. Charles Mukasa. He led a team of young Baganda in a Kampala based software development incubator to develop it in 2004.</p>
+			<p>In 2010, a few members of the Wampona Mubiru Kirimungo ssiga (sub clan) of the Mmamba clan created a business group to transform GandaAncestry into a US based state of the art web based social network for Baganda and the flagship of a ubiquitous cultural and social online ecosystem.</p>
+            
+            President: A. Nakazzi (Mmamba)<br />
+            Finance: S. Nsubuga (Mmamba)<br />
+            Advisor: C. Mukasa, Ph. D. (Mmamba)<br />
+            Address: 450 Shrewsbury Plaza, STE 136, NJ 07702, USA<br />
+        </div>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configdata>
+	<dashboard>
+		<label>menu_dashboard</label>
+		<controller>dashboard</controller>
+		<id>dashboard</id>
+	</dashboard>
+	<tree>
+		<label>menu_familytree</label>
+		<controller>tree</controller>
+		<action>list</action>
+		<resource>Tree</resource>
+		<privilege>view</privilege>
+		<id>tree</id>
+	</tree>
+	<family>
+		<label>menu_family</label>
+		<controller>person</controller> 
+		<action>add</action>
+		<resource>Person Profile</resource>
+		<privilege>view</privilege>
+		<id>family</id>
+		<class>dropdown</class>
+		<aclass>dropdown-toggle</aclass>
+		<datatoggle>dropdown</datatoggle>
+		<pages>
+			<person_list_relatives>
+				<label>My Relatives</label>
+				<controller>person</controller>
+				<action>list</action>
+				<resource>Family</resource>
+		        <privilege>view</privilege>
+		        <params>
+					<range>2</range>
+				</params>
+			</person_list_relatives>
+			<person_list_allpeople>
+				<label>All People</label>
+				<controller>person</controller>
+				<action>list</action>
+				<resource>Person Profile</resource>
+		        <privilege>list</privilege>
+		        <params>
+					<range>1</range>
+				</params>
+			</person_list_allpeople>
+			<person_list_myfamily>
+				<label>My Families</label>
+				<controller>family</controller>
+				<action>list</action>
+				<resource>Family</resource>
+				<privilege>list</privilege>
+				<params>
+					<range>2</range>
+				</params>
+			</person_list_myfamily>
+			<person_list_allfamily>
+				<label>All Families</label>
+				<controller>family</controller>
+				<action>list</action>
+				<resource>Person Profile</resource>
+		        <privilege>list</privilege>
+		        <params>
+					<range>1</range>
+				</params>
+			</person_list_allfamily>
+		</pages>	
+	</family>
+	<list_allclans>
+		<label>Clans</label>
+		<controller>clan</controller>
+		<action>list</action>
+		<resource>Person Profile</resource>
+		<privilege>list</privilege>
+	</list_allclans>
+	<administration>
+		<label>menu_administration</label>
+		<controller>appconfig</controller> 
+		<action>overview</action>
+		<resource>Application Settings</resource>
+		<privilege>list</privilege>		
+		<id>appconfig</id>
+	</administration>
+	<subscriberprofile>
+		<label>menu_profile</label>
+		<controller>person</controller> 
+		<action>view</action>
+		<resource>Family</resource>
+		<privilege>view</privilege>
+		<id>viewpersonprofile</id>		
+	</subscriberprofile>
+	<adminprofile>
+		<label>menu_profile</label>
+		<controller>profile</controller> 
+		<action>view</action>
+		<resource>User Account</resource>
+		<privilege>list</privilege>
+		<id>viewadminprofile</id>		
+	</adminprofile>
+</configdata>

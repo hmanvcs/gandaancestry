@@ -1,0 +1,54 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+		
+	if ($this->result) {
+		$title = $this->translate("useraccount_pagetitle_activation_success"); 
+		$this->headTitle($title);
+	} else {
+		$title = $this->translate("useraccount_pagetitle_activation_failure"); 
+		$this->headTitle($title);
+	}
+
+?>
+<style>
+#contentcolumn {
+	min-height:0;
+	height:auto;
+}
+</style>
+<div class="row span12 marginleft0" style="margin:0 auto;">
+<?php if($this->result){ ?>
+<span class="span7" style="margin-left:220px;">
+	<h1 class="aligncenter"><?php echo $title; ?></h1>
+	<table class="table well">    
+	    <thead>
+		 	<tr>			
+				<td><div class="alert alert-success"><a class="close" data-dismiss="alert">×</a>Your account on <?php echo $this->translate("appname");?> has been successfully activated. </div></td>
+			</tr>
+		</thead>
+        <tr>
+	        <td class="centeralign"><br /><br />
+	            You can now log in using the email address and password you provided during signup.<br><br />
+	            <a class="positiveaction btn btn-primary btn-gold" href="<?php echo $this->baseUrl("user/logout")?>"><i class="icon-lock"></i> Login</a><br /><br>
+	        </td>
+	    </tr>
+	</table>
+</span>	  
+<?php } else { ?>
+<span class="span7" style="margin-left:220px;">
+	<h1 class="aligncenter"><?php echo $title; ?></h1>
+	<table class="table" style="margin-top:20px;">		
+		<tr>
+		  	<td style="text-align:center;"><br /><br />
+            	<div class="alert alert-error"><?php echo $this->message; ?></div>
+				For any assistance please feel free to <a href="<?php echo $this->serverUrl($this->baseUrl('contactus')); ?>" title="Contact us">Contact us</a><br /><br />
+			</td>
+		</tr>
+	</table>
+</span>    		
+<?php } ?>
+</div>
+<?php
+	
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

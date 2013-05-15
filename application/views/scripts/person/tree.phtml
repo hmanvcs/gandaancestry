@@ -1,0 +1,114 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	# Load the profile, if no ID provided then use the profile of the currently logged in user
+	$person = new Person(); 
+	
+	$person->populate(22);
+	$usemainlayout = false;	
+	
+	$avatarurl = $this->baseUrl('uploads/user_0/avatar/male.jpg');
+	if($person->isFemale()){
+		$avatarurl = $this->baseUrl('uploads/user_0/avatar/female.jpg');
+	}
+	// $this->headTitle($title);  
+?>
+<!--<a href="javascript:void(0)" id="thetrigger" title="Woooow">Test</a>-->
+<span class="span6" id="addimage">
+	<table class="reltable">
+    	<tr>
+        	<td style="height:60px; vertical-align:top;">
+            	<table class="inner">
+                	<tr>
+                    	<td width="30"></td>
+                        <td width="135" style="padding-top:6px; padding-left:4px;"><a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/1/focusid/'.encode($person->getID())); ?>" id="malebutton" class="addperson addbutton" title="<?php echo $person->getID() == $personid ? "Add My Father" : "Add Father of ".$person->getName(); ?>" rel="<?php echo $person->getID() == $personid ? "Add My Father" : "Add Father of ".$person->getName(); ?>">Add Father</a></td>
+                        <td style="padding-top:6px; padding-left:6px;"><a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/2/focusid/'.encode($person->getID())); ?>" id="femalebutton" class="addperson addbutton" title="<?php echo $person->getID() == $personid ? "Add My Mother" : "Add Father of ".$person->getName(); ?>" rel="<?php echo $person->getID() == $personid ? "Add My Mother" : "Add Mother of ".$person->getName(); ?>">Add Mother</a></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+        	<td style="height:135px; vertical-align:top;">
+            	<table class="inner">
+                	<tr>
+                    	<td width="90"></td>
+                        <td width="190" style="padding-top:27px;"><a style="margin-left:40px;" href="<?php echo $this->baseUrl("person/view/id/".$person->getID()); ?>" title="<?php echo 'View '.$person->getName()."'s Profile"; ?>"><img src="<?php echo $avatarurl; ?>" /></a></td>
+                        <td style="height:80px; vertical-align:top;">
+                        	<table class="inner innermost">
+                            	<tr>
+                                	<td style="padding-top:5px;"><a href="javascript:void(0)" id="malebutton" class="addbutton">Add Spouse</a></td>
+                                </tr>
+                                <tr>
+                                	<td style="padding-top:7px;"><a href="javascript:void(0)" id="malebutton" class="addbutton">Add Brother</a></td>
+                                </tr>
+                                <tr>
+                                	<td style="padding-top:7px;"><a href="javascript:void(0)" id="femalebutton" class="addbutton">Add Sister</a></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+        	<td style="height:70px; vertical-align:top;">
+            	<table class="inner">
+                	<tr>
+                    	<td width="25"></td>
+                        <td width="135" style="padding-top:6px; padding-left:4px;"><a href="javascript:void(0)" id="malebutton" class="addbutton">Add Son</a></td>
+                        <td style="padding-top:6px; padding-left:6px;"><a href="javascript:void(0)" id="femalebutton" class="addbutton">Add Daughter</a></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</span>
+<script>
+	$(document).ready(function() {
+		//$('#thetrigger').tipsy({fade: true, gravity: 'w', html: true, trigger: 'hover', offset: -5, title: function() { return $('#addimage').html(); } });
+
+	}); 
+</script>
+<style>
+#addimage {
+	background:url('<?php echo $this->baseUrl('images/addfamily.png'); ?>') no-repeat;
+	height:250px;
+}
+.addbutton {
+	height:30px;
+	width:130px;
+	display:block;
+	text-align:center;
+	padding-top:6px;
+	font-size:15px;
+	text-decoration:none;
+	color:#0277da;
+	font-weight:bold;
+}
+#malebutton {
+	background:url('<?php echo $this->baseUrl('images/addmale.png'); ?>') no-repeat;	
+}
+#femalebutton {
+	background:url('<?php echo $this->baseUrl('images/addfemale.png'); ?>') no-repeat;	
+}
+.reltable, .inner{
+	border:none;
+	width:100%;
+	border-collapse:collapse;
+	border-spacing:0;
+}
+.innermost {
+	border: none;
+}
+.reltable td {
+	border:none;
+}
+.inner td {
+	border: none;
+	vertical-align:top;
+	min-height:75px;
+}
+</style>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

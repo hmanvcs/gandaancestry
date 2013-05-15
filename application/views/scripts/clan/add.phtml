@@ -1,0 +1,215 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$clan = new Clan(); 
+	$clanid = $request->clanid;
+	if(!isEmptyString($clanid)){
+		$clan->populate(decode($clanid));
+		$clan->setClanID($clan->getID());
+	}
+	$type = $request->type;
+	$clan->setType($type);
+	
+	$posturl = $this->baseUrl("clan/processcreate");
+	$button_title = $this->translate("clan_button_newname"); 
+	// debugMessage($clan->toArray());
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$clan->processPost($session->getVar(FORM_VALUES));	
+	}
+	
+	$isclan = true;
+	$isssiga = false;
+	if($clan->isClan()){
+		$isclan = true;
+		$isssiga = false;
+	}
+	if($clan->isSsiga()){
+		$isclan = false;
+		$isssiga = true;
+	}
+	
+	$ssazalist = new LookupType(); 
+	$ssazalist->setName("ALL_SSAZAS");
+	$massaza = $ssazalist->getOptionValuesFromQuery();
+	
+	$butaka = $clan->getButaka();
+	$butaka2 = $clan->getTheObutaka();
+	$but_key = 0;
+	if(isEmptyString($butaka->getID()) && !$butaka2){
+		$but_key = md5('butaka');
+		$but_id = "";
+		$but_type = "5";
+		$but_country = "XX";
+		$but_ssaza = '';
+		$but_parish = '';
+		$but_parishid = '';
+		$but_village = '';
+		$but_villageid = '';
+		$but_street = '---';
+	} else {
+		$but_id = isEmptyString($butaka->getID()) ? $butaka2->getID() : $butaka->getID();
+		$but_type = $butaka->getType();
+		$but_country = $butaka->getCountry();
+		$but_ssaza = $butaka->getCounty();
+		$but_parish = $butaka->getTownName();
+		$but_parishid = $butaka->getTownID();
+		$but_village = $butaka->getVillageName();
+		$but_villageid = $butaka->getVillageID();
+		$but_street = '---';
+	}				
+	
+	$title = "New Clan";
+	$this->headTitle($title);
+	
+?>
+<div class="popupdiv">
+<form class="form-horizontal well span6" id="clanform" action="<?php echo $posturl; ?>" method="post">
+    <table class="table">
+		<?php if($sessionhaserror) { ?>
+	        <tr>
+	        	<td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+	        </tr>
+        <?php } ?>
+        <?php if($isclan == 1){ ?>
+        <tr>
+            <td width="30%;"><label class="control-label"><?php echo $this->translate("clan_ekika_label")." (".$this->translate("clan_fullname_label").")"; ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input name="fullname" id="fullname" type="text" class="span2 hastooltip" value="" title="<?php echo $this->translate("clan_lugname_tooltip"); ?>" /><div id="fullname_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label"><?php echo $this->translate("clan_omuziro_label")." (".$this->translate("clan_totem_label").")"; ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input name="omuziro" id="omuziro" type="text" class="span2 hastooltip" value="" title="<?php echo $this->translate("clan_omuziro_tooltip"); ?>" /></td>
+        </tr>
+        <tr>
+            <td><label class="control-label"><?php echo $this->translate("clan_akabbiro_label"); ?></label></td>
+            <td><input name="akabbiro" id="akabbiro" type="text" class="span4 hastooltip" value="" title="<?php echo $this->translate("clan_akabbiro_tooltip"); ?>" /></td>
+        </tr>
+        <?php } ?>
+        <?php if($isssiga){ ?>
+        <tr>
+            <td width="30%;"><label class="control-label">Clan:</label></td>
+            <td><?php echo $clan->getFullName(); ?><input type="hidden" id="clanid" name="clanid" value="<?php echo $clan->getClanID(); ?>" /></td>
+        </tr>
+        <tr>
+            <td><label class="control-label">Ssiga Name:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input name="fullname" id="fullname" type="text" class="span3 hastooltip" value="" title="<?php echo $this->translate("clan_lugname_tooltip"); ?>" /><div id="fullname_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label"><?php echo $clan->isClan() ? "Omukulu w'ekika<br />(Clan Head)" : "Omukulu w'ESsiga<br />(Ssiga Head)"; ?></label></td>
+            <td><input name="leader" id="leader" type="text" class="span3 hastooltip" value="" title="<?php echo $this->translate("clan_leader_tooltip"); ?>" /></td>
+        </tr>
+        <tr>
+            <td><label class="control-label">Obutaka (Ssaza)</label></td>
+            <td><input name="butaka[id]" id="butaka_id" type="hidden" value="" />
+                <input name="butaka[type]" id="butaka_type" type="hidden" value="5" />
+                <input name="butaka[country]" id="butaka_country" type="hidden" value="XX" />
+                <input name="butaka[streetaddress]" id="butaka_streetaddress" type="hidden" value="--" />
+                <?php
+                    $ssazadropdown = new Zend_Form_Element_Select('butaka_ssazaid',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => "<Select Ssaza>"), $massaza),
+                                            'view' => new Zend_View(), 
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span3','xssazas','hastooltip'),
+                                            'title' => $this->translate("clan_ssaza_tooltip")
+                                        )
+                                    );
+                    $ssazadropdown->setValue(''); 
+                    echo $ssazadropdown->render(); 
+                ?> &nbsp;</td>
+        </tr>
+        <tr>
+            <td><label class="control-label">Obutaka (Village)</label></td>
+            <td><?php
+					$villagedropdown = new Zend_Form_Element_Select('butaka_villageid',
+										array(
+											'multiOptions' => array('' => '<Select ssaza first>'),
+											'view' => new Zend_View(),
+											'decorators' => array('ViewHelper'),
+											'class' => array('xchzn-select','span3','hastooltip'),
+											'title' => $this->translate("person_village_tooltip")
+										)
+									);
+					$villagedropdown->setValue(''); 
+					echo $villagedropdown->render(); 
+				 ?></td>
+        </tr>
+        <?php } ?>        
+        <tr class="hidden">
+            <td></td>
+            <td class="nowrapping" colspan="3">
+            	<input type="hidden" name="entityname" value="Organisation" />
+			    <input type="hidden" id="id" name="id" value="" />
+			    <input type="hidden" id="type" name="type" value="<?php echo $clan->getType(); ?>" />
+			    <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl("clan/add/pgc/true/type/".$clan->getType())); ?>" />			   				
+                <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('clan/addsuccess')); ?>" />
+            </td>
+        </tr>
+  </table>
+</form>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+	$(document).ready(function() {
+		$("#clanform").validate({		
+			// define the validation rules one field at a time
+			rules: {
+				fullname: "required"
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				fullname: "<?php echo $this->translate("clan_fullname_error"); ?>"
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		// tooltips in popup
+		$(".hastooltip").each(function(){		
+			var theid = $(this).attr('id');
+			var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
+			if($(this).attr('title') != "undefined" || $(this).attr('title') != ""){
+				$('<a href="javascript: void(0);" class="qcontainer" id="q_'+theid+'"><img src="'+thepath+'" /></a>').insertAfter(this);
+				$("#q_"+theid).attr('title', $(this).attr('title')).addClass('qtooltip');
+			}	    
+		}); 
+		$('.qtooltip').tipsy({fade: true, gravity: 'w', html: true, trigger: 'hover', offset: -5});
+    	$(".hastooltip").attr('title','');
+		
+		// reset tab index
+		var tabindex = 1;
+		$('input,select').each(function() {
+			if (this.type != "hidden") {
+				var $input = $(this);
+				$input.attr("tabindex", tabindex);
+				tabindex++;
+			}
+		});
+		
+		// chained select to load the parishes for a ssaza
+		$('#butaka_ssazaid').selectChain({
+			target: $('#butaka_villageid'),
+			url: '<?php echo $this->baseUrl('person/selectchain/'.SELECT_CHAIN_TYPE.'/ssaza_places/fieldid/butaka_ssazaid'); ?>',
+			data: 'currentvalue=<?php echo ''; ?>',
+			type: 'get'
+		});
+		<?php if(!isEmptyString($but_ssaza)){ ?>
+			$('#butaka_ssazaid').trigger("change");
+		<?php } ?>
+		
+	}); 
+</script>
+<style>
+body {
+	overflow:hidden;
+}
+</style>

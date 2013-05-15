@@ -1,0 +1,1007 @@
+
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = $this->translate("useraccount_pagetitle_signup"); 
+	
+	$useraccount = new UserAccount(); 	
+	$posturl = $this->baseUrl("signup/processstep1"); 
+	$button_title = $this->translate("useraccount_button_signup"); 
+	
+	// set all fields to empty string as default
+	$firstname = ''; $lastname = ''; $clanname = ''; $gender = ''; $email = ''; $password = ''; $dateofbirth = '';  $fdateofbirth = ''; $birthday = ''; $birthmonth = ''; $birthyear = ''; $country = 'XX'; $type = '1'; $agreedtoterms = ''; $membershipplanid = '1'; $dob = ''; $familyid = '';
+	$ffirstname = ''; $flastname = ''; $fclanname = ''; $fclanid = ''; $fdateofbirth = ''; $fbirthday = ''; $fbirthmonth = ''; $fbirthyear = ''; $flifestatus = '1'; 
+	$mfirstname = ''; $mlastname = ''; $mclanname = ''; $mclanid = ''; $mdateofbirth = ''; $mbirthday = ''; $mbirthmonth = ''; $mbirthyear = ''; $mlifestatus = '1'; 
+	$id = ''; $familyid = ''; $fatherid = ''; $motherid = ''; $birtheventid = ''; $fbirtheventid = ''; $mbirtheventid = ''; $addressid = '';
+	$dobarray = array();
+	
+	// invite logic default values
+	$personid = decode($request->profile);
+	$inviting = false;
+	//debugMessage('focus is '.$personid);
+	if(!isEmptyString($personid)){
+		$inviting = true;
+		$inviteperson = new Person();
+		$inviteperson->populate($personid);
+		//debugMessage($inviteperson->toArray());
+		if(isEmptyString($inviteperson->getType())) {
+			 $inviteperson->setType('1');
+		}
+		$firstname = $inviteperson->getFirstName(); $lastname = $inviteperson->getLastName(); $clanname = $inviteperson->getClanName(); $gender = $inviteperson->getGender(); $email = $inviteperson->getEmail(); $type = $inviteperson->getType(); $id = $inviteperson->getID();
+		// set country from primary if exists
+		if($inviteperson->getPrimaryPhysicalAddress()){
+			$addressid = $inviteperson->getPrimaryPhysicalAddress()->getID();
+			$country = $inviteperson->getPrimaryPhysicalAddress()->getCountry();
+		}
+		if(!$inviteperson->getPrimaryPhysicalAddress() && $inviteperson->getPhysicalAddresses()->count() == '1'){
+			$pri = $inviteperson->getPhysicalAddresses()->get(0);
+			$addressid = $pri->getID();
+			$country = $pri->getCountry();
+		}
+		if($inviteperson->isMuganda() && !isEmptyString($inviteperson->getClanID())){
+			$fclanid = $inviteperson->getClanID();
+			// $mclanid = $inviteperson->getClanID();
+		}
+		
+		// set parents if already exists
+		if(!isEmptyString($inviteperson->getFamilyID())){
+			$familyid = $inviteperson->getFamilyID();
+			$father = $inviteperson->getFamily()->getFather();
+			$mother = $inviteperson->getFamily()->getMother();
+			
+			// father's date of birth
+			if(!isEmptyString($father->getID())){
+				$fatherid = $father->getID(); $ffirstname = $father->getFirstName(); $flastname = $father->getLastName(); $fclanname = $father->getClanName(); $fclanid = $father->getClanID(); $flifestatus = $father->getLifeStatus();
+				if(!isEmptyString($father->getDateOfBirth())){
+					$dob = $father->getDateOfBirth(); $fdateofbirth = date('M d, Y', strtotime($dob)); 
+					$fbirthday = abs(date('d', strtotime($dob)));  $fbirthmonth = abs(date('m', strtotime($dob))); $fbirthyear = date('Y', strtotime($dob));
+				} else {
+					$dob = ""; $fdateofbirth = "";
+					$dobevent = $father->getBirthDetails();
+					if($dobevent && !isEmptyString($dobevent->getFullStartDate())){
+						$dob = $dobevent->getFullStartDate();
+						$fdateofbirth = date('M d, Y', strtotime($dob)); $fbirthday = $dobevent->getStartDay(); $fbirthmonth = $dobevent->getStartMonth(); $fbirthyear = $dobevent->getStartYear();						
+					}
+				}
+				if($father->getBirthDetails() === true){
+					$fbirtheventid = $dobevent->getID();
+				}
+			}
+			if(!isEmptyString($mother->getID())){
+				$motherid = $mother->getID(); $mfirstname = $mother->getFirstName(); $mlastname = $mother->getLastName(); $mclanname = $mother->getClanName(); $mclanid = $mother->getClanID(); $mlifestatus =$mother->getLifeStatus();
+				// mother's date of birth
+				if(!isEmptyString($mother->getDateOfBirth())){
+					$dob = $mother->getDateOfBirth(); $mdateofbirth = date('M d, Y', strtotime($dob)); 
+					$mbirthday = abs(date('m', strtotime($dob)));  $mbirthmonth = abs(date('d', strtotime($dob))); $mbirthyear = date('Y', strtotime($dob));
+				} else {
+					$dob = ""; $mdateofbirth = "";
+					$dobevent = $mother->getBirthDetails();
+					if($dobevent && !isEmptyString($dobevent->getFullStartDate())){
+						$dob = $dobevent->getFullStartDate();
+						$mdateofbirth = date('M d, Y', strtotime($dob)); $mbirthday = $dobevent->getStartDay(); $mbirthmonth = $dobevent->getStartMonth(); $mbirthyear = $dobevent->getStartYear(); 						
+					}
+				}
+				if($mother->getBirthDetails() === true){
+					$mbirtheventid = $dobevent->getID();
+				}
+			}
+		}
+		
+		if(!isEmptyString($inviteperson->getDateOfBirth())){
+			$dob = $inviteperson->getDateOfBirth(); $dateofbirth = date('M d, Y', strtotime($dob)); 
+			$birthday = abs(date('m', strtotime($dob)));  $birthmonth = abs(date('d', strtotime($dob))); $birthyear = date('Y', strtotime($dob));
+		} else {
+			$dob = ""; $dateofbirth = "";
+			$dobevent = $inviteperson->getBirthDetails();
+			if($dobevent && !isEmptyString($dobevent->getFullStartDate())){
+				$dob = $dobevent->getFullStartDate();
+				$dateofbirth = date('M d, Y', strtotime($dob)); $birthday = $dobevent->getStartDay(); $birthmonth = $dobevent->getStartMonth(); $birthyear = $dobevent->getStartYear(); 
+				$birtheventid = $dobevent->getID();
+			}
+		}
+		
+		$title = "Account Activation: ".$inviteperson->getName();
+		$posturl = $this->baseUrl("signup/processinvite"); 
+	}
+	
+	if($session->getVar('joinfromhome') == '1'){
+		$firstname = $session->getVar('firstname');
+		$lastname = $session->getVar('lastname');
+		$email = $session->getVar('email');
+		$password = $session->getVar('password');
+	}
+	
+	// any errors occured in processing
+	if ($sessionhaserror) {
+		$formvalues = $session->getVar(FORM_VALUES);
+		// debugMessage($formvalues);
+		$firstname = $formvalues['firstname']; $lastname = $formvalues['lastname']; $clanname = $formvalues['type'] == 1 ? $formvalues['clanname'] : '';  $gender = $formvalues['gender']; $email = $formvalues['email'];
+		
+		if(!isEmptyString($formvalues['birthday']) && !isEmptyString($formvalues['birthmonth']) && !isEmptyString($formvalues['birthyear'])){
+			$formvalues['dateofbirth'] = $formvalues['birthyear']."-".$formvalues['birthmonth']."-".$formvalues['birthday'];
+			$dateofbirth = date('M d, Y', strtotime($formvalues['dateofbirth'])); 
+		} else {
+			$formvalues['dateofbirth'] = NULL;
+		}
+		$birthday = $formvalues['birthday']; $birthmonth = $formvalues['birthmonth']; $birthyear = $formvalues['birthyear']; $country = $formvalues['country']; $type = $formvalues['type']; $agreedtoterms = $formvalues['agreedtoterms'];
+		if($formvalues['type'] == 1){
+			$fatherid = $formvalues['fatherid']; $ffirstname = $formvalues['ffirstname']; $flastname = $formvalues['flastname']; $fclanname = $formvalues['fclanname']; $fclanid = $formvalues['fclanid']; $fdateofbirth = date('M d, Y', strtotime($formvalues['fdateofbirth'])); $fbirthday = $formvalues['fbirthday']; $fbirthmonth = $formvalues['fbirthmonth']; $fbirthyear = $formvalues['fbirthyear']; $flifestatus = $formvalues['flifestatus'];
+		}
+		if($formvalues['type'] == 2){
+			$motherid = $formvalues['motherid']; $mfirstname = $formvalues['mfirstname']; $mlastname = $formvalues['mlastname']; $mclanname = $formvalues['mclanname']; $mclanid = $formvalues['mclanid']; $mdateofbirth = date('M d, Y', strtotime($formvalues['mdateofbirth'])); $mbirthday = $formvalues['mbirthday']; $mbirthmonth = $formvalues['mbirthmonth']; $mbirthyear = $formvalues['mbirthyear']; $mlifestatus = $formvalues['mlifestatus'];
+		}
+		if(!isArrayKeyAnEmptyString('id', $formvalues)){
+			$id = $formvalues['id']; 
+		}
+		
+		$familyid = $formvalues['familyid']; $fatherid = $formvalues['fatherid']; $motherid = $formvalues['motherid']; $birtheventid = $formvalues['birtheventid']; $fbirtheventid = $formvalues['fbirtheventid']; $mbirtheventid = $formvalues['mbirtheventid']; $addressid = $formvalues['addressid']; 
+	} 
+	
+	$this->headMeta()->appendName('keywords', '');
+	$this->headMeta()->appendName('description', $title);
+	$this->headTitle($title); 
+	
+	$showleftcolumn = false;
+	
+?>
+<h1><?php echo "Register for a ".$this->translate("appname")." Account"; ?></h1>
+<span class="spans marginleft0 pull-left" style="width:600px;">
+	<form class="form-horizontal well" id="signupform" action="<?php echo $posturl; ?>" method="post">
+	<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+		<div class="alert alert-success"><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+	<?php } ?>	
+		<fieldset title="My Account" id="account">
+			<legend>Step 1</legend>
+			<table class="table">
+			   <?php if($sessionhaserror) { ?>
+			   <tr>
+					<td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+			   </tr>
+			   <?php } ?>
+               <tr>
+               	   <td colspan="2"><span class="requiredmark"><?php echo $this->translate("global_required_field_info"); ?></span></td>
+               </tr>
+	           <tr>
+	               <td colspan="2"><label class="control-label gender"><?php echo $this->translate("person_gender_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+					<?php						  
+						  $genderradio = new Zend_Form_Element_Radio('gender',
+								  array(
+										  'multiOptions' => array('1' => 'Male', '2' => 'Female'), 
+										  'view' => new Zend_View(),
+										  'disableLoadDefaultDecorators' => true,
+										  'separator' => '&nbsp;&nbsp;&nbsp;&nbsp;',
+										  'decorators' => array('ViewHelper',
+															  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+														  )
+								  )
+						  );
+						  $genderradio->setValue($gender);
+						  echo $genderradio->render();
+					  ?>
+                  <div id="gender_error"></div>
+	              </td>
+	           </tr>
+	           <tr>
+	               <td width="45%"><label class="control-label firstname"><?php echo $this->translate("person_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <input name="firstname" id="firstname" type="text" class="span2 hastooltip" value="<?php echo $firstname; ?>" title="<?php echo $this->translate("person_firstname_tooltip"); ?>" />
+	               <div id="firstname_error"></div></td>
+	               <td><label class="control-label lastname"><?php echo $this->translate("person_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <input name="lastname" id="lastname" type="text" class="span2 hastooltip" value="<?php echo $lastname; ?>" title="<?php echo $this->translate("person_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>
+	           </tr>
+	           <tr>
+	               <td class="type"><b style="padding-bottom:5px;">Ethinicity:</b><br />
+	               <?php if(!$inviting){ ?>	
+					<?php						  
+						  $typeradio = new Zend_Form_Element_Radio('type',
+								  array(
+										  'multiOptions' => array('1'=>'Muganda', '2'=>'Non Muganda'), 
+										  'view' => new Zend_View(),
+										  'disableLoadDefaultDecorators' => true,
+										  'separator' => '&nbsp;&nbsp;',	
+										  'decorators' => array('ViewHelper',
+															  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+														  )
+								  )
+						  );
+						  $typeradio->setValue($type);
+						  echo $typeradio->render();
+					  ?>
+                      <?php } else { ?>  
+                        <input name="type" id="type" type="hidden" value="<?php echo $type; ?>" /><?php echo $inviteperson->getTypeLabel(); ?>
+                      <?php } ?>
+                      <input name="validtype" id="validtype" type="hidden" value="" />
+                      <div id="type_error"></div>
+	                 </td>
+	                 <td><span id="mugandaclanname"><label class="control-label clanname"><?php echo $this->translate("person_clanname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               		<input name="clanname" id="clanname" type="text" class="span2 hastooltip" value="<?php echo $clanname; ?>" title="<?php echo $this->translate("person_clanname_tooltip"); ?>" placeholder="e.g., Mugerwa" />
+                        <div id="clanname_error"></div>
+                        </span>
+                        <span id="notmuganda" class="pagedescription alert alert-info" style="width:80%; display:block;">Registration is only currently available to true valid Baganda. A valid muganda is one whos father is also a muganda and belongs to one of the 56 Buganda Clans</span>
+                        </td>
+	           </tr>
+	           <tr>
+	               <td colspan="2"><label class="control-label email"><?php echo $this->translate("person_email_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                   <?php if(!isEmptyString($personid)){ ?>
+	               <input name="email" id="email" type="hidden" value="<?php echo $email; ?>" /><?php echo $email; ?>
+                   <?php } else { ?>
+                   <input style="width:335px;" class="hastooltip" name="email" id="email" type="text" value="<?php echo $email; ?>" title="<?php echo $this->translate("person_email_tooltip"); ?>" />
+                   <?php } ?>
+                   <div id="email_error"></div></td>
+	           </tr>
+	           <tr>
+	               <td><label class="control-label password"><?php echo $this->translate("useraccount_password_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <input name="password" id="password" type="password" class="span2 password hastooltip" onkeyup="passwordStrength(this.value)" value="<?php echo $password; ?>" title="<?php echo $this->translate("person_password_tooltip"); ?>" />
+	               <p style="display:inline-block; float:right;">
+						<label for="passwordStrength" class="hidden">Password strength</label>
+						<div id="passwordDescription" style="width:100px;">strength</div>
+						<div id="passwordStrength" class="strength0"></div>
+					</p>
+	               <div id="password_error"></div></td>
+	               <td><label class="control-label confirmpassword"><?php echo $this->translate("useraccount_password_confirm_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <input name="confirmpassword" id="confirmpassword" type="password" class="span2 password hastooltip" value="" title="<?php echo $this->translate("person_confirmpassword_tooltip"); ?>" />
+	               <div id="confirmpassword_error"></div></td>
+	           </tr>
+	           <tr>
+	               <td><label class="control-label country"><?php echo $this->translate("person_country_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               <?php
+	               		$countries = getCountries();
+	               		unset($countries['UG']);
+	               		// debugMessage($countries['XX']);
+						$countrydropdown = new Zend_Form_Element_Select('country',
+											array(
+												'multiOptions' => array_merge_maintain_keys(array('' => "<Select Country of Residence>","XX"=>"Buganda","UG"=>"Uganda"), $countries),
+												'view' => new Zend_View(), 
+												'decorators' => array('ViewHelper'),
+												'class' => array('span3','country','hastooltip'),
+												'title' => $this->translate("person_country_tooltip"),
+												'placeholder' => $this->translate("person_country_label")
+											)
+										);
+						$countrydropdown->setValue($country); 
+						echo $countrydropdown->render(); 
+					?><div id="country_error"></div></td>
+	               <td>
+	               <label class="control-label dateofbirth"><?php echo $this->translate("person_dateofbirth_label"); ?>:  <?php echo $this->translate("global_required_field_marker"); ?></label>
+	               	<?php
+						$daydp = new Zend_Form_Element_Select('birthday',
+											array(
+												'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), getMonthDays()),	
+												'view' => new Zend_View(),
+												'decorators' => array('ViewHelper'),
+												'class' => array('birth'),
+												'title' => 'Select Day'		
+											)
+										);
+						$daydp->setValue($birthday); 
+						echo $daydp->render(); 
+					?>
+			        <?php
+						$monthdp = new Zend_Form_Element_Select('birthmonth',
+											array(
+												'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
+												'view' => new Zend_View(),
+												'decorators' => array('ViewHelper'),
+												'class' => array('birth'),
+												'title' => 'Select Month'		
+											)
+										);
+						$monthdp->setValue($birthmonth); 
+						echo $monthdp->render(); 
+					?>
+			        <?php
+			        	$years = getSubscribeBirthYears();
+						$yeardp = new Zend_Form_Element_Select('birthyear',
+											array(
+												'multiOptions' => array_merge_maintain_keys(array('' => 'Year'), $years),	
+												'view' => new Zend_View(),
+												'decorators' => array('ViewHelper'),
+												'class' => array('birth'),
+												'title' => 'Select Year'		
+											)
+										);
+						$yeardp->setValue($birthyear); 
+						echo $yeardp->render(); 
+					?>
+	               	<input name="dateofbirth" id="dateofbirth" type="text" class="span2 datefield hastooltip" value="<?php // echo $dateofbirth; ?>" title="<?php echo $this->translate("person_dateofbirth_tooltip"); ?>" /><div id="dateofbirth_error"></div><div id="birthyear_error"></div></td>
+	           </tr>
+	           <tr id="terms">
+	               <td colspan="2"><input type="checkbox" name="agreedtoterms" id="agreedtoterms" value="1" class="<?php echo $agreedtoterms; ?>" title="<?php echo $this->translate("person_agreedtoterms_tooltip"); ?>" />
+                I accept the <a href="<?php echo $this->baseUrl('aboutus/termsofservice'); ?>" target="_blank" title="User Agreement">Service Terms</a> and <a href="<?php echo $this->baseUrl('aboutus/privacypolicy'); ?>" target="_blank" title="Privacy Policy">Privacy Policy</a> <?php echo $this->translate("global_required_field_marker"); ?>
+               <div id="agreedtoterms_error"></div></td>
+	           </tr>
+               <?php if(isEmptyString($personid)){ ?>
+               <tr>
+                    <td style="text-align:right;"><label class="control-label captcha" style="float:right; text-align:right; width:100%;">Captcha: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                    <span class="pagedescription">(Enter the code you see in blue)</span></td>
+                    <td>
+                    	<div id="code_error"></div>
+                        <div id="wrap" align="center">
+                            <label id="captcha"></label>
+                            <input name="code" type="text" id="code" style="width:80px;" value="">
+                            <input name="validcode" type="hidden" id="validcode" value="">
+                        </div>
+                        <img src="<?php echo $this->baseUrl('images/refresh.jpg'); ?>" width="25" alt="Refresh Captcha Code" id="refresh" />                        
+                        
+                    </td>
+                </tr>
+                <?php } ?>
+			</table>
+		</fieldset>
+		<fieldset title="My Ancestry">
+			<legend>Step 2</legend>
+			<table class="table">
+	           <tbody id="muganda">
+		           <tr>
+		               <td width="50%"><label class="control-label ffirstname"><?php echo $this->translate("person_father_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($fatherid)){ ?>
+		               		<input name="ffirstname" id="ffirstname" type="text" class="span2 hastooltip" value="<?php echo $ffirstname; ?>" title="<?php echo $this->translate("person_father_firstname_tooltip"); ?>" /><div id="ffirstname_error"></div>
+                       <?php } else { ?>
+                       		<?php echo $ffirstname; ?>
+                            <input type="hidden" name="ffirstname" id="ffirstname" value="<?php echo $ffirstname; ?>" />
+                       <?php } ?>
+                       </td>
+		               <td><label class="control-label flastname"><?php echo $this->translate("person_father_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($fatherid)){ ?>
+		               		<input name="flastname" id="flastname" type="text" class="span2 hastooltip" value="<?php echo $flastname; ?>" title="<?php echo $this->translate("person_father_lastname_tooltip"); ?>" /><div id="flastname_error"></div>
+                       <?php } else { ?>
+                       		<?php echo $flastname; ?>
+                            <input type="hidden" name="flastname" id="flastname" value="<?php echo $flastname; ?>" />
+                       <?php } ?>
+                       </td>
+		           </tr>
+		           <tr>
+		               <td><label class="control-label fclanid"><?php echo $this->translate("person_father_clanid_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($fatherid)){ ?>
+							<?php
+                                  $clanlookup = new LookupType();
+                                  $clanlookup->setName("ALL_CLANS");
+                                  $clandropdown = new Zend_Form_Element_Select('fclanid',
+                                          array(
+                                                  'multiOptions' => array_merge_maintain_keys(array('' => '<Select Father\'s Clan>'), $clanlookup->getOptionValuesFromQuery()),
+                                                  'view' => new Zend_View(),
+                                                  'decorators' => array(array('ViewHelper')),
+                                                  'class' => array('clan','hastooltip'),
+                                                  'title' => $this->translate("person_father_clanid_tooltip")
+                                          )
+                                  );
+                                  
+                                  $clandropdown->setValue($fclanid);
+                                  echo $clandropdown->render();
+                              ?><div id="fclanid_error"></div>
+					   <?php } else { ?>
+                        	<?php echo $inviteperson->getClan()->getFullName(); ?>
+                        	<input type="hidden" name="fclanid" id="fclanid" value="<?php echo $fclanid; ?>" />
+                       <?php } ?>
+		               </td>
+		               <td><label class="control-label fclanname"><?php echo $this->translate("person_father_clanname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($fatherid)){ ?>
+                       		<input name="fclanname" id="fclanname" type="text" class="span2 hastooltip" value="<?php echo $fclanname; ?>" title="<?php echo $this->translate("person_father_clanname_tooltip"); ?>" placeholder="e.g., Mugerwa" /><div id="fclanname_error"></div>
+                       <?php } else { ?>
+                        	<?php echo $fclanname; ?>
+                            <input type="hidden" name="fclanname" id="fclanname" value="<?php echo $fclanname; ?>" />
+                       <?php } ?> 
+                       </td>
+		           </tr>
+		           <tr>
+		           	   <td colspan="2"><label class="control-label fdateofbirth"><?php echo $this->translate("person_father_dateofbirth_label"); ?>:</label>
+                       <?php if(isEmptyString($fatherid)){ ?>
+						   <?php
+                                $daydp = new Zend_Form_Element_Select('fbirthday',
+                                                    array(
+                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), getMonthDays()),	
+                                                        'view' => new Zend_View(),
+                                                        'decorators' => array('ViewHelper'),
+                                                        'class' => array('birth'),
+                                                        'title' => 'Select Day'		
+                                                    )
+                                                );
+                                $daydp->setValue($fbirthday); 
+                                echo $daydp->render(); 
+                            ?>
+                            <?php
+                                $monthdp = new Zend_Form_Element_Select('fbirthmonth',
+                                                    array(
+                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
+                                                        'view' => new Zend_View(),
+                                                        'decorators' => array('ViewHelper'),
+                                                        'class' => array('birth'),
+                                                        'title' => 'Select Month'		
+                                                    )
+                                                );
+                                $monthdp->setValue($fbirthmonth); 
+                                echo $monthdp->render(); 
+                            ?>
+                            <input name="fbirthyear" id="fbirthyear" type="text" class="span1" maxlength="4" value="<?php echo $fbirthyear; ?>" title="xx" placeholder="e.g., 1960" />
+                            <input name="fdateofbirth" id="fdateofbirth" type="text" class="span2 hastooltip" value="<?php echo $fdateofbirth; ?>" title="<?php echo $this->translate("person_father_dateofbirth_tooltip"); ?>" /><div id="fdateofbirth_error"></div><div id="fbirthyear_error"></div>
+                           <?php } else { ?>
+                                <?php echo $inviteperson->getFamily()->getFather()->getExactDateOfBirth(); ?>
+                                <input type="hidden" name="fdateofbirth" id="fdateofbirth" value="<?php echo $fdateofbirth; ?>" />
+                                <input type="hidden" name="fbirthyear" id="fbirthyear" value="<?php echo $fbirthyear; ?>" />
+                                <input type="hidden" name="fbirthmonth" id="fbirthmonth" value="<?php echo $fbirthmonth; ?>" />
+                                <input type="hidden" name="fbirthday" id="fbirthday" value="<?php echo $fbirthday; ?>" />
+                           <?php } ?> 
+                        </td>
+		           </tr>
+		           <tr class="visible_if_unknown">
+		               <td colspan="2">
+		               	<label class="control-label flifestatus"><?php echo "Father's ".$this->translate("person_lifestatus_label"); ?>: </label>
+                        	<?php if(isEmptyString($fatherid)){ ?>
+		               		<?php
+								  $lifestatuslookup = new LookupType();
+								  $lifestatuslookup->setName("LIFE_STATUS");
+								  $statuses = $lifestatuslookup->getOptionValuesAndDescription();
+								  ksort($statuses);
+								  unset($statuses['3']);
+								  $lifestatusradio = new Zend_Form_Element_Radio('flifestatus',
+										  array(
+												  'multiOptions' => $statuses, 
+												  'view' => new Zend_View(),
+												  'disableLoadDefaultDecorators' => true,
+												  'separator' => '&nbsp;',
+												  'title' => $this->translate("person_father_lifestatus_tooltip"),
+												  'decorators' => array('ViewHelper',
+																	  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+																  )
+										  )
+								  );
+								  $lifestatusradio->setValue($flifestatus);
+								  echo $lifestatusradio->render();
+							  ?><div id="flifestatus_error"></div>
+                          <?php } else { ?>
+								<?php echo $inviteperson->getLifeStatusLabel(); ?>
+                                <input type="hidden" name="flifestatus" id="flifestatus" value="<?php echo $flifestatus; ?>" />
+                          <?php } ?> 
+                          </td>
+		           </tr>
+	           </tbody>
+	           <tbody id="mujjwa">
+	           		<tr>
+		               <td width="40%"><label class="control-label mfirstname"><?php echo $this->translate("person_mother_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($motherid)){ ?>
+		               		<input name="mfirstname" id="mfirstname" type="text" class="span2 hastooltip" value="<?php echo $mfirstname; ?>" title="<?php echo $this->translate("person_mother_firstname_tooltip"); ?>" /><div id="mfirstname_error"></div>
+                       <?php } else { ?>
+                       		<?php echo $mfirstname; ?>
+                            <input type="hidden" name="mfirstname" id="mfirstname" value="<?php echo $mfirstname; ?>" />
+                       <?php } ?>
+                       </td>
+		               <td><label class="control-label mlastname"><?php echo $this->translate("person_mother_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($motherid)){ ?>
+		               		<input name="mlastname" id="mlastname" type="text" class="span2 hastooltip" value="<?php echo $mlastname; ?>" title="<?php echo $this->translate("person_mother_lastname_tooltip"); ?>" /><div id="mlastname_error"></div>
+                       <?php } else { ?>
+                       		<?php echo $mlastname; ?>
+                            <input type="hidden" name="mlastname" id="mlastname" value="<?php echo $mlastname; ?>" />
+                       <?php } ?>
+                       </td>
+		           </tr>
+		           <tr>
+		               <td><label class="control-label mclanid"><?php echo $this->translate("person_mother_clanid_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                       <?php if(isEmptyString($motherid)){ ?>
+		           	   	<?php
+							  $clanlookup = new LookupType();
+							  $clanlookup->setName("ALL_CLANS");
+							  $clandropdown = new Zend_Form_Element_Select('mclanid',
+									  array(
+											  'multiOptions' => array_merge_maintain_keys(array('' => '<Select Mother\'s Clan>'), $clanlookup->getOptionValuesFromQuery()),
+											  'view' => new Zend_View(),
+											  'decorators' => array(array('ViewHelper')),
+											  'class' => array('clan','hastooltip'),
+									  		  'title' => $this->translate("person_mother_clanid_tooltip")
+									  )
+							  );
+							  
+							  $clandropdown->setValue($mclanid);
+							  echo $clandropdown->render();
+						  ?><div id="mclanid_error"></div>
+                       <?php } else { ?>
+                        	<?php echo $inviteperson->getClan()->getFullName(); ?>
+                        	<input type="hidden" name="mclanid" id="mclanid" value="<?php echo $mclanid; ?>" />
+                       <?php } ?>
+                          
+		               </td>
+		               <td><label class="control-label mclanname"><?php echo $this->translate("person_mother_clanname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?>
+		               </label>
+                       <?php if(isEmptyString($motherid)){ ?>
+                       		<input name="mclanname" id="mclanname" type="text" class="span2 hastooltip" value="<?php echo $mclanname; ?>" title="<?php echo $this->translate("person_mother_clanname_tooltip"); ?>" placeholder="e.g., Namugerwa" /><div id="mclanname_error"></div>
+                       <?php } else { ?>
+                        	<?php echo $mclanname; ?>
+                        	<input type="hidden" name="mclanname" id="mclanname" value="<?php echo $mclanname; ?>" />
+                       <?php } ?>
+                       </td>
+		           </tr>
+		           <tr>
+		           	   <td colspan="2"><label class="control-label mdateofbirth"><?php echo $this->translate("person_mother_dateofbirth_label"); ?>:</label>
+                       <?php if(isEmptyString($motherid)){ ?> 
+						   <?php
+                                $daydp = new Zend_Form_Element_Select('mbirthday',
+                                                    array(
+                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), getMonthDays()),	
+                                                        'view' => new Zend_View(),
+                                                        'decorators' => array('ViewHelper'),
+                                                        'class' => array('birth'),
+                                                        'title' => 'Select Day'		
+                                                    )
+                                                );
+                                $daydp->setValue($mbirthday); 
+                                echo $daydp->render(); 
+                            ?>
+                            <?php
+                                $monthdp = new Zend_Form_Element_Select('mbirthmonth',
+                                                    array(
+                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
+                                                        'view' => new Zend_View(),
+                                                        'decorators' => array('ViewHelper'),
+                                                        'class' => array('birth'),
+                                                        'title' => 'Select Month'		
+                                                    )
+                                                );
+                                $monthdp->setValue($mbirthmonth); 
+                                echo $monthdp->render(); 
+                            ?>
+                            <input name="mbirthyear" id="mbirthyear" type="text" class="span1" maxlength="4" value="<?php echo $mbirthyear; ?>" title="Enter Year of Birth" placeholder="e.g., 1960" />
+                            <input name="mdateofbirth" id="mdateofbirth" type="text" class="span2 hastooltip" value="<?php echo $mdateofbirth; ?>" title="<?php echo $this->translate("person_mmother_dateofbirth_tooltip"); ?>" /><div id="mdateofbirth_error"></div><div id="mbirthyear_error"></div>
+                           <?php } else { ?>
+                                <?php echo $inviteperson->getBirthDateFromEvent(); ?>
+                                <input type="hidden" name="mdateofbirth" id="mdateofbirth" value="<?php echo $mdateofbirth; ?>" />
+                                <input type="hidden" name="mbirthyear" id="mbirthyear" value="<?php echo $mbirthyear; ?>" />
+                                <input type="hidden" name="mbirthmonth" id="mbirthmonth" value="<?php echo $mbirthmonth; ?>" />
+                                <input type="hidden" name="mbirthday" id="mbirthday" value="<?php echo $mbirthday; ?>" />
+                           <?php } ?> 
+                        </td>
+		           </tr>
+		           <tr class="visible_if_unknown">
+		               <td colspan="2">
+		               	<label class="control-label mlifestatus"><?php echo "Mother's ".$this->translate("person_lifestatus_label"); ?>:</label>
+		               	<?php if(isEmptyString($motherid)){ ?> 
+							<?php
+			                  $lifestatuslookup = new LookupType();
+			                  $lifestatuslookup->setName("LIFE_STATUS");
+							  $statuses = $lifestatuslookup->getOptionValuesAndDescription();
+							  ksort($statuses);
+							  unset($statuses['3']);
+			                  $lifestatusradio = new Zend_Form_Element_Radio('mlifestatus',
+			                          array(
+			                                  'multiOptions' => $statuses, 
+			                                  'view' => new Zend_View(),
+			                                  'disableLoadDefaultDecorators' => true,
+			                                  'separator' => '&nbsp;',
+			                          		  'title' => $this->translate("person_mother_lifestatus_tooltip"),
+			                                  'decorators' => array('ViewHelper',
+			                                                      array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio','zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+			                                                  )
+			                          )
+			                  );
+			                  $lifestatusradio->setValue($mlifestatus);
+			                  echo $lifestatusradio->render();
+			              ?><div id="mlifestatus_error"></div>
+                          <?php } else { ?>
+								<?php echo $mlifestatus; ?>
+                                <input type="hidden" name="mlifestatus" id="mlifestatus" value="<?php echo $mlifestatus; ?>" />
+                          <?php } ?> 
+                          </td>
+		           </tr>
+	           </tbody>
+	    	</table>
+		</fieldset>
+		<button type="submit" class="btn btn-primary finish" id="complete"><i class="icon-arrow-right icon-white"></i> Complete</button>
+		<input type="hidden" name="usecustomsave" id="usecustomsave" value="true" />
+        <input type="hidden" name="personid" id="personid" value="<?php echo $id; ?>" />
+        <input type="hidden" name="fatherid" id="fatherid" value="<?php echo $fatherid; ?>" />
+        <input type="hidden" name="motherid" id="motherid" value="<?php echo $motherid; ?>" />
+        <input type="hidden" name="familyid" id="familyid" value="<?php echo $familyid; ?>" />
+        <input type="hidden" name="membershipplanid" id="membershipplanid" value="<?php echo $membershipplanid; ?>" />
+        <input type="hidden" name="birtheventid" id="birtheventid" value="<?php echo $birtheventid; ?>" />
+        <input type="hidden" name="fbirtheventid" id="fbirtheventid" value="<?php echo $fbirtheventid; ?>" />
+        <input type="hidden" name="mbirtheventid" id="mbirtheventid" value="<?php echo $mbirtheventid; ?>" />
+        <input type="hidden" name="addressid" id="addressid" value="<?php echo $addressid; ?>" />
+        
+	</form>
+</span>
+<span class="span5 pull-right" style="margin-left:10px; width:365px;">
+	<div class="well contentright">
+		<h3><span id="familyname">Build your</span> Family Tree</h3>
+		<div id="mini_tree">
+			<div id="mini_tree_father_box">
+				<span id="fatherName">My Father</span>
+			</div>
+			<div id="mini_tree_mother_box">
+				<span id="motherName">My Mother</span>
+			</div><div id="mini_tree_myself_box">
+				<span id="myName">Me</span></div>
+			<div id="mini_tree_text_sizer">
+				<span id="TextSizer">Me</span>
+			</div>
+		</div>
+	</div>
+</span>
+<script>
+	$(document).ready(function() {
+		// configure the date picker not to accept dates before today
+		var dateofbirthOpts = datepickerOpts;
+		var startfrom = '<?php echo date('Y') - 15; ?>';
+		dateofbirthOpts.yearRange = "-100:-15"; 
+		dateofbirthOpts.minDate = "-105Y";
+		datepickerOpts.maxDate = new Date("Dec 31, "+startfrom);	
+		$("#dateofbirth, #fdateofbirth, #mdateofbirth").datepicker(dateofbirthOpts);
+		
+		// form wizard
+		$('#signupform').stepy({
+			backLabel:	'Back',
+			block:		true,
+			errorImage:	false,
+			nextLabel:	'Continue',
+			titleClick:	true,
+			validate:	true,
+			next: function(index) {
+				if($("#signupform").validate().element("#dateofbirth") == false){
+					$("#dateofbirth").trigger('blur');
+				}
+			}
+		});
+		$(".button-back").html('').prepend('<i class="icon-arrow-left"></i> Back').addClass('btn btn-primary btn-large btn-gold');
+		$(".button-next").html('').prepend('<i class="icon-arrow-right"></i> Continue').addClass('btn btn-primary btn-large btn-gold'); 
+		$(".finish").html('').prepend('<i class="icon-ok"></i> Finish').addClass('btn btn-primary btn-large btn-gold');
+		$(".step legend").hide();
+		
+		// define the validation rules
+		$("#signupform").validate({		
+			rules: {
+				gender: "required",
+				firstname: "required",
+				lastname: "required",
+				clanname: "required",
+				ffirstname: "required",
+				flastname: "required",
+				fclanname: "required",
+				fclanid: "required",
+				mfirstname: "required",
+				mlastname: "required",
+				mclanname: "required",
+				mclanid: "required",
+				birthyear: {
+					validbirth: true
+				},
+				fbirthyear: {
+					required: false,
+					number:true,
+					minlength: '4',
+					maxlength: '4',
+					max:'<?php echo date('Y') - 12; ?>',
+					min: '<?php echo '1500'; ?>',
+					maxfatherdiff: true
+				},
+				mbirthyear: {
+					required: false,
+					number:true,
+					minlength: '4',
+					maxlength: '4',
+					max:'<?php echo date('Y') - 12; ?>',
+					min: '<?php echo '1500'; ?>',
+					maxmotherdiff: true
+				},
+				country: "required",
+				email: {
+					required: true, 
+					email: true
+				},
+				type: {
+					validatetype: true
+				},	
+				password: {
+					required: true,
+					maxlength: <?php echo $config->password->maxlength; ?>,
+					minlength: <?php echo $config->password->minlength; ?>
+				},			
+				confirmpassword: {
+					required: true,
+					equalTo: "#password"
+				},
+				agreedtoterms: "required",
+				code: {
+					required: true,
+					validatecode: true					
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {	
+				gender: "<?php echo $this->translate("person_gender_error"); ?>",
+				firstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("person_lastname_error"); ?>",
+				clanname: "<?php echo $this->translate("person_clanname_error"); ?>",
+				ffirstname: "<?php echo $this->translate("person_father_firstname_error"); ?>",
+				flastname: "<?php echo $this->translate("person_father_lastname_error"); ?>",
+				fclanname: "<?php echo $this->translate("person_father_clanname_error"); ?>",
+				fclanid: "<?php echo $this->translate("person_father_clanid_error"); ?>",
+				mfirstname: "<?php echo $this->translate("person_mother_firstname_error"); ?>",
+				mlastname: "<?php echo $this->translate("person_mother_lastname_error"); ?>",
+				mclanid: "<?php echo $this->translate("person_mother_clanid_error"); ?>",				
+				birthyear: {
+					validbirth: "Please select full Date of Birth"
+				},
+				fbirthyear: {
+					number:"Please enter valid Year of Birth",
+					max:"Father's current age should be greater than 12",
+					min: "Earliest year allowed is 1500",
+					minlength: "Year must have four digits",
+					maxlength: "Year must have four digits",
+					maxfatherdiff: "Father should be atleast 12years older"
+				},
+				mbirthyear: {
+					number:"Please enter valid Year of Birth",
+					max:"Mother's current age should be greater than 12",
+					min: "Earliest year allowed is 1500",
+					minlength: "Year must have four digits",
+					maxlength: "Year must have four digits",
+					maxmotherdiff: "Mother should be atleast 12years older"
+				},
+				country: "<?php echo $this->translate("person_country_error"); ?>",
+				email: {
+					"required": "<?php echo $this->translate("useraccount_email_error"); ?>", 
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				},
+				password: {
+					required: "<?php echo $this->translate("useraccount_password_error"); ?>",
+					maxlength: "<?php echo sprintf($this->translate("useraccount_password_error_maxlength"), $config->password->maxlength); ?>",
+					minlength: "<?php echo sprintf($this->translate("useraccount_password_error_minlength"), $config->password->minlength); ?>"					
+				},
+				confirmpassword: {
+					required: "<?php echo $this->translate("useraccount_confirmpassword_error"); ?>",
+					equalTo: "<?php echo $this->translate("useraccount_confirmpassword_error_equalto"); ?>"
+				},
+				agreedtoterms: "<?php echo $this->translate("useraccount_agreetoterms_error"); ?>",
+				code: {
+					required: "Enter the code you see in blue"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		$.validator.addMethod("validbirth", function(value, element, params) { 
+			var day = $("#birthday").val();
+			var month = $("#birthmonth").val();
+			var year = value;
+			if (!isEmptyString(day) && !isEmptyString(month) && !isEmptyString(year)) {
+				return true; 
+			}
+			return false;        
+		}, "Please select full Date of Birth");
+		
+		// add the validation for wholesale price to be less than retail price
+		$.validator.addMethod("validnumber", function(value, element, params) { 
+			if (IsValidAmount(value)) {
+				return true; 
+			}
+			return false;        
+		}, "Please enter a valid Phone Number");
+		
+		$.validator.addMethod("validatecode", function(value, element, params) {
+			//alert('code is '+value); //alert('valid is '+$("#validcode").val());
+			if ($("#code").val().toLowerCase() == $("#validcode").val().toLowerCase()) {
+				return true; 
+			}
+			return false;        
+		}, "Captcha Invalid! <br />Re-enter code or refresh for a new one");
+		
+		// add the validation for father being atleast 12years older
+		$.validator.addMethod("maxfatherdiff", function(value, element, params) { 
+			var age = $("#birthyear").val();
+			var agediff = age - value; 
+			if(!isEmptyString(age) && !isEmptyString(value) && (agediff < 12)){
+				return false;
+			}
+			return true;        
+		}, "Father should be atleast 12years older");
+		
+		// add the validation for mother being atleast 12years older
+		$.validator.addMethod("maxmotherdiff", function(value, element, params) { 
+			var age = $("#birthyear").val();
+			var agediff = age - value; 
+			if(!isEmptyString(age) && !isEmptyString(value) && (agediff < 12)){
+				return false;
+			}
+			return true;        
+		}, "Mother should be atleast 12years older");
+
+		// validate birthdate to be less than today
+		
+		// add the validation for wholesale price to be less than retail price
+		$.validator.addMethod("validatetype", function(value, element, params) {
+			// var type = $("#type").val();
+			var type = $('input:radio[name=type]:checked').val();
+			if (type == 1) {
+				return true; 
+			}
+			return false;        
+		}, "Only Baganda Allowed at this time");
+		
+		// default values of clanname from lastname
+		$("#lastname").bind("keyup", function(event) {
+			if(isEmptyString($(this).val())){
+				$("#familyname").html('Build your');
+			} else {
+				$("#familyname").html($("#lastname").val()+"'s ");
+			}
+		});
+		
+		// 
+		$("#firstname, #lastname, #clanname").bind("keyup", function(event) {
+			var theclan = '';
+			if(!isEmptyString($("#clanname").val()) && $("#clanname").val() != $("#lastname").val()){
+				theclan = '('+$("#clanname").val()+')';
+			}
+			$("#myName").html($("#firstname").val()+' '+$("#lastname").val()+' '+theclan);
+		});
+		$("#ffirstname, #flastname, #fclanname").bind("keyup", function(event) {
+			var fclan = '';
+			if(!isEmptyString($("#fclanname").val()) && $("#fclanname").val() != $("#flastname").val()){
+				fclan = '('+$("#fclanname").val()+')';
+			}
+			$("#fatherName").html($("#ffirstname").val()+' '+$("#flastname").val()+' '+fclan);
+		});
+		$("#mfirstname, #mlastname, #mclanname").bind("keyup", function(event) {
+			var mclan = '';
+			if(!isEmptyString($("#mclanname").val()) && $("#mclanname").val() != $("#mlastname").val()){
+				mclan = '('+$("#mclanname").val()+')';
+			}
+			$("#motherName").html($("#mfirstname").val()+' '+$("#mlastname").val()+' '+mclan);
+		});
+
+		// trigger keyup on all name fields
+		$("#firstname, #lastname, #clanname, #ffirstname, #flastname, #fclanname, #mfirstname, #mlastname, #mclanname").trigger('keyup');
+		
+		$("#gender-2").click(function(){
+			$("#mini_tree").css({'background': 'url("<?php echo $this->baseUrl('images/signuptree_female.png'); ?>") no-repeat'});	
+		});
+		$("#gender-1").click(function(){
+			$("#mini_tree").css({'background': 'url("<?php echo $this->baseUrl('images/signuptree_male.png'); ?>") no-repeat'});	
+		});
+		<?php if($inviting){ ?>
+			<?php if($inviteperson->isFemale()){ ?>
+				$("#mini_tree").css({'background': 'url("<?php echo $this->baseUrl('images/signuptree_female.png'); ?>") no-repeat'});	
+			<?php } ?>
+		<?php } ?>
+		
+		// on type change
+		$("#type-1").click(function() {
+			multipleEnableContainerByID("muganda, mugandaclanname");
+			disableContainerByID("mujjwa");
+			disableContainerByID("notmuganda");
+			$("#flifestatus-1").click();
+		});
+		$("#type-2").click(function() {
+			enableContainerByID("mujjwa");
+			enableContainerByID("notmuganda");
+			multipleDisableContainerByID("muganda, mugandaclanname");
+			$("#mlifestatus-1").click();
+		});
+		<?php if($inviting){ ?>
+			<?php if($inviteperson->isMuganda()){ ?>
+				multipleEnableContainerByID("muganda, mugandaclanname");
+				disableContainerByID("mujjwa");
+				$("#flifestatus-1").click();
+			<?php } ?>
+			<?php if($inviteperson->isMujjwa()){ ?>
+				enableContainerByID("mujjwa");
+				multipleDisableContainerByID("muganda, mugandaclanname");
+				$("#mlifestatus-1").click();
+			<?php } ?>
+		<?php } ?>
+		
+		// default values for form elements
+		<?php if (!$sessionhaserror) {?>
+			$("#type-1, #flifestatus-1, #mlifestatus-1, #membershipplanid-1").click();
+		<?php } ?>
+		<?php if($type == 1){ ?>
+			$("#type-1").click();
+			var fstatus = '<?php echo $flifestatus; ?>';
+			$("#flifestatus-"+fstatus).click();
+		<?php } ?>
+		<?php if($type == 2){ ?>
+			$("#type-2").click();
+			var mstatus = '<?php echo $mlifestatus; ?>';
+			$("#flifestatus-"+mstatus).click();
+		<?php } ?>
+		
+		$("label:has(input#type-1)").attr('title', '<?php echo $this->translate("tipperson_type_muganda_tooltip"); ?>').css({'display':'inline-block'});
+		$("label:has(input#type-2)").attr('title', '<?php echo $this->translate("tipperson_type_mujjwa_tooltip"); ?>').css({'display':'inline-block'});
+		$('fieldset').removeAttr('title');
+		
+		$(".hastooltip").change();
+		
+		$("#fdateofbirth").change(function() {
+			var thedate = $(this).val();
+			if(!isEmptyString(thedate)){
+				var d = new Date(thedate);
+				$("#fbirthyear").val(d.getFullYear());
+				$("#fbirthmonth").val(d.getMonth()+1);
+				$("#fbirthday").val(d.getDate());
+			}
+		});
+		$("#mdateofbirth").change(function() {
+			var thedate = $(this).val();
+			if(!isEmptyString(thedate)){
+				var d = new Date(thedate);
+				$("#mbirthyear").val(d.getFullYear());
+				$("#mbirthmonth").val(d.getMonth()+1);
+				$("#mbirthday").val(d.getDate());
+			}
+		});
+		
+		$("#dateofbirth, #fdateofdeath, #mdateofbirth").change();
+		<?php if(!isEmptyString($fatherid) || !isEmptyString($motherid)){ ?>
+			$("#signupform-step-1 img.ui-datepicker-trigger").hide();
+		<?php } ?>
+		
+		// prevent copy and paste in password fields
+		$('input.password').bind('copy paste', function (e) {
+	      // e.preventDefault();
+	    });
+		
+		<?php if(!isEmptyString($personid)){ ?>
+			$("#password").focus();
+		<?php } ?>
+		
+		// remove login header at the top so that password fields do not clatch
+		$("#loginheader").remove();
+	}); 
+</script>
+<style>
+.contentright {
+	min-height: 545px;
+}
+.radio input[type="radio"], .checkbox input[type="checkbox"] {
+	margin-top:1px;
+}
+.form-horizontal .control-label.gender {
+	width:60px;
+}
+#agreedtoterms {
+	margin-top:-2px;
+}
+tr#terms td {
+	font-size: 13px;
+	font-weight:bold;
+}
+img.ui-datepicker-trigger {
+	margin-left:-24px;
+}
+.form-horizontal td.type {
+	padding-top:15px;
+}
+.form-horizontal td.type div.radio.inline {
+	padding-left:0;
+	margin-left:5px;
+	width:95%;
+}
+.form-horizontal td.type div.zendradio .radio {
+	padding-left:15px;
+	margin-left:0;
+	width:auto;
+	display:block;
+}
+.form-horizontal td.type div.radio.inline label {
+	width:80px;
+}
+#fbirthyear, #mbirthyear {
+	font-size:11px;
+}
+select.clan {
+	width:190px;
+}
+input.pass {
+	width:153px;
+}
+</style>
+<?php
+	$session->setVar('firstname', '');
+	$session->setVar('lastname', '');
+	$session->setVar('email', '');
+	$session->setVar('password', '');
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

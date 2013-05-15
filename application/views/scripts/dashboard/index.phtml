@@ -1,0 +1,507 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+		
+	$title = "Home | ".$this->translate("appname");
+	$this->headTitle($title); 
+	
+	$person = new Person();
+	$person->populate($personid); 
+	
+	// debugMessage($person->getRelativesOrderByDOB());
+	$id = $person->getID();
+	$name = $person->getName();
+	$fathertitle = "Add My Father";
+	$mothertitle = "Add My Mother";
+	
+	$total = $person->getCurrentPercentageCompletion();
+	$hasfather = false;
+	$completeclass = '';
+	if($person->hasFather()){
+		$hasfather = true;
+	}
+	$hasmother = false;
+	if($person->hasMother()){
+		$hasmother = true;
+	}
+	$haspicture = false;
+	if(!isEmptyString($person->getPhoto())){
+		$haspicture = true;
+	}
+	$clan = $person->getClan();
+	
+	# profile for one viewing
+	if($personid == $person->getID()){
+		$isme = true;
+		$isfamily = true;
+		$isrelative = true;
+	}
+	if($personid != $person->getID()){
+		if(isEmptyString($personid)){
+			$ispublic = true;
+		}
+		$issubscriber = true;
+		// determine if a family member
+		if(in_array($loggedinperson->getID(), $familyids)){
+			$isfamily = true;
+			// debugMessage('is family');
+		}
+		// determine if a relative
+		if(in_array($loggedinperson->getID(), $relativeids)){
+			$isrelative = true;
+			//debugMessage('is relative');
+		} 
+	}
+	
+	# determine if profile was added by person
+	$addedbyme = false;
+	if($person->getAddedByID() == $personid || $isme || $person->getCreatedBy() == $userid){
+		$addedbyme = true;
+		$isfamily = true;
+		$isrelative = true;
+	}
+	$allowedit = false;
+	if($person->getOwnerID() == $userid){
+		$allowedit = true;
+	}
+	
+	$pagetitle = $person->getName();
+	if(isAdmin()){
+		$pagetitle = "Admin Dashboard";
+	}
+	
+?>
+<script>
+$(document).ready(function(){
+	$("#completefather.done a, #completemother.done a").removeAttr('href');
+	// remove box style if person has no profile picture
+	<?php if($person->hasProfileImage()){ ?>
+		$("#profileinfo").addClass('new_pic');
+	<?php } ?>
+});
+</script>
+<style>
+#contentwrapper {
+	border:none;
+	box-shadow:none;
+}
+#contentcolumn {
+	padding:2px;
+}
+#memorial .thumbinfo {
+	float:left;
+	margin-right:5px;
+	position:relative;
+	display:inline-block;
+	width:100px;
+	height:100px;
+}
+#memorial .thumbinfo img {
+	width:100px;
+	height:100px;
+}
+.widget#whatnext  { 
+	background-color:#f1f5f9;
+	padding-left:10px;
+	padding-top:10px;
+}
+h3.well-legend {
+	color:#1e1e1e;
+}
+.table#linksprofile {
+	margin:0;
+}
+.table#linksprofile tr td {
+	padding:5px;
+	padding-left:10px;
+	text-align:left;
+	font-size:12px;
+}
+
+.table#statimages {
+	margin:0;
+}
+.table#statimages tr td {
+	padding:0;
+	padding-right:5px;
+	text-align:left;
+}
+.table#statimages tr td label {
+	font-size:10px;
+}
+.table#statimages tr td div.picbg {
+	height:81px; 
+	width:100%;
+	background-color:#f1f3f8;
+	float:left;
+}
+table#profsummary tr td {
+	padding-top:4px;
+	padding-bottom:4px;
+}
+.headedcontent {
+	padding:10px; 
+	padding-left:15px;
+	height:auto;
+}
+.subtitle {
+	font-weight:bold; 
+	font-size:12px; 
+	margin-bottom:5px; 
+	color:#0C0C0C; 
+	display:block;
+}
+ul.peoplehome {
+	list-style:none; 
+	margin:5px; 
+	padding:0;
+}
+ul.peoplehome li {
+	padding:0; 
+	margin:0; 
+	list-style:none; 
+	float:left; 
+	width:87px;
+}
+.seeall {
+	position:absolute; 
+	right:20px; 
+	top:10px;
+}
+.widget.widgetlight.headed {				
+	margin-bottom:5px; 
+	padding-left:0; 
+	padding-right:0;
+}
+.widget.widgetlight.headed h3.well-legend {
+	color:#161616; 
+	padding: 5px 0 5px 15px; 
+	background-color: #F1F5F9; 
+	width: 95%; 
+	margin-left: 1px; 
+	margin-top: -7px;
+	display:block;
+}
+.widget.widgetlight.headed label.sellall {
+	position:absolute;
+	right:20px;
+	top:10px;
+}
+</style>
+<div class="row margin0">
+    <div id="leftcontent" class="margin0">
+    	<h1><a href="<?php echo $this->baseUrl('person/view/id/'.encode($person->getID())); ?>"><?php echo $pagetitle; ?></a></h1>
+        <?php if(isSubscriber()){ ?>
+        <div id="whatnext" class="well row widget margin0">
+        <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+        <?php } ?>
+        <?php if(!isEmptyString($session->getVar("demo_success")) ){ ?>
+            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("demo_success"); ?></div>
+        <?php } ?>
+        	<table id="summarycontainer" style="width:100%; margin:0;">
+                <tr>
+                    <td style="width:20%; vertical-align:top; padding-top:5px;">
+                        <div id="profileinfo">
+                            <?php if(!$person->hasProfileImage()){ ?>
+                                <a href="<?php echo $this->baseUrl('person/picture/id/'.encode($id)); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $person->getMediumPicturePath(); ?>" /></a>
+                            <?php } else { ?>
+                               <a href="<?php echo $this->baseUrl('person/view/id/'.encode($id)); ?>" title="View Full Profile"><img id="profileimage" src="<?php echo $person->getMediumPicturePath(); ?>" /></a>
+                            <?php } ?>
+                        </div>
+                    </td>
+                    <td id="summarydetails" style="width:50%; vertical-align:top; padding:10px 0px 0px 15px;">
+                        <table class="noborder margin0" id="profsummary" style="width:100%;">
+                            <tr>
+                                <td width="40%"><label class="control-label pull-left">Gender:</label></td>
+                                <td><?php echo $person->getGenderLabel(); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label pull-left">Birth Date, Place:</label></td>
+                                <td><?php echo $person->getBirthDateFromEvent(); ?>
+                                <?php echo isEmptyString($person->getBirthPlaceFromEvent()) ? '' : " , &nbsp;".$person->getBirthPlaceFromEvent(); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label type pull-left"><?php echo $this->translate("person_lifestatus_label"); ?>:</label></td>
+                                <td><?php echo $person->getLifeStatusLabel(); ?></td>
+                            </tr>
+                                <?php if($person->isDead()) { ?>
+                                    <tr>
+                                        <td><label class="control-label pull-left">Death Date, Place:</label></td>
+                                        <td><?php echo $person->getDeathDateFromEvent(); ?>
+                                        <?php echo isEmptyString($person->getDeathPlaceFromEvent()) ? '--' : " , &nbsp;".$person->getDeathPlaceFromEvent(); ?>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            <tr>
+                                <td><label class="control-label pull-left">Immediate Family:</label></td>
+                                <td><a href="<?php echo $this->baseUrl('family/view/id/'.encode($person->getFamilyID())); ?>">Show</a></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label pull-left">Clan:</label></td>
+                                <td>
+                                	 <?php if($person->isMuganda()){ ?>
+                                		<a href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>" title="Details of <?php echo $clan->getFullName(); ?>"><?php echo $person->getClan()->getFullName(); ?></a>
+                                     <?php } else { ?>
+                                     	--
+                                     <?php } ?>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>
+                    	<ul class="nav nav-tabs nav-stacked" style="width:180px;">
+                                <li><a href="javascript: void(0)" class="addpreview" title="Add Relative using <?php echo $id == $personid ? "Myself" : $firstname; ?> as the Focus Person" rel="<?php echo $id == $personid ? "Add My Relative" : "Add Relative of ".$name; ?>" id="add_<?php echo $id; ?>"><i class="icon-plus"></i> Add Relative</a>
+                                <span class="hide list_<?php echo $id; ?> add_<?php echo $id; ?>"><?php echo $id; ?></span>
+                                <label class="hide list_<?php echo $id; ?>"><?php echo $person->getFamilyID(); ?></label>
+                                </li>
+                                <li><a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil"></i> Update Profile</a></li>
+                                <li><a href="<?php echo $this->baseUrl('person/picture/id/'.encode($id)); ?>"><i class="icon-upload"></i> Upload Photo</a></li>
+                            	<li><a href="<?php echo $this->baseUrl('person/list'); ?>" id="view"><i class="icon-list"></i> Relatives</a></li>
+                        </ul>
+                    </td>                    
+                </tr>
+            </table>
+        </div>
+        <div class="row margin0" style="margin-bottom:5px; height:110px; border-top:1px solid #dddddd; border-left:1px solid #f4f4f4; border-right:1px solid #f4f4f4; border-bottom:1px solid #F1F5F9; margin-top:-10px; padding-top:2px;">
+            <span style="float:left; width:125px; margin:0 10px 0 0;">
+            	
+            </span>
+            <span style="float:right; width:510px">
+            	<table class="table noborder margin0" id="statimages">
+                	<tr>
+                    	<td style="width:125px;">
+                        	<label style="text-align:left; width:auto; padding:0; margin:0;"><b>Kabaka:</b> 35</label>
+                            <div class="picbg">
+                            	<a href="<?php echo $this->baseUrl('kabaka'); ?>" title="Kabaka Institution" style="text-align:center;"><img style="width:99%; height:80px;" id="profileimage" src="<?php echo $this->baseUrl('images/kabakathumb.jpg'); ?>" alt="Kabaka" /></a>
+                            </div>
+                        </td>
+                        <td style="width:125px;">
+                        	<label style="text-align:left; width:auto; padding:0; margin:0;"><b>Relatives:</b> <?php echo $person->getRelativeCount()-1; ?></label>
+                            <div class="picbg">
+                            	<ul style="list-style:none; margin:0; padding:0;">
+                                	<?php
+										$relatives = $person->getFeaturedProfileRelatives(6);
+										foreach($relatives as $relative){
+											$aperson = $relative;
+									?>
+                                		<li style="padding:0; margin:0; list-style:none; float:left; width:40px;"><a href="<?php echo $this->baseUrl("person/view/id/".encode($aperson->getID())); ?>" title="<?php echo $aperson->getName(); ?>"><img style="width:40px; height:40px;" id="profileimage" src="<?php echo $aperson->getMediumPicturePath(); ?>" /></a></li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                        </td>
+                        <td style="width:125px;">
+                        	<label style="text-align:left; width:auto; padding:0; margin:0;"><b>Immediate Family:</b> <?php echo count($person->getImmediateFamilyMembers()); ?></label>
+                            <div class="picbg">
+                            	<ul style="list-style:none; margin:0; padding:0;">
+                                	<?php
+										$family = $person->getRandomImmediateFamilyMembers(6);
+										foreach($family as $theperson){
+									?>
+                                		<li style="padding:0; margin:0; list-style:none; float:left; width:40px;"><a href="<?php echo $this->baseUrl("person/view/id/".encode($theperson->getID())); ?>" title="<?php echo $theperson->getName(); ?>"><img style="width:40px; height:40px;" id="profileimage" src="<?php echo $theperson->getMediumPicturePath(); ?>" /></a></li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                        </td>
+                        <td style="width:125px;">
+                        	<label style="text-align:left; width:auto; padding:0; margin:0;"><b>Abe <?php echo $person->getClan()->getName(); ?>:</b> <?php echo $person->getClanRelativeCount(); ?></label>
+                        	<div class="picbg">
+                            	<ul style="list-style:none; margin:0; padding:0;">
+                                	<?php
+										$relatives = $person->getFeaturedClanRelatives(6);
+										foreach($relatives as $relative){
+											$aperson = $relative;
+									?>
+                                		<li style="padding:0; margin:0; list-style:none; float:left; width:40px;"><a href="<?php echo $this->baseUrl("person/view/id/".encode($aperson->getID())); ?>" title="<?php echo $aperson->getName(); ?>"><img style="width:40px; height:40px;" id="profileimage" src="<?php echo $aperson->getMediumPicturePath(); ?>" /></a></li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </span>
+        </div>
+        <div class="row margin0" style="margin-bottom:10px;">
+            <span style="float:left; width:49%; margin:0 5px 0 0;">
+                <div class="well margin0 widget widgetlight headed" style="height:auto; min-height:480px;">
+                    <h3 class="well-legend">Luganda Proverb of the Week</h3> 	
+                    <div class="headedcontent">
+                    	<?php 
+							$thisweekmonday = ''; $sundaythisweek = '';
+							if (date('w') == 1) {
+								$thisweekmonday = date('Y-m-d', strtotime("now"));
+							} else {
+								$thisweekmonday = date('Y-m-d', strtotime("previous monday"));
+							}
+							$this_sunday = date("Y-m-d", strtotime(date("Y-m-d", strtotime($thisweekmonday)) . " +6 days"));
+							// debugMessage($this_sunday);
+							$proverb = new Proverb(); // $weekproverb = new Proverb();
+                            $weekproverb = $proverb->getProverbForWeek($thisweekmonday);
+							// debugMessage($proverbs->toArray());
+						?>
+                        <pre style="font-size:12px; padding:8px; margin-bottom:15px; position:relative; font-family:'Helvetica Neue','Helvetica','Arial','sans-serif';"><?php echo date('M d', strtotime($thisweekmonday))." - ".date('M d', strtotime($this_sunday)); ?></pre>
+                        <?php if(!$weekproverb){ ?>
+                       		<div class="alert alert-info" style="margin:15px;">No Proverb uploaded for this Week</div>
+                        <?php } else { ?>                        
+                            <label class="subtitle italisize">Olugero</label>                        	
+                            <div class="proverbleft">                            	
+                                <?php echo $weekproverb->getLugPhrase(); ?>
+                            </div>
+                            <label class="subtitle italisize">Amakulu</label>                        	
+                            <div class="proverbleft">                            	
+                                <?php echo $weekproverb->getLugMeaning(); ?>
+                            </div>
+                            <label class="subtitle italisize">Proverb (English)</label>      
+                            <div class="proverbleft">    
+                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                            </div>
+                            <label class="subtitle italisize">Moral</label>      
+                            <div class="proverbleft">    
+                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                            </div>
+                        <?php } ?>
+                        <label class="pull-right"><a href="<?php echo $this->baseUrl('proverb'); ?>" title="See more proverbs">more proverbs</a></label>	
+                     </div>  
+                </div>
+                <div class="well margin0 widget widgetlight headed" style="min-height:170px; margin-bottom:5px;">
+                    <h3 class="well-legend">Upcoming Birthdays</h3> 					
+                    <div class="headedcontent">
+                    	<?php
+							$cur_month = date('m');
+							$cur_month = str_pad($cur_month, 2, "0", STR_PAD_LEFT);
+							
+							$cur_month_next = date('m')+1;
+							$cur_month_next = str_pad($cur_month_next, 2, "0", STR_PAD_LEFT);;
+							
+							$months = getAllMonthsAsNumbers();
+							$upcomingdata_current = $person->getUpcomingBirthdays($cur_month);
+							$count_c = count($upcomingdata_current);
+							
+							$upcomingdata_nxt = $person->getUpcomingBirthdays($cur_month_next);
+							$count_n = count($upcomingdata_nxt);
+							
+							
+						?>
+                        <label class="subtitle"><?php echo $months[$cur_month]; ?></label>                        	
+                        <div class="proverbleft">
+                        	<?php if($count_c == 0) { ?>
+                            	None<br />
+                            <?php } else { ?>
+                            	<?php 
+									foreach($upcomingdata_current as $key => $value){ 
+										$theperson = new Person();
+										$theperson->populate($value['id']);
+								?>
+                                	<a href="<?php echo $this->baseUrl("person/view/id/".encode($theperson->getID())); ?>"><?php echo $theperson->getName(); ?></a> - <?php echo date('M j', strtotime($theperson->getPersonBirth())); ?>
+                                    <?php if(date('Y-m-d') == $value['currentbirth']){ ?>
+                                    	&nbsp;(Today)
+                                    <?php } ?>
+                                    <br />
+                                <?php } ?>
+                            <?php } ?>                            	
+                        </div>
+                        <label class="subtitle"><?php echo $months[$cur_month_next]; ?></label>                   	
+                        <div class="proverbleft">
+                        	<?php if($count_n == 0) { ?>
+                            	None<br />
+                            <?php } else { ?>
+                            	<?php 
+									foreach($upcomingdata_nxt as $key => $value){ 
+										$theperson = new Person();
+										$theperson->populate($value['id']);
+								?>
+                                	<a href="<?php echo $this->baseUrl("person/view/id/".encode($theperson->getID())); ?>"><?php echo $theperson->getName(); ?></a> - <?php echo date('M j', strtotime($theperson->getPersonBirth())); ?><br />
+                                <?php } ?>
+                            <?php } ?>                            	
+                        </div>
+                     </div>  
+                </div>
+            </span>
+            <span style="float:right; width:50%; margin:0;">
+            	<div class="well margin0 widget widgetlight headed" style="min-height:225px;">
+                    <h3 class="well-legend">Relatives (<?php echo ($person->getRelativeCount())-1; ?>)</h3> 					
+                    <label class="seeall"><a href="<?php echo $this->baseUrl('person/list/range/2'); ?>">see all</a></label>
+                    <ul class="peoplehome">
+                        <?php
+							$relatives = $person->getFeaturedProfileRelatives(8);
+                        	foreach($relatives as $relative){
+                            	$aperson = $relative;
+                        ?>
+                            <li><a href="<?php echo $this->baseUrl("person/view/id/".encode($aperson->getID())); ?>" title="<?php echo $aperson->getName(); ?>"><img style="width:87px; height:87px;" id="profileimage" src="<?php echo $aperson->getMediumPicturePath(); ?>" /></a></li>
+                        <?php } ?>
+                    </ul>    
+                </div>
+                <div class="well margin0 widget widgetlight headed" style="height:140px;">
+                    <h3 class="well-legend">In Memorial With Love</h3>		
+                    <label class="seeall"><a href="<?php echo $this->baseUrl('person/list/range/2/lifestatus/2'); ?>">see all</a></label>
+                    <div>
+                        	<?php
+								$relatives = $person->getFeaturedDeceased();
+								$late_count = $relatives->count();
+							?>
+                            <?php if($late_count == 0){ ?>
+                            	<div class="alert alert-info" style="margin:15px;">No deceased relatives</div>
+                            <?php } else { ?>
+                               <ul class="peoplehome"> 
+                               <?php
+                                    foreach($relatives as $relative){
+                                        $aperson = $relative;
+                                ?>
+                                    <li><a href="<?php echo $this->baseUrl("person/view/id/".encode($aperson->getID())); ?>" title="<?php echo $aperson->getName(); ?>"><img style="width:87px; height:87px;" id="profileimage" src="<?php echo $aperson->getMediumPicturePath(); ?>" /></a></li>
+                               <?php } ?>
+                               </ul>
+                           <?php } ?>
+                    </div>
+                </div>
+            </span>
+        </div>
+        
+        <?php } ?>
+        <?php if(isAdmin()){ ?>        
+            <div class="row margin0" style="margin-bottom:10px;">
+                <span style="float:left; width:49%; margin:0 5px 0 0;">
+                    <div class="well margin0 widget widgetlight" style="height:200px;">
+                    	<h3 class="well-legend">Quick Actions</h3> 	
+                                          	
+                        <div class="proverbleft" style="margin-top:15px; margin-left:0; height:auto;">                            	
+                            <a href="<?php echo $this->baseUrl('clan/list'); ?>" class="btn btn-primary btn-gold btn-large">Manage Clans</a>                     
+                        </div>
+                        	
+                    </div>
+                </span>
+                <span style="float:right; width:50%; margin:0;">
+                    <div class="well margin0 widget widgetlight" style="height:200px;">
+                        <h3 class="well-legend">TBD</h3>
+                    </div>
+                </span>
+            </div>
+            <div class="row margin0" style="margin-bottom:10px;">
+                <span style="float:left; width:49%; margin:0 5px 0 0;">
+                    <div class="well margin0 widget widgetlight" style="height:200px;">
+                    	<h3 class="well-legend">TBD</h3> 	
+                                          	
+                       
+                    </div>
+                </span>
+                <span style="float:right; width:50%; margin:0;">
+                    <div class="well margin0 widget widgetlight" style="height:200px;">
+                        <h3 class="well-legend">TBD</h3>
+                    </div>
+                </span>
+            </div>
+        <?php } ?>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>    
+<?php if(isSubscriber()){ ?>
+<?php require APPLICATION_PATH."/views/scripts/person/addwidget.phtml"; ?>
+<?php } ?>
+<label class="hide" id="targetposition">leftTop</label>
+<label class="hide" id="tipposition">rightTop</label>
+<span id="waitcontent" class="hide"><a id="loading"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a></span>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<style>
+
+</style>

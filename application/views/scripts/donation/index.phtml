@@ -1,0 +1,305 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Donate to ".$this->translate("appname");
+	$this->headTitle($this->translate("appname")." | Donate"); 
+	$donation =  new Donation();
+	$posturl = $this->baseUrl("donation/create"); 
+	// any errors occured in processing
+	if ($sessionhaserror) {
+		$formvalues = $session->getVar(FORM_VALUES);
+		$donation->processPost($formvalues);
+	}
+?>
+<style>
+.btn-large.tens {
+	padding: 5px 32px;
+}
+.btn-large.hundreds {
+	padding: 5px 25px;
+}
+.thousands.btn-large {
+	/*padding: 11px 34px;*/
+	padding: 4px 15px;
+}
+#radiobuttons {
+	width: 375px;
+}
+#radiobuttons li {
+	width: 100px;
+	margin-right: 25px;
+	margin-bottom: 20px;
+}
+#radiobuttons li .btn {
+	font-size: 24px;
+	font-weight:bolder;
+	margin-left: -9px;
+}
+#amount-other {
+	width: 220px;
+	height: 31px;
+	margin-left: -9px;
+}
+input.hidden {
+	display: none;
+}
+li#donationamount_error,li#amount_other_error {
+	width: 355px;
+	margin-left: -8px;
+}
+#addressline1 {
+	width: 447px;
+}
+#radiobuttons li.amountdisplay {
+	width: 290px;
+	font-size: 18px;
+	margin-bottom: 0;
+	float:left;
+}
+#donationform-titles{
+	margin-top:12px;
+}
+</style>
+<div class="row marginleft0">
+  <div class="span8 pull-left marginleft0 public_leftcolumn">
+    <div class="content">
+      <h1><?php echo $title; ?></h1>
+      <p>The mission of GandaAncestry is to provide an online ecosystem where people with Baganda ancestry interact with Baganda cultural institutions, each other, and various resources to enrich their life experiences.  To achieve our mission, we strive to make basic GandaAncesty services available to every person with Baganda ancestry, which could become prohibitively expensive.</p>
+
+<p>And that is where a generous person like you comes in. When you donate to GandaAncestry, you make it possible for any young Muganda with access to a web cafe, whether in Masaka, Mukono or Luwero, to enjoy  GandaAncestry services at no charge. </p>
+        <form class="form-horizontal well" id="donationform" action="<?php echo $posturl; ?>" method="post">
+        <fieldset title="Amount" id="amount">
+          <legend>Step 1</legend>
+          <table class="table">
+            <?php if($sessionhaserror) { ?>
+            <tr>
+              <td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+            </tr>
+            <?php } ?>
+            <tr>
+              <td><ul class="unstyled" id="radiobuttons">
+                  <li class="first">
+                    <button class="btn btn-large btn-primary amount tens" id="15" value="15" type="button">$15</button>
+                  </li>
+                  <li>
+                    <button class="btn btn-large btn-primary amount tens" id="20" value="20" type="button">$20</button>
+                  </li>
+                  <li>
+                    <button class="btn btn-large btn-primary amount tens" id="30" value="30" type="button">$30</button>
+                  </li>
+                  <li>
+                    <button class="btn btn-large btn-primary amount tens" id="50" value="50" type="button">$50</button>
+                  </li>
+                  <li>
+                    <button class="btn btn-large btn-primary hundreds amount" id="100" value="100" type="button">$100</button>
+                  </li>
+                  <li>
+                    <button class="btn btn-large btn-primary hundreds amount" id="200" value="200" type="button">$200</button>
+                  </li>
+                  <li>
+                    <button class="btn btn-large btn-primary hundreds amount" id="500" value="500" type="button">$500</button>
+                  </li>
+                  <li class="last">
+                    <input type="text" class="otheramount" name="amount_other" id="amount-other" placeholder="Other amount">
+                  </li>
+                  <li id="donationamount_error"></li>
+                  <li id="amount_other_error"></li>
+                  <li class="amountdisplay hidden"><b>You have selected to donate:&nbsp; </b><span id="donationamountdsplay"></span></li>
+                  
+                </ul>
+                <input type="text" class="hidden" name="donationamount" id="donationamount" value=""></td>
+            </tr>
+          </table>
+        </fieldset>
+        <fieldset title="Personal Information" id="name">
+          <legend>Step 2</legend>
+          <table class="table">
+            <tr>
+                <td colspan="2"><span class="requiredmark"><?php echo $this->translate("global_required_field_info"); ?></span></td>
+            </tr>
+            <tr>
+              <td width="30%"><label class="control-label firstname"><?php echo $this->translate("person_firstname_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label>
+                <input name="firstname" id="firstname" type="text" value="<?php echo $donation->getFirstName(); ?>"/>
+                <div id="firstname_error"></div></td>
+              <td><label class="control-label lastname"><?php echo $this->translate("person_lastname_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label>
+                <input name="lastname" id="lastname" type="text"  value="<?php echo $donation->getLastName(); ?>" />
+                <div id="lastname_error"></div></td>
+            </tr>
+            <tr>
+              <td colspan="2"><label class="control-label address"><?php echo $this->translate("person_addressline1_label"); ?>:</label>
+                <input name="addressline1" id="addressline1" type="text" value="<?php echo $donation->getAddressLine1(); ?>"/>
+                <div id="addressline1_error"></div></td>
+            </tr>
+            <tr>
+              <td><label class="control-label city"><?php echo $this->translate("person_city_label"); ?>:</label>
+                <input name="city" id="city" type="text" value="<?php echo $donation->getCity(); ?>"/>
+                <div id="city_error"></div></td>
+                             
+                 <td><label class="control-label state"><?php echo $this->translate("donation_state_label"); ?>:</label>
+                <input name="state" id="state" type="text"  value="<?php echo $donation->getState(); ?>" />
+                <div id="state_error"></div></td>
+            </tr>
+            <tr>
+             
+              <td><label class="control-label zipcode"><?php echo $this->translate("donation_zipcode_label"); ?>:</label>
+                <input name="zipcode" id="zipcode" type="text" value="<?php echo $donation->getZipCode(); ?>" />
+                <div id="zipcode_error"></div></td>
+                <td><label class="control-label country"><?php echo $this->translate("person_country_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label>
+                <?php
+	               		$countries = getCountries();
+	               		unset($countries['UG']);
+	               		// debugMessage($countries['XX']);
+						$countrydropdown = new Zend_Form_Element_Select('country',
+											array(
+												'multiOptions' => array_merge_maintain_keys(array('' => "<Select Country of Residence>","XX"=>"Buganda","UG"=>"Uganda"), $countries),
+												'view' => new Zend_View(), 
+												'decorators' => array('ViewHelper'),
+												'class' => array('country'),
+												'placeholder' => $this->translate("person_country_label")
+											)
+										);
+						$countrydropdown->setValue($donation->getCountry()); 
+						echo $countrydropdown->render(); 
+					?>
+                <div id="country_error"></div></td>
+            </tr>
+            <tr>
+              <td><label class="control-label email"><?php echo $this->translate("person_email_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label>
+                <input name="email" id="email" type="text" value="<?php echo $donation->getEmail(); ?>"/>
+                <div id="email_error"></div></td>
+              <td><label class="control-label phone"><?php echo $this->translate("person_phone_label"); ?>:</label>
+                <input name="phone" id="phone" type="text"  value="<?php echo $donation->getPhone(); ?>" />
+                <div id="phone_error"></div></td>
+                 
+            </tr>
+            <tr>
+            	<td colspan="2" align="center"><img src="<?php echo $this->baseUrl('/images/paypal.gif');?>"></td>
+            </tr>
+          </table>
+        </fieldset>
+        <button type="submit" class="btn btn-primary finish" id="complete"><i class="icon-arrow-right icon-white"></i>Complete</button>
+        <input name="entityname" id="entityname" type="hidden"  value="Donation" />
+      </form>
+    </div>
+  </div>
+  <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+	$(document).ready(function() {
+		// add a class to aling the amounts horizontally
+		$('#radiobuttons li').addClass('pull-left');
+		$('#radiobuttons li.amountdisplay').removeClass('pull-left');
+		//set the amount
+		$(".amount").click(function(){
+			//set the value for donationamount
+			var amt = parseInt(this.value);
+			
+			// $('#donationamount').val(this.value); 
+			$('#donationamount').val(amt/1000);
+			//display the amount seleted in the display span	
+			$('#donationamountdsplay').html('$ '+amt/1000);
+			$('.amountdisplay').removeClass('hidden');
+			//trigger a change on donation amount
+			$('#donationamount').change();
+			//set the the other amount to nul
+			// $('#amount-other').val(this.value);
+		});
+				
+		// form wizard
+		$('#donationform').stepy({
+			backLabel:	'Back',
+			block:		true,
+			errorImage:	false,
+			nextLabel:	'Continue',
+			titleClick:	true,
+			validate:	true,
+		});
+		$(".button-back").html('').prepend('<i class="icon-arrow-left"></i> Back').addClass('btn btn-primary btn-large btn-gold');
+		$(".button-next").html('').prepend('<i class="icon-arrow-right"></i> Continue').addClass('btn btn-primary btn-large btn-gold'); 
+		$(".finish").html('').prepend('<i class="icon-ok"></i> Donate Now').addClass('btn btn-primary btn-large btn-gold');
+		$(".step legend").hide();
+		
+		//add entered amount into the donation field
+		$('#amount-other').keyup(function() {
+			$('#donationamount').val(this.value);
+			//display the amount seleted in the display span
+			if(this.value > 0.01 || this.value == 0.01){
+				$('.amountdisplay').removeClass('hidden');
+			}else{
+				$('.amountdisplay').addClass('hidden');
+			}
+			$('#donationamountdsplay').html('$ '+$('#donationamount').val());	
+			$('#donationamount').change();
+		});
+		
+		$("#donationamount").change(function(){
+			if($("#donationamount").val() == ''){
+				$('#donationamount_error').removeClass('hidden');
+			}else{
+				$('#donationamount_error').addClass('hidden');
+			}
+		});	
+		// define the validation rules
+		$("#donationform").validate({		
+			rules: {
+				firstname: "required",
+				lastname: "required",
+				country: "required",
+				donationamount: {
+					required: true,
+					number: true,
+					/*min: 3*/
+					min: 0.01					
+				},
+				amount_other:{
+					number: true,
+					/*min: 3*/
+					min: 0.01					
+				},
+				email: {
+					required: true, 
+					email: true
+				},	
+				
+			}, 
+			// the messages for each of the fields being validated
+			messages: {	
+				donationamount: {
+					required: "<?php echo $this->translate("donation_amount_error"); ?>",
+					number: "<?php echo $this->translate("donation_invalid_amount_error"); ?>",
+					min: "<?php echo $this->translate("donation_minimum_amount_error"); ?>"								
+				},
+				amount_other: {
+					number: "<?php echo $this->translate("donation_invalid_amount_error"); ?>",
+					min: "<?php echo $this->translate("donation_minimum_amount_error"); ?>"								
+				},
+				firstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("person_lastname_error"); ?>",
+				country: "<?php echo $this->translate("person_country_error"); ?>",
+				email: {
+					"required": "<?php echo $this->translate("useraccount_email_error"); ?>", 
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				},
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		$.validator.addMethod("validnumber", function(value, element, params) { 
+			if (IsValidAmount(value)) {
+				return true; 
+			}
+			return false;        
+		}, "Please enter a valid Phone Number");
+				
+	}); 
+</script>

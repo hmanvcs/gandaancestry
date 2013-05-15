@@ -1,0 +1,542 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Proverb of the Week";
+	$this->headTitle($title);
+	
+	$timestamp_monday_thisweek = '';
+	$now = time();
+	$beginning_of_week = date('w', $now) == 1 ? strtotime('this Monday') : strtotime('last Monday', $now); // Gives you the time at the BEGINNING of the week
+	$end_of_week = strtotime('last Sunday', $now); // Gives you the time at the END of the last day of the week
+	/*debugMessage(date('Y-m-d', $beginning_of_week));
+	debugMessage(date('Y-m-d', $end_of_week));
+	debugMessage(date('w', $now));*/
+?>
+<script>
+	$(document).ready(function(){
+		$('.months, .accordion.ui-accordion .weekcontent, .ui-accordion-content.ui-accordion-content-active').css({'height':'auto'});
+		
+		
+	}); 
+</script>
+<style>
+
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+    background: none;
+}
+.ui-accordion-content-active.clicked, .ui-accordion .ui-accordion-content {
+	border: 1px solid #A3B9D8;
+	height:auto;
+}
+.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited {
+	color:#212121;
+}
+.accordion .weekhead .thedate {
+	font-size:12px;
+	display:inline-block;
+	font-weight:bold;
+	color:#317EAC;
+}
+.accordion.ui-accordion > .weekcontent {
+	padding-left:27px; 
+	height:auto;
+	min-height:100px;
+}
+.months {
+	padding-top:5px 15px 0 15px;
+	height:auto;
+}
+.proverbleft {
+	width:95%; 
+	height:auto; 
+}
+</style>
+<!--&nbsp;<span style="display:inline-block;" class="pagedescription">(Current Week)</span>-->
+<div class="row margin0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+        <div class="content">
+        	<h1><?php echo $title; ?></h1> 
+        	<div class="well row span8" style="margin:0 auto; display:block; width:100%;">
+                <table class="table noborder margin0">
+                	<tr>
+                    	<td>
+                            <div id="accordion">
+                               	<h3 id="head_5"><a href="javascript: void(0);"><span class="caret"></span> March 2013</a></h3>
+                                <div id="div_5" class="months">
+                                    <div class="accordion">
+                                    	<h3 id="head_5_4_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Mar 25 - Mar 31</span></a></h3>
+                                        <div id="div_5_4_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-03-25');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_5_3_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Mar 18 - Mar 24</span></a></h3>
+                                        <div id="div_5_3_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-03-18');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_5_2_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Mar 11 - Mar 17</span></a></h3>
+                                        <div id="div_5_2_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-03-11');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_5_1_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Mar 04 - Mar 10</span></a></h3>
+                                        <div id="div_5_1_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-03-04');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3 id="head_4"><a href="javascript: void(0);"><span class="caret"></span> February 2013</a></h3>
+                                <div id="div_4" class="months">
+                                    <div class="accordion">
+                                    	<h3 id="head_4_4_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Feb 25 - Mar 03</span></a></h3>
+                                        <div id="div_4_4_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-02-25');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_4_3_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Feb 18 - Feb 24</span></a></h3>
+                                        <div id="div_4_3_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-02-18');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_4_2_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Feb 11 - Feb 17</span></a></h3>
+                                        <div id="div_4_2_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-02-11');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_4_1_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Feb 04 - Feb 10 </span></a></h3>
+                                        <div id="div_4_1_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-02-04');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3 id="head_3"><a href="javascript: void(0);"><span class="caret"></span> January 2013</a></h3>
+                                <div id="div_3" class="months">
+                                    <div class="accordion">
+                                        <h3 id="head_3_4_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Jan 28 - Feb 03</span></a></h3>
+                                        <div id="div_3_4_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-01-28');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_3_3_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Jan 21 - Jan 27</span></a></h3>
+                                        <div id="div_3_3_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-01-21');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_3_2_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Jan 14 - Jan 20</span></a></h3>
+                                        <div id="div_3_2_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-01-14');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_3_2_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Jan 07 - Jan 13</span> </a></h3>
+                                        <div id="div_3_2_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2013-01-07');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_3_1_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Dec 31 - Jan 06</span></a></h3>
+                                        <div id="div_3_1_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-12-31');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3 id="head_2"><a href="javascript: void(0);"><span class="caret"></span> December 2012</a></h3>
+                                <div id="div_2" class="months">
+                                    <div class="accordion">
+                                        
+                                        <h3 id="head_2_4_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Dec 24 - Dec 30</span></a></h3>
+                                        <div id="div_2_4_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-12-24');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_2_3_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Dec 17 - Dec 23</span></a></h3>
+                                        <div id="div_2_3_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-12-17');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_2_2_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Dec 10 - Dec 16</span></a></h3>
+                                        <div id="div_2_2_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-12-10');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        
+                                        <h3 id="head_2_1_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Dec 03 - Dec 09</span> </a></h3>
+                                        <div id="div_2_1_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); // $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-12-03');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h3 id="head_2"><a href="javascript: void(0);"><span class="caret"></span> November 2012</a></h3>
+                                <div id="div_2" class="months">
+                                    <div class="accordion">
+                                        <h3 id="head_1_2_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Nov 26 - Dec 02</span></a></h3>
+                                        <div id="div_1_2_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-11-26');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                        <h3 id="head_1_1_h" class="weekhead"><a href="javascript: void(0);"><span class="caret"></span> <span class="thedate">Nov 19 - Nov 25 </span>&nbsp;
+                                            </a>
+                                        </h3>
+                                        <div id="div_1_1_c" class="weekcontent">
+                                            <?php 
+                                                $proverb = new Proverb(); $weekproverb = new Proverb();
+                                                $weekproverb = $proverb->getProverbForWeek('2012-11-19');
+                                            ?>
+                                            <label class="subtitle">Proverb</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugPhrase(); ?>
+                                            </div>
+                                            <label class="subtitle">Amakulu</label>                        	
+                                            <div class="proverbleft">                            	
+                                                <?php echo $weekproverb->getLugMeaning(); ?>
+                                            </div>
+                                            <label class="subtitle">Interpretation</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngPhrase(); ?> 
+                                            </div>
+                                            <label class="subtitle">Morals</label>      
+                                            <div class="proverbleft">    
+                                                <?php echo $weekproverb->getEngMeaning(); ?> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+        	</div>
+        </div>
+	</div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

@@ -1,0 +1,23 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Donation to ".$this->translate("appname")."Confirmed";
+	$this->headTitle($this->translate("appname")." | Donation Confirmation"); 
+	$donation = new Donation();
+	$donation->populate(decode($request->donorid));
+	
+?>
+
+<div class="row marginleft0">
+  <div class="span8 pull-left marginleft0 public_leftcolumn">
+    <div class="content">
+      <h1><?php echo $title; ?></h1>
+      This is to confirm that we have received your kind donation of <b>$ <?php echo $donation->getDonationAmount(); ?></b>
+    </div>
+  </div>
+  <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+

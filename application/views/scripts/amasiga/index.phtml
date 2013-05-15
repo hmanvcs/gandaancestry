@@ -1,0 +1,221 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Amasiga ga Buganda";
+	$this->headTitle($this->translate("appname")." | Amasiga"); 
+	
+	$searchnames = '';
+	if(!isEmptyString($request->searchterm)){
+		$searchnames .= $request->searchterm;
+	}
+	if (!isEmptyString($request->letter)){
+		$searchnames .= "Browse By: <b>".strtoupper($request->letter)."</b>";
+	}
+	
+	$paginate = new Pagination();	
+	$paginate->setView($this);
+	# set the search columns to be used on this list
+	$paginate->setSearchColumns(array("c.shortname","c.fullname","c.engname","c.omubala","c.akabbiro","c.leader"));
+	$paginate->setDefaultSortBy("c.fullname");	
+	$paginate->setDefaultSortOrder("ASC");
+	$paginate->setItemCountPerPage("50");
+	
+	# define the letter to be clicked to ease navigation 
+	$where_query = "";
+	
+	$searched = true;
+	if(!isEmptyString($request->searchterm)){
+		$where_query .= " AND (c.fullname LIKE '%".$request->searchterm."%') ";
+		$searched = true;
+	}
+	
+	if (!isEmptyString($request->letter)){
+		$where_query .= " AND (`c`.`fullname` LIKE '".$request->letter."%') ";
+		$searched = true;
+	}
+	
+	$paginate->processPost($request->getParams());
+	$all_results_query = "SELECT c.id, c.shortname, c.fullname as `Clan Name`, c.omubala, c.akabbiro, c.leader, c.bio c FROM organisation c WHERE c.type = '2' ".$where_query."  ".$paginate->getSearchAndFilterSQL()." GROUP BY c.id ".$paginate->getSortSQL();
+	
+	// debugMessage($all_results_query);
+	$paginate->setItemCountFromSQLQuery($all_results_query);
+	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
+	
+	$conn = Doctrine_Manager::connection(); 
+	$result = $conn->fetchAll($current_results_query);
+	$has_no_data = (count($result) == 0) ? true : false; 
+	
+	// debugMessage($result);
+
+?>
+<script>
+$(document).ready(function(){		
+	// set hidden field for the alphabet and submit the form
+	$(".alphabet").click(function(){
+		var letter = $(this).attr('id');
+		// alert(letter);
+		$('#letter').val(letter);
+		$("#listform").submit();
+	});
+}); 
+</script>
+<style>
+.public_leftcolumn {
+	width:70%;
+}
+.public_leftcolumn .content {
+	width:100%;
+}
+.public_rightcolumn {
+	margin-left:5px; 
+	width:250px;
+}
+ul#searchbox {
+	width:100%; 
+	margin-bottom:20px;
+	margin-top:5px;
+}
+ul#bagandalist {
+	clear:both;
+	border-top:2px solid #DDDDDD;
+	margin-top:8px;
+}
+ul#bagandalist li {
+	border-bottom:dashed 1px #D1D1D1;
+}
+ul#bagandalist li:hover {
+	background-color:#E1F0F6;	
+}
+ul#bagandalist li .control-label {
+	color:#707070;
+	float:left;
+	text-align:left;
+}
+ul#bagandalist li table.itemlist td {
+	padding:2px;	
+}
+.searchedterm {
+	display:inline-block; 
+	width:265px; 
+	clear:both; 
+	padding-top:12px;
+}
+.paginatecustom {
+	margin-bottom:15px; 
+	margin-top:10px; 
+	width:370px; 
+	display:inline-block; 
+	float:right;
+	text-align:right;
+}
+</style>
+<div class="row marginleft0">
+	<h1><?php echo $title; ?></h1>  
+	<form action="<?php echo $this->baseUrl("amasiga/indexsearch"); ?>" method="get" id="listform" class="form-search">
+    
+    <div class="span11 pull-left marginleft0 public_leftcolumn">
+        <div class="wellcontent" style="position:relative;">
+          <ul class="nav pagination pull-right" id="searchbox">
+          	<li>
+            	<a style="padding-left:0; padding-right:0; float:right; width:100%;" class="pull-right">
+                    <table id="directorysearchtable" class="table noborder margin0">
+                        <tr>
+                            <td style="padding-top:10px;"><label style="font-size:12px; color:#777777;" class="control-label leftalign margin0">Find a Ssiga:</label></td>
+                            <td width="100"><label class="control-label">Filter By Clan:</label></td>
+                            <td>
+                                <?php
+                                      $clanlookup = new LookupType();
+                                      $clanlookup->setName("ALL_CLANS");
+                                      $clans = array_merge_maintain_keys(array('' => 'All'), $clanlookup->getOptionValuesFromQuery());
+                                      $clandropdown = new Zend_Form_Element_Select('c__clanid',
+                                              array(
+                                                      'multiOptions' => $clans,
+                                                      'view' => new Zend_View(),
+                                                      'decorators' => array(array('ViewHelper')),
+                                                      'class' => array('clan', 'width180', 'autofilter'),
+                                                      'title' => 'Filter Amasiga By Clan'
+                                              )
+                                      );
+                                      
+                                      $clandropdown->setValue($request->getParam('c__clanid')); 
+                                      echo $clandropdown->render();
+                                  ?>
+                            </td>
+                            <td style="padding-top:10px;"><input name="searchterm" id="searchterm" type="text" class="span2 padding3" value="<?php echo $request->searchterm; ?>" placeholder="Searchterm" /></td>                            
+                            <td style="padding-top:10px;"><button type="submit" id="searchbutton" class="btn" style="padding:6px 10px"><i class="icon-search"></i></button>
+                            <input type="hidden" name="letter" id="letter" value="<?php echo $request->getParam('letter'); ?>" /></td>
+                        </tr>
+                    </table>
+                </a>
+            </li>
+          </ul>
+          <div class="alphabetlist pull-left"><?php echo $paginate->getAlphabetString(); ?></div>
+          <label class="searchedterm control-label pull-left leftalign" style=""><?php echo $searchnames; ?></label>
+            <div class="paginatecustom">
+				<?php if(!$has_no_data){ ?>
+                    <?php echo sprintf($this->translate("clan_ssiga_counter"), $paginate->getItemCounterText()); ?> | 
+                <?php } ?>
+                <a href="<?php echo $this->baseUrl('amasiga'); ?>" title="Reset list to view all">Reset</a>
+            </div>
+            <?php if($has_no_data){ ?>
+            	<div style="clear:both;" class="alert alert-info"><?php echo $this->translate("clan_list_nossiga"); ?></div>
+            <?php } else { ?>
+            <ul id="bagandalist" class="nav nav-stacked">
+				<?php 				  		
+                    foreach($result as $line){
+                        $clan = new Ssiga();
+						$clan->populate($line['id']);
+						$theclan = $clan->getClan();
+                ?>
+                    <li>
+                        <table class="table noborder margin0">
+                        	<tr>
+                                <td width="130" style="padding:0;">
+                                    <div class="profileinfo clantotem_thumb">
+                                        <a href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>" title="Details of <?php echo $clan->getName(); ?>"><img id="coverlogo" src="<?php echo $theclan->getTotemThumbnailPath(); ?>" /></a>
+                                    </div>
+                                </td>
+                                <td valign="top" style="padding:0;">
+                                	<div style="position:relative;">
+                                        <h2 style="padding-left:8px;"><a class="clanpopup" id="clan_<?php echo $line['id']; ?>" href="<?php echo $this->baseUrl('clan/view/id/'.encode($line['id'])); ?>" style="width:100%; display:block;" title="Details of <?php echo $line['Clan Name']; ?>"><?php echo snippet($line['Clan Name'], 32, '...'); ?></a></h2>
+                                        <table style="width:100%;">
+                                            <tr>
+                                                <td class="field" width="130"><label class="control-label">Clan:</label></td>
+                                                <td class="value"><?php echo $theclan->getName(); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field"><label class="control-label">Omukulu w'essiga:</label></td>
+                                                <td class="value"><?php echo $clan->getHeadTitle(); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field"><label class="control-label"><?php echo $this->translate("clan_obutaka_label"); ?>:</label></td>
+                                                <td class="value"><?php echo $clan->getObutakaSsaza(); ?></td>
+                                            </tr>
+                                        </table>  
+                                        <a class="btn btn-primary btn-blue" style="position:absolute; top:10px; right:20px;" href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>">View Full Profile</a>
+                                    </div>                        	
+                                </td>
+                            </tr>
+                        </table>
+                        
+                    </li>
+                <?php } ?>    
+            </ul>
+            <?php echo $paginate->getPaginationLinks(); ?>  
+            <div style="margin-bottom:15px;"><?php echo $this->listcountdropdown; ?></div>
+          <?php } ?>
+        </div>
+    </div>
+    <div class="span4 pull-right public_rightcolumn">
+        <div class="well rightwidget">
+			<h2 class="well-legend">Featured Ssiga</h2>
+        </div>
+        <div class="well rightwidget">
+			<h2 class="well-legend">TBD</h2>
+        </div>
+    </div>
+    </form>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

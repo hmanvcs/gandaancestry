@@ -1,0 +1,111 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+?>
+<script>
+$(document).ready(function(){
+	
+	function showTime(){
+		var timeNow = new Date(); 
+		var currentHours = timeNow.getHours();
+		var currentMinutes = timeNow.getMinutes ( );
+		var currentSeconds = timeNow.getSeconds ( );
+		currentMinutes = ( currentMinutes < 10 ? "0" : "" ) + currentMinutes;
+		currentSeconds = ( currentSeconds < 10 ? "0" : "" ) + currentSeconds;
+		var timeOfDay = ( currentHours < 12 ) ? "AM" : "PM";
+	
+		document.getElementById('spHrs').innerHTML = currentHours;
+		document.getElementById('spMins').innerHTML = currentMinutes;
+		document.getElementById('spSecs').innerHTML = currentSeconds;
+		// document.getElementById('spTime').innerHTML = timeOfDay;
+	}
+	setInterval(showTime,1000);
+	
+	var newDate = new Date();
+	newDate.setDate(newDate.getDate());
+	// $('#Date').text($.format.date(newDate.toString(), 'ddd dd MMMM yyyy'));​
+	
+	var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
+	var dayNames= ["Sunday","Monday","Tueday","Wednesday","Thurday","Friday","Saturday"];
+
+	var newDate = new Date();
+	newDate.setDate(newDate.getDate()); 
+	
+	var themonth = monthNames[newDate.getMonth()];
+	themonth = themonth.substr(0,3);    
+	var thedate = newDate.getDate();
+	thedate = ( thedate < 10 ? "0" : "" ) + thedate;
+	$('#Date').html(dayNames[newDate.getDay()] + " " + thedate + ' ' + themonth + ' ' + newDate.getFullYear());
+	// alert();
+});
+</script>
+<div id="rightcontent" class="well row widget round0 margin0" style="min-height:940px; margin-top:40px;">
+    	<div class="margin0 padding0" style="height:auto; margin-top:-45px; margin-left:-10px; width:109%; padding-top:0;">
+            <div id="today" style=" width:auto; margin:0 auto; padding:7px 0; padding-right:0; padding-left:20px; border:1px solid #DDDDDD;">
+        		<label id="Date" style="display:inline-block; text-align:center; margin-left:6px; margin-right:3px; font-size:12px; color:#000000; font-weight:bold;"></label>​&nbsp;
+                <label id="clockContainer" style="display:inline-block; font-size:12px; color:#000000; font-weight:bold;"><span id="spHrs"></span>:<span id="spMins"></span>:<span id="spSecs"></span></label>
+            </div>
+        </div>
+        <div class="margin0 padding0" style="height:auto; margin-bottom:10px; padding-top:35px;">            
+            <table class="table noborder margin0">
+            	<tr>
+                	<td style="padding:0; text-align:center;"><a href="<?php echo $this->baseUrl('donation');?>" class="btn btn-primary btn-gold btn-large" style="padding-left:25px; padding-right:25px;">Donate</a></td>
+                </tr>
+                <tr>
+                	<td style="padding:0; text-align:center;">
+                    	<a href="<?php echo $this->baseUrl('lugandadictionary'); ?>" title="Luganda Talking Dictionary"><img style="display:block; width:75px; margin-left:75px; margin-top:5px;" src="<?php echo $this->baseUrl('images/talk.png'); ?>" />Luganda Talking Dictionary</a>
+                    </td>
+                </tr>
+                <tr>
+                	<td style="padding:0; padding-top:20px; text-align:center;">
+                    	<a href="<?php echo $this->baseUrl('contactus');?>" class="btn btn-primary btn-gold btn-mini" style="">Feedback</a>&nbsp;
+                        <a href="<?php echo $this->baseUrl('contactus/tellfriend');?>" class="btn btn-primary btn-gold btn-mini" style="">Tell a Friend</a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <?php if(!isEmptyString($userid)){ ?>
+        <div class="margin0 padding0" style="height:auto;  margin-bottom:10px; padding-top:10px;">
+            <h3 class="well-legend">Notifications</h3>
+            <ul class="nav nav-list nav-pills news">
+                <li>
+                    <a style="display:block; font-weight:bold;" href="<?php echo $this->baseUrl('aboutus/termsofservice'); ?>" title="New version of GandaAncestry User Agreement">New version of GandaAncestry User Agreement</a> <span class="pagedescription" style="font-size:10px;"><?php echo date('M d, Y', strtotime('2012-12-01')); ?></span>
+                </li>
+                <li>
+                    <a style="display:block; font-weight:bold;" href="<?php echo $this->baseUrl('aboutus/privacypolicy'); ?>" title="New version of GandaAncestry Privacy Policy">New version of GandaAncestry Privacy Policy</a> <span class="pagedescription" style="font-size:10px;"><?php echo date('M d, Y', strtotime('2012-12-01')); ?></span>
+                </li>
+            </ul>
+        </div>
+        <?php } ?>
+        <div class="margin0 padding0" style="height:auto;  margin-bottom:10px; padding-top:0;">
+            <h3 class="well-legend">Ancestry News</h3>
+            <?php 
+				$latestnews = new News();
+				$latestnews = $latestnews->getFeaturedNewsItem();
+				
+				$latestnews2 = new News();
+				$latestnews2->populate(2);
+			?>
+            <ul class="nav nav-list nav-pills news">
+                <li>
+                	<a style="display:block; font-weight:bold;" href="<?php echo $this->baseUrl('news/item/id/'.encode($latestnews->getID())); ?>" title="<?php echo $latestnews->getHeadline(); ?>"><?php echo $latestnews->getHeadline(); ?></a> <span class="pagedescription" style="font-size:10px;"><?php echo date('M d, Y', strtotime($latestnews->getDatePublished())); ?></span>
+                    <div>
+                       <span class="summaryinfo">
+							<?php echo snippet($latestnews->getSummary(), 160, '<a href="'.$this->baseUrl('news/item/id/'.encode($latestnews->getID())).'">...read more</a>'); ?> 
+                        </span>
+                    </div>
+                </li>
+                <li>
+                	<a style="display:block; font-weight:bold;" href="<?php echo $this->baseUrl('news/item/id/'.encode($latestnews2->getID())); ?>" title="<?php echo $latestnews2->getHeadline(); ?>"><?php echo $latestnews2->getHeadline(); ?></a> <span class="pagedescription" style="font-size:10px;"><?php echo date('M d, Y', strtotime($latestnews2->getDatePublished())); ?></span>
+                    <div>
+                       <span class="summaryinfo">
+							<?php echo snippet($latestnews2->getSummary(), 160, '<a href="'.$this->baseUrl('news/item/id/'.encode($latestnews2->getID())).'">...read more</a>'); ?> 
+                        </span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="margin0 padding0" style="height:auto;  margin-bottom:20px; padding-top:10px;">
+            <h3 class="well-legend">Sponsored</h3>
+        </div>
+        
+    </div>

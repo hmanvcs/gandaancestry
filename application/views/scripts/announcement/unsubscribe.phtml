@@ -1,0 +1,132 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$posturl = $this->baseUrl("announcement/processunsubscribe");
+	
+	// initialise the form values
+	$formvalues['name'] = '';
+	$formvalues['youremail'] = '';
+	$formvalues['intromsg'] = '';
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$formvalues = $session->getVar(FORM_VALUES);
+	}
+	
+	$title = "Unsubscribe";
+	$this->headTitle($title);
+	
+?>
+<script>
+	$(document).ready(function() {
+		$("#indexform").validate({		
+			rules: {
+				name: "required",
+				youremail: {
+					required: true, 
+					email: true
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {	
+				name: "Please enter your name",
+				youremail: {
+					"required": "Please enter your email", 
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		var tabindex = 1;
+		  $('input,select').each(function() {
+			 if (this.type != "hidden") {
+			   var $input = $(this);
+			   $input.attr("tabindex", tabindex);
+			   tabindex++;
+			 }
+		  });
+  
+		$("#contentwrapper").removeClass('well');
+	}); 
+</script>
+<style>
+body {
+	font-family:'calibri', 'Telex', sans-serif;
+}
+.popupdiv .form-horizontal .control-label {
+	font-size:15px;
+}
+#loginheader, #footertable, #betalogo, #headeractions {
+	display:none;
+}
+body.publicbody .footer.well {
+	height:30px;
+	min-height:0;
+}
+#clanid {
+	width:215px;
+}
+.btn-primary.btn-gold {
+	font-weight:bold;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+	padding:8px 25px 8px 25px;
+	font-size:16px;
+}
+</style>
+<div class="popupdiv well span7" style="margin-left:170px;">
+  <form class="form-horizontal " id="indexform" action="<?php echo $posturl; ?>" method="post">
+    <h3 class="well-legend" style="text-align:center;">Unsubscribe</h3>
+    </legend>
+    <table class="table">
+      <?php if($sessionhaserror) { ?>
+      <tr>
+        <td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+      </tr>
+      <?php } ?>
+      <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) || $request->success == 'true'){ ?>
+      <tr>
+        <td colspan="2"><div class="alert alert-success" style="text-align:left; display:block;">Request received</div>
+          <span class="pagedescription" style="font-size:18px; font-style:normal;"> We have received your request to unsubscribe from all GandaAncestry mailings. We will remove your email address within the next five (5) days. </span></td>
+      </tr>
+      <?php } else { ?>
+      <tr>
+        <td colspan="2"><span class="pagedescription" style="font-size:18px; font-style:normal;"> Please use the form below to  unsubscribe from all  GandaAncestry mailings. All fields marked with <?php echo $this->translate("global_required_field_marker"); ?> are mandatory. </span>
+        <td>
+      </tr>
+      <tr>
+        <td width="100"><label class="control-label leftalign">Your Name: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+        <td><input name="name" id="name" type="text" class="span3" value="<?php echo $formvalues['name']; ?>" />
+          <div id="name_error"></div></td>
+      </tr>
+      <tr>
+        <td><label class="control-label leftalign">Your Email: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+        <td><input class="span4" name="youremail" id="youremail" type="text" value="<?php echo $formvalues['youremail']; ?>" />
+          <div id="youremail_error"></div></td>
+      </tr>
+      <tr>
+        <td style="vertical-align:top;"><label class="control-label leftalign">Message:</label>
+          <span class="pagedescription" style="font-size:15px;">(Optional message - Please tell us why you've decided to unsubscribe)</span></td>
+        <td><textarea class="span4 expanding" style="min-height:60px;" name="intromsg" id="intromsg" type="text"><?php echo $formvalues['intromsg']; ?></textarea>
+          <div id="intromsg_error"></div></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td class="nowrapping"><button type="submit" id="submitjoin" class="btn btn-primary btn-gold">Unsubscribe</button></td>
+      </tr>
+      <?php } ?>
+    </table>
+  </form>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

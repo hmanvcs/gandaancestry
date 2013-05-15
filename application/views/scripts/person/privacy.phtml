@@ -1,0 +1,555 @@
+            <ul class="nav nav-pills nav-stacked" id="privacylist">
+                <li class="hasprivacy">Who can see your profile summary, other names, nick names, etc?  
+                    <?php 
+						$name_letter = $person->getCurrentPrivacyLevel('namesection', $person->getPrivacyLine()->getnamesection());
+						$name_detail = $person->getCurrentPrivacyDetail('namesection', $person->getPrivacyLine()->getnamesection());
+					?>
+                    <label class="privacycontainer" id="nameprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $name_detail; ?>"><label class="privacylabel"><?php echo $name_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="nameprivacy" sector="namesection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $name_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="nameprivacy" sector="namesection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $name_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="nameprivacy" sector="namesection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $name_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="nameprivacy" sector="namesection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_name_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $name_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="nameprivacy" sector="namesection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $name_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your profile picture?
+                	<?php 
+						$picture_letter = $person->getCurrentPrivacyLevel('profilepicture', $person->getPrivacyLine()->getprofilepicture());
+						$picture_detail = $person->getCurrentPrivacyDetail('profilepicture', $person->getPrivacyLine()->getprofilepicture());
+					?>
+                    <label class="privacycontainer" id="profilepictureprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $picture_detail; ?>"><label class="privacylabel"><?php echo $picture_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="profilepictureprivacy" sector="profilepicture" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $picture_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="profilepictureprivacy" sector="profilepicture" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $picture_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="profilepictureprivacy" sector="profilepicture" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $picture_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="profilepictureprivacy" sector="profilepicture" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $picture_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="profilepictureprivacy" sector="profilepicture" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $picture_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your birth and death information?  
+                	<?php 
+						$birth_letter = $person->getCurrentPrivacyLevel('birthsection', $person->getPrivacyLine()->getbirthsection());
+						$birth_detail = $person->getCurrentPrivacyDetail('birthsection', $person->getPrivacyLine()->getbirthSection());
+					?>
+                    <label class="privacycontainer" id="birthprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $birth_detail; ?>"><label class="privacylabel"><?php echo $birth_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="birthprivacy" sector="birthsection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $birth_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="birthprivacy" sector="birthsection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $birth_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="birthprivacy" sector="birthsection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $birth_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="birthprivacy" sector="birthsection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $birth_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="birthprivacy" sector="birthsection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $birth_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your immediate family members?  
+                	<?php 
+						$family_letter = $person->getCurrentPrivacyLevel('familysection', $person->getPrivacyLine()->getfamilysection());
+						$family_detail = $person->getCurrentPrivacyDetail('familysection', $person->getPrivacyLine()->getfamilysection());
+					?>
+                    <label class="privacycontainer" id="familyprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $family_detail; ?>"><label class="privacylabel"><?php echo $family_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="familyprivacy" sector="familysection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $family_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="familyprivacy" sector="familysection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $family_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="familyprivacy" sector="familysection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $family_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="familyprivacy" sector="familysection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $family_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="familyprivacy" sector="familysection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $family_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your personal information, about you, height, weight, etc? 
+                	<?php 
+						$personal_letter = $person->getCurrentPrivacyLevel('personalsection', $person->getPrivacyLine()->getpersonalsection());
+						$personal_detail = $person->getCurrentPrivacyDetail('personalsection', $person->getPrivacyLine()->getPersonalSection());
+					?>
+                    <label class="privacycontainer" id="personalprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $personal_detail; ?>"><label class="privacylabel"><?php echo $personal_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="personalprivacy" sector="personalsection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $personal_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="personalprivacy" sector="personalsection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $personal_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="personalprivacy" sector="personalsection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $personal_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="personalprivacy" sector="personalsection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $personal_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="personalprivacy" sector="personalsection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $personal_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your clan and ancestry information? 
+                	<?php 
+						$clan_letter = $person->getCurrentPrivacyLevel('clansection', $person->getPrivacyLine()->getclansection());
+						$clan_detail = $person->getCurrentPrivacyDetail('clansection', $person->getPrivacyLine()->getclanSection());
+					?>
+                    <label class="privacycontainer" id="clanprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $clan_detail; ?>"><label class="privacylabel"><?php echo $clan_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="clanprivacy" sector="clansection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $clan_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="clanprivacy" sector="clansection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $clan_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="clanprivacy" sector="clansection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $clan_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="clanprivacy" sector="clansection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $clan_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="clanprivacy" sector="clansection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $clan_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>  
+                </li>
+                <li class="hasprivacy">Who can see your email addresses? 
+                	<?php 
+						$emailaddress_letter = $person->getCurrentPrivacyLevel('emailaddresssection', $person->getPrivacyLine()->getemailaddresssection());
+						$emailaddress_detail = $person->getCurrentPrivacyDetail('emailaddresssection', $person->getPrivacyLine()->getemailaddressSection());
+					?>
+                    <label class="privacycontainer" id="emailaddressprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $emailaddress_detail; ?>"><label class="privacylabel"><?php echo $emailaddress_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="emailaddressprivacy" sector="emailaddresssection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $emailaddress_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="emailaddressprivacy" sector="emailaddresssection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $emailaddress_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="emailaddressprivacy" sector="emailaddresssection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $emailaddress_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="emailaddressprivacy" sector="emailaddresssection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $emailaddress_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="emailaddressprivacy" sector="emailaddresssection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $emailaddress_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your phone numbers? 
+                	<?php 
+						$phone_letter = $person->getCurrentPrivacyLevel('phonesection', $person->getPrivacyLine()->getphonesection());
+						$phone_detail = $person->getCurrentPrivacyDetail('phonesection', $person->getPrivacyLine()->getphoneSection());
+					?>
+                    <label class="privacycontainer" id="phoneprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $phone_detail; ?>"><label class="privacylabel"><?php echo $phone_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="phoneprivacy" sector="phonesection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $phone_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="phoneprivacy" sector="phonesection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $phone_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="phoneprivacy" sector="phonesection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $phone_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="phoneprivacy" sector="phonesection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $phone_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="phoneprivacy" sector="phonesection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $phone_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy">Who can see your current location and other physical addresses?
+                	<?php 
+						$physicaladdress_letter = $person->getCurrentPrivacyLevel('physicaladdresssection', $person->getPrivacyLine()->getphysicaladdresssection());
+						$physicaladdress_detail = $person->getCurrentPrivacyDetail('physicaladdresssection', $person->getPrivacyLine()->getphysicaladdressSection());
+					?>
+                    <label class="privacycontainer" id="physicaladdressprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $physicaladdress_detail; ?>"><label class="privacylabel"><?php echo $physicaladdress_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="physicaladdressprivacy" sector="physicaladdresssection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $physicaladdress_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="physicaladdressprivacy" sector="physicaladdresssection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $physicaladdress_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="physicaladdressprivacy" sector="physicaladdresssection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $physicaladdress_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="physicaladdressprivacy" sector="physicaladdresssection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $physicaladdress_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="physicaladdressprivacy" sector="physicaladdresssection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $physicaladdress_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>   
+                </li>
+                <li class="hasprivacy">Who can see your IM and web addresses?
+                	<?php 
+						$webaddress_letter = $person->getCurrentPrivacyLevel('webaddresssection', $person->getPrivacyLine()->getwebaddresssection());
+						$webaddress_detail = $person->getCurrentPrivacyDetail('webaddresssection', $person->getPrivacyLine()->getwebaddressSection());
+					?>
+                    <label class="privacycontainer" id="webaddressprivacy">
+                        <div class="privacydiv">
+                            <a class="loading privacywait hidden"><img src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /></a>
+                            <div class="btn-group privacywidget">
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle privacytrigger" title="<?php echo $this->translate("privacy_current_label"); ?>: <?php echo $webaddress_detail; ?>"><label class="privacylabel"><?php echo $webaddress_letter; ?>:</label> <i class="icon-user"></i>
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-mini dropdown-toggle"><span class="caret"></span></button>
+                                <ul class="dropdown-menu privacyoptions">
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_1; ?>" wrapper="webaddressprivacy" sector="webaddresssection" rel="<?php echo PRIVACY_1_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_public_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?>:</label>  
+											<?php echo $this->translate("privacy_level_public_label"); ?>
+                                            <span class="currentspan <?php echo $webaddress_letter == PRIVACY_1_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_2; ?>" wrapper="webaddressprivacy" sector="webaddresssection" rel="<?php echo PRIVACY_2_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_subscriber_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?>:</label> 
+                                            <?php echo $this->translate("privacy_level_subscriber_label"); ?>
+                                            <span class="currentspan <?php echo $webaddress_letter == PRIVACY_2_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span></a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_3; ?>" wrapper="webaddressprivacy" sector="webaddresssection" rel="<?php echo PRIVACY_3_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_relative_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_relative_label"); ?>
+                                            <span class="currentspan <?php echo $webaddress_letter == PRIVACY_3_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_4; ?>" wrapper="webaddressprivacy" sector="webaddresssection" rel="<?php echo PRIVACY_4_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_family_description"); ?>">
+                                        	<label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_family_label"); ?>
+                                            <span class="currentspan <?php echo $webaddress_letter == PRIVACY_4_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                    	<a href="javascript: void(0)" theid="<?php echo $person->getID(); ?>" id="<?php echo PRIVACY_5; ?>" wrapper="webaddressprivacy" sector="webaddresssection" rel="<?php echo PRIVACY_5_SYMBOL; ?>" class="levelchange" title="<?php echo $this->translate("privacy_me_description"); ?>">
+                                        	<label class="privacylabel"><?php echo PRIVACY_5_SYMBOL; ?>:</label> 
+											<?php echo $this->translate("privacy_level_me_label"); ?> 
+                                            <span class="currentspan <?php echo $webaddress_letter == PRIVACY_5_SYMBOL ? 'visible' : 'hidden'; ?>"><?php echo $this->translate("privacy_current_isactive_label"); ?></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                       </div>
+                    </label>
+                </li>
+                <li class="hasprivacy" id="private_default">What is your default privacy? Toggle similar settings across all your information. 
+                	<?php 
+						$defaultprivacy_letter = $person->getCurrentPrivacyLevel('defaultprivacy', $person->getPrivacyLine()->getdefaultprivacy());
+						// $defaultprivacy_detail = $person->getCurrentPrivacyDetail('webaddresssection', $person->getPrivacyLine()->getwebaddressSection());
+					?>
+                    <ul class="defaultlist nav nav-pills">
+                    	<li class="<?php echo $person->getPrivacyLine()->getDefaultPrivacyClass(PRIVACY_1); ?>"><label class="symlabel"><?php echo PRIVACY_1_SYMBOL; ?></label><input type="radio" name="defaultprivacy" class="defaultprivacy <?php echo $person->getPrivacyLine()->getDefaultPrivacyStatus(PRIVACY_1); ?>" id="defaultprivacy_1" value="<?php echo PRIVACY_1; ?>" placeholder="<?php echo $this->translate("privacy_level_public_label"); ?>" person="<?php echo $person->getID(); ?>" /><?php echo $this->translate("privacy_level_public_label"); ?></li>
+                        <li class="<?php echo $person->getPrivacyLine()->getDefaultPrivacyClass(PRIVACY_2); ?>"><label class="symlabel"><?php echo PRIVACY_2_SYMBOL; ?></label> <input type="radio" name="defaultprivacy" class="defaultprivacy <?php echo $person->getPrivacyLine()->getDefaultPrivacyStatus(PRIVACY_2); ?>" id="defaultprivacy_2" value="<?php echo PRIVACY_2; ?>" placeholder="<?php echo $this->translate("privacy_level_subscriber_label"); ?>" person="<?php echo $person->getID(); ?>" /><?php echo $this->translate("privacy_level_subscriber_label"); ?></li>
+                        <li class="<?php echo $person->getPrivacyLine()->getDefaultPrivacyClass(PRIVACY_3); ?>"><label class="symlabel"><?php echo PRIVACY_3_SYMBOL; ?></label> <input type="radio" name="defaultprivacy" class="defaultprivacy <?php echo $person->getPrivacyLine()->getDefaultPrivacyStatus(PRIVACY_3); ?>" id="defaultprivacy_3" value="<?php echo PRIVACY_3; ?>" placeholder="<?php echo $this->translate("privacy_level_relative_label"); ?>" person="<?php echo $person->getID(); ?>" /><?php echo $this->translate("privacy_level_relative_label"); ?></li>
+                        <li class="<?php echo $person->getPrivacyLine()->getDefaultPrivacyClass(PRIVACY_4); ?>"><label class="symlabel"><?php echo PRIVACY_4_SYMBOL; ?></label> <input type="radio" name="defaultprivacy" class="defaultprivacy <?php echo $person->getPrivacyLine()->getDefaultPrivacyStatus(PRIVACY_4); ?>" id="defaultprivacy_4" value="<?php echo PRIVACY_4; ?>" placeholder="<?php echo $this->translate("privacy_level_family_label"); ?>" person="<?php echo $person->getID(); ?>" /><?php echo $this->translate("privacy_level_family_label"); ?></li>
+                        <li class="<?php echo $person->getPrivacyLine()->getDefaultPrivacyClass(PRIVACY_5); ?>"><label class="symlabel"><?php echo PRIVACY_5_SYMBOL; ?></label> <input type="radio" name="defaultprivacy" class="defaultprivacy <?php echo $person->getPrivacyLine()->getDefaultPrivacyStatus(PRIVACY_5); ?>" id="defaultprivacy_5" value="<?php echo PRIVACY_5; ?>" placeholder="<?php echo $this->translate("privacy_level_me_label"); ?>" person="<?php echo $person->getID(); ?>" /><br /><?php echo $this->translate("privacy_level_me_label"); ?></li>
+                    </ul>
+                </li>
+            </ul>

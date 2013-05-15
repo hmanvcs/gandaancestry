@@ -1,0 +1,62 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "How it Works";
+	$this->headTitle($this->translate("appname")." | ".$title); 
+
+?>
+<div class="row marginleft0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+        <div class="content">
+        	<h1><?php echo $title; ?></h1> 
+            <h2>Signup and Membership</h2>
+            <p>To use GandaAncestry you must first sign up as a member by creating a login account. Signing up requires you to have a working Internet email account and choosing a secret password. To become a member you must be a Muganda (a person whose father is a Muganda).</p>
+            
+          <h2>Privacy Settings</h2>
+            <p>The privacy settings for your member account determine what other members of GandaAncestry are able to access of your family tree. You may set or change your privacy settings at any time when logged in. You do this by clicking on your name in the top right hand corner and selecting Privacy Settings.  But we strongly advise you to do so before starting to build your family tree.</p>
+            
+            <h2>Personal Profiles</h2>
+            <p>Once you sign up and become a member, you can create your personal profile by adding your images, clan details and other demographic information. Similarly, you will create personal profiles for your relatives when building your family tree.</p>
+            
+            <h2>Building and Maintaining Your Family Tree</h2>
+            <p>You start building your family tree by creating personal profiles for your immediate relatives: Father, Mother, Son, Daughter, and Spouse. For example, to create a personal profile for your mother, click Add Relative on your profile page and then select Add Mother.</p>
+            <p>To expand your family, you repeat the process for each individual relative that you have already added to your family tree. For example, to add a son to your brother, click on the brother to reach his profile page. Once there click on Add Relative and then select Add Son.</p>
+            <p>You may edit the information for any relative on your family tree by selecting Edit Profile on his or her personal profile.</p>
+
+            <h2>Baganda Clans</h2>
+            <p>Every Muganda must belong to one of the 56 Baganda clans, the one of his or her father. A child who is born to a Muganda woman is called a Mujjwa (plural: Bajjwa) to the mother's clan, whether that child is a Muganda or not.</p>
+            
+            <h2>Search</h2>
+            <p>GandaAncestry allows you to search for people in your family tree based on clan membership, gender, whether deceased or not, obutaka and other criteria. You can do the same for people in other family trees but what and how much you can see depends on the Privacy Settings that were set by the other members on their respective accounts.</p>
+            
+            <h2>Family Tree Browsing</h2>
+            <p>You can browse your family tree and other family trees from a number of views: My Relatives, My Families, All People and All Families. In all views, the family tree is displayed in a list format.</p>
+            
+            <h2>Family Tree Sharing</h2>
+            <p>Once you add a relative to your family tree, you may invite them via email to be able to view your family tree. The profile for each member of your family tree who qualifies to be invited will appear in the family tree with an email address field and button for inviting him or her.</p>
+            <p>If a relative accepts your invitation, by clicking on a link within the email invitation and providing a password, they will be able to login with their own email address and password to view and browse you family tree.</p>
+            
+            <h2>Getting Help</h2>
+            <p>If you need help after signing up as a member, please login and visit the Help Center under More on the menu bar.</p>
+            <p>If you have not signed up, you can still get assistance by completing the <a href="<?php echo $this->baseUrl('contactus'); ?>" title="Contact Us">Contact Us </a>form.</p>
+            
+            <h2>Reporting Abuse</h2>
+            <p>There will be people who will attempt to violate the GandaAncestry User Agreement. Examples of abuses include pretending to be a Muganda when not one, hacking into another's account, etc. We take these matters very seriously and will continually add new technologies and security mechanisms to prevent this abuse
+			<p>Please do your part towards ensuring a safe social network for Baganda and their families at GanaAncestry. Report all potential violations of the GandaAncestry User Agreement using the <a href="<?php echo $this->baseUrl('contactus/report'); ?>" title="Report Violation">Report Violations</a> page.</p>
+
+            <h2>User Agreement</h2>
+            <p>The GandaAncestry <a href="<?php echo $this->baseUrl('aboutus/termsofservice'); ?>" title="User Agreement">User Agreement</a> describes the terms governing how you and other members may use the services provided by GandaAncestry. Please carefully read the <a href="<?php echo $this->baseUrl('aboutus/termsofservice'); ?>" title="User Agreement">User Agreement</a> because violating it can lead to cancellation of your membership.</p>
+            
+            <h2>Privacy Policy</h2>
+            <p>The GandaAncestry <a href="<?php echo $this->baseUrl('aboutus/privacypolicy'); ?>" title="Privacy Policy">Privacy Policy</a> describes the types of information we receive about you, how we receive it and the restrictions on how we use it. Please read our <a href="<?php echo $this->baseUrl('aboutus/privacypolicy'); ?>" title="Privacy Policy">Privacy Policy</a> to understand how far we go to protect the privacy of your information.</p>
+            
+            <h2>Cancellation</h2>
+            <p>You may cancel your membership at any time, by clicking Unsubscribe on the My Account tab of your profile page. More details are provided in the GandaAncestry User Agreement.</p>
+
+        </div>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

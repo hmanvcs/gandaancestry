@@ -1,0 +1,43 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Donate to ".$this->translate("appname");
+	$this->headTitle($this->translate("appname")." | Donate"); 
+	$donation = new Donation();
+	$donation->populate(decode($request->id));
+	
+	//$donation->sendThankYouEmail();
+?>
+
+<div class="row marginleft0">
+  <div class="span8 pull-left marginleft0 public_leftcolumn">
+    <div class="content">
+      <h1><?php echo $title; ?></h1>
+      Processing donation... Please wait...
+      <form action="<?php echo PAYPAL_URL/*$config->paypal->serverurl*/; ?>" method="post" name="donationform" id="donationform">
+        <input type="hidden" name="cmd" value="_xclick" />
+        <input type="hidden" name="business" value="<?php echo PAYPAL_RECEIVER_EMAIL/*$config->paypal->receiveremail*/; ?>" />
+        <input type="hidden" name="item_name" id="item_name" value="Gandaancestry Donation" />
+        <input type="hidden" name="item_number" id="item_number" value="GA-DON-00<?php echo $donation->getID();?>" />
+        <input type="hidden" name="custom" id="custom" value="<?php echo $donation->getID(); ?>" />
+        <input type="hidden" name="amount" id="amount" value="<?php echo $donation->getDonationAmount(); ?>" />
+        <input type="hidden" name="currency_code" value="USD" />
+        <input type="hidden" name="return" value="<?php echo getPayPalReturnUrl().'/donorid/'.encode($donation->getID()); ?>" />
+        <input type="hidden" name="notify_url" value="<?php echo getPayPalNotifyUrl(); ?>" />
+        <input type="hidden" name="cancel_return" value="<?php echo getPayPalCancelUrl(); ?>" />
+        <input type="hidden" name="receiver_email" value="<?php echo PAYPAL_RECEIVER_EMAIL/*$config->paypal->receiveremail*/; ?>" />
+        <input type="hidden" name="no_shipping" value="1" />
+        <input type="hidden" name="no_note" value="0" />
+      </form>
+    </div>
+  </div>
+  <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+	$(document).ready(function() {
+ 		document.donationform.submit();	
+	}); 
+</script>

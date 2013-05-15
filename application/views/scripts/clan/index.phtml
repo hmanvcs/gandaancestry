@@ -1,0 +1,362 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$id = decode($request->id);
+	$clan = new Organisation();
+	$clan->populate($id);
+	//debugMessage($clan->toArray());
+	
+	$button_title = $this->translate("clan_button_save");
+	$posturl = $this->baseUrl("clan/edit"); 
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$clan->processPost($session->getVar(FORM_VALUES));		
+	}
+	// set the default tab
+	if (isEmptyString($request->tab)) {
+		$request->setParam('tab','basics'); 
+	}
+	
+	$title = $clan->isClan() ? "Update ".$clan->getName() : "Update ".$clan->getName();
+	$this->headTitle($title);
+	
+	$ssigas = $clan->getSsigas();
+	$totalssigas = $ssigas->count();
+	
+	$isclan = true;
+	$isssiga = false;
+	$hideall = false;
+	if($clan->isClan()){
+		$clanpeople = $clan->getClanPeople();
+		$isclan = true;
+		$isssiga = false;
+	}
+	if($clan->isSsiga()){
+		$clanpeople = $clan->getSsigaPeople();
+		$isclan = false;
+		$isssiga = true;
+	}
+	$totalpeople = $clanpeople->count(); 
+	 
+	$isadmin = false;
+	if(isAdmin()){
+		$isadmin = true;
+	}
+	
+	$ssazalist = new LookupType(); 
+	$ssazalist->setName("ALL_SSAZAS");
+	$massaza = $ssazalist->getOptionValuesFromQuery();
+	
+	$placelist = new LookupType(); 
+	$placelist->setName("ALL_PLACES");
+	$places = $placelist->getOptionValuesFromQuery();
+	
+	$butaka = $clan->getButaka();
+	$butaka2 = $clan->getTheObutaka();
+	$but_key = 0;
+	if(isEmptyString($butaka->getID()) && !$butaka2){
+		$but_key = md5('butaka');
+		$but_id = "";
+		$but_type = "5";
+		$but_country = "XX";
+		$but_ssaza = '';
+		$but_parish = '';
+		$but_parishid = '';
+		$but_village = '';
+		$but_villageid = '';
+		$but_street = '---';
+	} else {
+		$but_id = isEmptyString($butaka->getID()) ? $butaka2->getID() : $butaka->getID();
+		$but_type = $butaka->getType();
+		$but_country = $butaka->getCountry();
+		$but_ssaza = $butaka->getCounty();
+		$but_parish = $butaka->getTownName();
+		$but_parishid = $butaka->getTownID();
+		$but_village = $butaka->getVillageName();
+		$but_villageid = $butaka->getVillageID();
+		$but_street = '---';
+	}				
+									
+	$head = $clan->getEmbuga();
+	$head2 = $clan->getTheEmbuga();
+	$hed_key = 1;
+	if(!$head2 && isEmptyString($head->getID())){
+		$hed_id = "";
+		$hed_type = "6";
+		$hed_country = "XX";
+		$hed_ssaza = '';
+		$hed_parish = '';
+		$hed_parishid = '';
+		$hed_village = '';
+		$hed_villageid = '';
+		$hed_street = '---';
+	} else {											
+		$hed_id = isEmptyString($head->getID()) ? $head2->getID() : $head->getID();
+		$hed_type = $head->getType();
+		$hed_country = "XX";
+		$hed_ssaza = $head->getCounty();
+		$hed_parish = $head->getTownName();
+		$hed_parishid = $head->getTownID();
+		$hed_village = $head->getVillageName();
+		$hed_villageid = $head->getVillageID();
+		$hed_street = '---';
+	}
+?>
+<script>
+$(document).ready(function() {
+	// override default tab
+	<?php if(!isEmptyString($request->tab)){ ?>
+		$("#tabs").tabs({ selected:'<?php echo $request->tab; ?>', fx: {opacity: 'toggle'} });	   
+	<?php } ?>
+	$('#tabs').tabs({
+		// the selected tab
+		selected: '<?php echo $request->tab; ?>'
+	});
+	
+	// basics custom failure and success url
+	$("#profileform-basics .savethenview").click(function() {
+		$("#profileform-basics .successurl").val('<?php echo encode($this->baseUrl('clan/view/tab/basics')); ?>');
+		$("#profileform-basics .failureurl").val('<?php echo encode($this->baseUrl('clan/index/id/'.encode($clan->getID()).'/tab/basics')); ?>');
+	});
+			
+	$("#morebio").click(function(){
+		$("#tabs").tabs({ selected:'history', fx: {opacity: 'toggle'} });
+	});
+	
+	// chained select to load the parishes for a ssaza
+	$('#places_ssaza_<?php echo $but_key; ?>').selectChain({
+		target: $('#places_village_<?php echo $but_key; ?>'),
+		url: '<?php echo $this->baseUrl('person/selectchain/'.SELECT_CHAIN_TYPE.'/ssaza_places/fieldid/places_ssaza_'.$but_key); ?>',
+		data: 'currentvalue=<?php echo $but_villageid; ?>',
+		type: 'get'
+	});
+	<?php if(!isEmptyString($but_ssaza)){ ?>
+		$('#places_ssaza_<?php echo $but_key; ?>').trigger("change");
+	<?php } ?>
+	
+}); 
+</script>
+<style>
+.form-horizontal .control-label {
+	text-align:right;
+	width:0;
+	white-space:nowrap;
+}
+ul#clans li.well {
+	width:410px;
+}
+.table.clanlist td.field {
+	width:100px;
+}
+ul.widgetlist.vip li.well {
+	height:160px;
+}
+#summary.well {
+	padding-bottom:45px;
+}
+</style>
+<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+<?php } ?>	
+<?php if($sessionhaserror) { ?>
+    <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+<?php } ?>	
+<div class="well" id="summary">
+	<table id="summarycontainer">
+		<tr>
+			<td style="width:200px; vertical-align:top;">
+            <div class="profileinfo clantotem">
+				<?php if($isadmin){ ?>
+                    <a href="<?php echo $this->baseUrl('clan/picture/type/2/clanid/'.encode($clan->getID())); ?>" class="edittotem" title="Upload Totem Image"><img id="coverlogo" src="<?php echo $clan->getTotemPath(); ?>" /></a>
+                <?php } else { ?>
+                    <img id="coverlogo" src="<?php echo $clan->getTotemPath(); ?>" /></a>
+                <?php } ?>
+            </div>
+			</td>
+			<td width="60%" style="vertical-align:top; padding-left:15px;">
+				<table>
+                    <tr>
+						<td><h1><?php echo $title; ?></h1></td>
+					</tr>                  
+				</table>
+			</td>
+			<td style="vertical-align:top;">
+            	<ul class="nav nav-tabs nav-stacked" style="width:180px;">	
+					<?php if($isssiga){ ?>
+                    	<li><a href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>" id="View <?php echo $clan->getClan()->getName(); ?> Profile"><i class="icon-list"></i> <?php echo $clan->getClan()->getName(); ?> Profile</a></li>
+                    <?php } ?>
+                    <li><a href="<?php echo $this->baseUrl('clan/list'); ?>"><i class="icon-list"></i> All Clans</a></li>
+                   
+				</ul>                    
+            </td>
+		</tr>
+	</table>
+</div>
+<div class="well" style="height:auto; margin:-10px 0 10px 0; padding:10px">
+	<div id="tabs" style="margin-top:-35px; margin-bottom:0; min-height:400px;">   
+        <ul>
+           <li><a href="#basics"><?php echo 'Update Basic Info'; ?></a></li>
+           <?php if($isclan){ ?>  
+			   <?php if($hideall){ ?>      
+               <li><a href="#ssiga"><?php echo 'Manage '.$this->translate("clan_section_ssigas"); ?></a></li>
+               <?php } ?>
+           <li><a href="#names"><?php echo 'Manage '.$this->translate("clan_section_names"); ?></a></li>
+           <?php } ?>
+        </ul>
+        <div id="basics">
+        	<form id="profileform-basics" class="form-horizontal" action="<?php echo $posturl; ?>" method="post">
+            <div class="row" style="margin-left:0px;">
+                <span class="span10">
+                    <div class="well lighter row" style="min-height:60px;">
+                        <h3 class="well-legend"><?php echo $this->translate("clan_section_summary"); ?></h3>
+                        <table class="table"> 
+                            <tr>
+                                <td style="width:15%;"><label class="control-label"><?php echo $clan->isClan() ? $this->translate("clan_ekika_label")."<br />(".$this->translate("clan_fullname_label").")" : "Ssiga Name"; ?></label></td>
+                                <td style="width:35%;" class="nowrapping"><input name="fullname" id="fullname" type="text" class="span3 hastooltip" value="<?php echo $clan->getFullName(); ?>" title="<?php echo $this->translate("clan_lugname_tooltip"); ?>" /><div id="fullname_error"></div></td>
+                                <td style="width:15%;"><label class="control-label"><?php echo $clan->isClan() ? "Omukulu w'ekika<br />(Clan Head)" : "Omukulu w'ESsiga<br />(Ssiga Head)"; ?></label></td>
+                                <td class="nowrapping"><input style="width:160px;" name="leader" id="leader" type="text" class="span2 hastooltip" value="<?php echo $clan->getLeader(); ?>" title="<?php echo $this->translate("clan_leader_tooltip"); ?>" /></td>
+		                	</tr>
+                            <?php if($isclan){ ?>   
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("clan_omuziro_label")."<br />(".$this->translate("clan_totem_label").")"; ?>:</label></td>
+                                <td class="nowrapping"><input style="width:160px;" name="omuziro" id="omuziro" type="text" class="span2 hastooltip" value="<?php echo $clan->getOmuziro(); ?>" title="<?php echo $this->translate("clan_omuziro_tooltip"); ?>" /></td>
+                                <td></td>
+                                <td class="nowrapping"></td>
+		                	</tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("clan_akabbiro_label"); ?>:</label></td>
+                                <td class="nowrapping" colspan="3"><input name="akabbiro" id="akabbiro" type="text" class="span4 hastooltip" value="<?php echo $clan->getAkabbiro(); ?>" title="<?php echo $this->translate("clan_akabbiro_tooltip"); ?>" /></td>
+                                <td></td>
+                                <td class="nowrapping"></td>
+		                	</tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("clan_omubala_label"); ?>:</label></td>
+                                <td class="nowrapping" colspan="3"><textarea style="height:40px;" name="omubala" id="omubala" class="span4 expanding hastooltip" title="<?php echo $this->translate("clan_omubala_tooltip"); ?>"><?php echo $clan->getOmubala(); ?></textarea></td>                                
+		                	</tr>
+                            <?php } ?>
+                        </table>
+                    </div>
+                    <div class="well lighter row" style="">
+                        <h3 class="well-legend">Contact Info</h3>
+                        <table class="table">  
+                           <tr>
+                                <td><label class="control-label butaka">Obutaka:</label>
+                                    <input name="places[<?php echo $but_key; ?>][id]" id="places_id_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_id; ?>" />
+                                    <input name="places_type_<?php echo $but_key; ?>" id="places_type_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_type; ?>" />
+                                    <input name="places_country_<?php echo $but_key; ?>" id="places_country_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_country; ?>" />
+                                    <input name="places[<?php echo $but_key; ?>][streetaddress]" id="places_streetaddress_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_street; ?>" />
+                                    <?php
+                                        $ssazadropdown = new Zend_Form_Element_Select('places_ssaza_'.$but_key,
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => "<Select Ssaza>"), $massaza),
+                                                                'view' => new Zend_View(), 
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span3','xssazas','hastooltip'),
+                                                                'title' => $this->translate("clan_ssaza_tooltip")
+                                                            )
+                                                        );
+                                        $ssazadropdown->setValue($but_ssaza); 
+                                        echo $ssazadropdown->render(); 
+                                    ?> &nbsp;</td>
+								<td> <label class="control-label"><br /></label>                                   
+                                   <?php
+										$villagedropdown = new Zend_Form_Element_Select('places_village_'.$but_key,
+															array(
+																'multiOptions' => array('' => '<Select ssaza first>'),
+																'view' => new Zend_View(),
+																'decorators' => array('ViewHelper'),
+																'class' => array('xchzn-select','span3','hastooltip'),
+																'title' => $this->translate("person_village_tooltip")
+															)
+														);
+										$villagedropdown->setValue($but_villageid); 
+										echo $villagedropdown->render(); 
+									 ?>
+                                </td>
+                            </tr>
+                            <tr>
+                           		<td width="33%" style="padding-top:0; border-top:none;"><label class="pagedescription">(Ssaza/county)</label></td>
+                                <td style="padding-top:0; border-top:none;"><label class="pagedescription">(Ekyalo/village)</label></td>
+                            </tr>
+                            <?php if($hideall){ ?>
+                            <tr>
+                            	<td><label class="control-label">Embuga (HeadQuaters)<?php //echo $this->translate("clan_headquaters_address_label"); ?>:</label>   
+                                    <input name="places[<?php echo $hed_key; ?>][id]" id="places_id_<?php echo $hed_key; ?>" type="hidden" value="<?php echo $hed_id; ?>" />
+                                    <input name="places_type_<?php echo $hed_key; ?>" id="places_type_<?php echo $hed_key; ?>" type="hidden" value="<?php echo $hed_type; ?>" />
+                                    <input name="places_country_<?php echo $hed_key; ?>" id="places_country_<?php echo $hed_key; ?>" type="hidden" value="<?php echo $hed_country; ?>" />
+                                    <input name="places[<?php echo $hed_key; ?>][streetaddress]" id="places_streetaddress_<?php echo $hed_key; ?>" type="hidden" value="<?php echo $hed_street; ?>" />
+									<?php
+                                        $ssazadropdown = new Zend_Form_Element_Select('places_ssaza_'.$hed_key,
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => "<Select Ssaza>"), $massaza),
+                                                                'view' => new Zend_View(), 
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span3','xssazas','hastooltip'),
+                                                                'title' => $this->translate("clan_ssaza_tooltip")
+                                                            )
+                                                        );
+                                        $ssazadropdown->setValue($hed_ssaza); 
+                                        echo $ssazadropdown->render(); 
+                                    ?> &nbsp;</td>
+								<td> <label class="control-label"><br /></label>                                   
+                                   <?php
+										$villagedropdown = new Zend_Form_Element_Select('places_village_'.$hed_key,
+															array(
+																'multiOptions' => array('' => '<Select ssaza first>'),
+																'view' => new Zend_View(),
+																'decorators' => array('ViewHelper'),
+																'class' => array('xchzn-select','span3','hastooltip'),
+																'title' => $this->translate("person_village_tooltip")
+															)
+														);
+										$villagedropdown->setValue($hed_villageid); 
+										echo $villagedropdown->render(); 
+									 ?>
+                                </td>
+                           </tr>
+                           <tr>
+                                <td width="33%" style="padding-top:0; border-top:none;"><label class="pagedescription">(Ssaza / county)</label></td>
+                                <td style="padding-top:0; border-top:none;"><label class="pagedescription">(Ekyalo / village)</label></td>
+                           </tr> 
+                           <?php } ?>                
+                           <tr>
+                                <td width="35%"><label class="control-label">Contact Person:</label>
+                                <input name="contactname" id="contactname" type="text" class="span3 hastooltip" value="<?php echo $clan->getContactName(); ?>" title="<?php echo $this->translate("clan_contactperson_tooltip"); ?>" /></td>
+                                <td colspan="2"><label class="control-label">Contact Phone:</label>
+                                <input name="contactphone" id="contactphone" type="text" class="span2 hastooltip" value="<?php echo $clan->getContactPhone(); ?>" title="<?php echo $this->translate("clan_contactphone_tooltip"); ?>" /></td>
+                            </tr> 
+                        </table>
+                    </div>
+                    <div class="form-actions row">
+                        <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
+                        <a href="<?php echo $this->baseUrl('clan/view/id/'.encode($clan->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                        <input type="hidden" name="entityname" value="Organisation" />
+                        <input type="hidden" id="id" name="id" value="<?php echo encode($clan->getID()); ?>" />
+                        <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" value="" />
+                        <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" value="" />
+                        <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />  
+                    </div>
+                </span>
+            </div>
+            </form>
+        </div>
+        <?php if($isclan){ ?>
+        	<?php if($hideall){ ?>             
+            <div id="ssiga">
+                <?php require APPLICATION_PATH."/views/scripts/clan/ssigawidget.phtml"; ?>
+            </div>
+            <?php } ?>
+        <div id="names">
+            <form id="profileform-names" class="form-horizontal"> 	
+            <div class="row" style="margin-left:0px;">
+            	<?php require APPLICATION_PATH."/views/scripts/clan/nameswidget.phtml"; ?>    
+            </div>
+            </form>
+        </div>
+        <?php } ?>
+</div>
+<?php
+	$session->setVar(SUCCESS_MESSAGE, '');
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

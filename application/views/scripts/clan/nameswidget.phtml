@@ -1,0 +1,32 @@
+<span class="span9">
+                    <div class="well lighter row" style="min-height:150px;">
+                        <h3 class="well-legend"><?php echo $this->translate("clan_male_names_label"); ?></h3>
+                        <?php if($isadmin){ ?>
+                    		<a href="<?php echo $this->baseUrl('clan/addname/clanid/'.encode($clan->getID())."/type/1/pgc/true"); ?>" rel="New Boys Name" title="Add New Boys Name" id="newboy" class="addclanname button directedit pull-right"><i class="icon-plus"></i> Add</a>
+                     	<?php } ?> 
+                        <?php if($clan->getListOfNames(1) == '---'){ ?><br /><br />
+                            <div class="alert alert-info">There are currently no names to display</div>
+                        <?php } else { ?>
+                            <table class="table">                       
+                               <tr>
+                                    <td><?php echo $clan->getListOfNames(1); ?></td>
+                               </tr>
+                            </table>
+                        <?php } ?>
+                    </div>
+                    <div class="well lighter row" style="min-height:150px;">
+                        <h3 class="well-legend"><?php echo $this->translate("clan_female_names_label"); ?></h3>
+                        <?php if($isadmin){ ?>
+                        	<a href="<?php echo $this->baseUrl('clan/addname/clanid/'.encode($clan->getID())."/type/2/pgc/true"); ?>" rel="New Girls Name" title="Add New Girls Name" id="newgirl" class="addclanname button directedit pull-right"><i class="icon-plus"></i> Add</a>
+                        <?php } ?>       
+                        <?php if($clan->getListOfNames(2) == '---'){ ?><br /><br />
+                            <div class="alert alert-info">There are currently no names to display</div>
+                        <?php } else { ?>
+                            <table class="table">                       
+                               <tr>
+                                    <td><?php echo $clan->getListOfNames(2); ?></td>
+                               </tr>
+                            </table>
+                        <?php } ?>
+                    </div>
+                </span>

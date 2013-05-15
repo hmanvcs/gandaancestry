@@ -1,0 +1,27 @@
+<table style="width:700px; margin:0; padding:25px 25px 25px 15px; background-color:#fafdff; font-family: Arial, Helvetica, Tahoma, sans-serif; font-size:15px; line-height: 1.2em;">
+	<tr>
+        <td colspan="2" style="padding-bottom:10px; padding-top:10px; text-align:center; border-bottom: 3px solid #E2E2E2; background:none repeat scroll 0 0 #F4F4F4;">
+            <a class="brand" id="thelogo" href="<?php echo $this->serverUrl($this->baseUrl()); ?>"><img alt="<?php echo $this->appname; ?>" src="<?php echo $this->serverUrl($this->baseUrl("images/logogrey.png")); ?>" /></a>
+        </td>
+    </tr>    
+    <tr>
+    	<td>
+            Dear <?php echo $this->firstname; ?>,<br /><br />
+            
+            Welcome to <?php echo $this->appname; ?>!<br /><br />
+            
+            You have successfully launched Step 1 of your GandaAncestry account registration process. However, due to a larger than anticipated volume of registration requests that Baganda have submitted after our launch, we are controlling the number of registrations that are completed per day.<br /><br />
+            
+            You will receive the instruction for completing all steps in the registration process as soon as possible, depending on the number of requests received.<br /><br />
+
+            Alexandra Nakazzi<br />
+            President, <?php echo $this->appname; ?>.<br />
+            <?php echo $this->serverUrl($this->baseUrl()); ?>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding:10px 0 10px 0; text-align:center; border-top: 3px solid #E2E2E2; background:none repeat scroll 0 0 #F4F4F4;">
+           &nbsp;Copyright &copy; 2012 <?php echo $this->appname; ?>. All Rights Reserved.
+        </td>
+    </tr>
+</table>

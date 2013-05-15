@@ -1,0 +1,40 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = $this->translate("useraccount_pagetitle_invitation_success"); 
+	$this->headTitle($title); 
+	
+	// the usermaking the payment
+	$useraccount = new UserAccount();
+	// $useraccount->populate(decode($request->id));
+	
+?>
+<style>
+#contentcolumn {
+	min-height:0;
+	height:auto;
+}
+</style>
+<div class="row span12 marginleft0" style="margin:0 auto;">
+
+<span class="span7" style="margin-left:220px;">
+	<h1 class="aligncenter"><?php echo $title; ?></h1>
+	<table class="table" style="margin-top:20px;">
+		<thead>
+		 	<tr>			
+				<td><div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php //echo $session->getVar(SUCCESS_MESSAGE); ?>Registration completed successfully</div></td>
+			</tr>
+		</thead>
+		<tr>
+		  	<td>Thank you for registering with <b><?php echo $this->translate("appname"); ?></b>.<br /><br />           
+				You can now log in using the email address and password you provided during signup<br><br />
+                <a class="positiveaction btn btn-primary" href="<?php echo $this->baseUrl("user/logout")?>"><i class="icon-lock icon-white"></i> Login</a><br /><br>
+				For any assistance please feel free to <a href="<?php echo $this->serverUrl($this->baseUrl('contactus')); ?>" title="Contact us">Contact us</a><br /><br />
+			</td>
+		</tr>
+	</table>
+</span>
+</div>	
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

@@ -1,0 +1,164 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$posturl = $this->baseUrl("announcement/processtellfriend");
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$formvalues = $session->getVar(FORM_VALUES);
+		$ssiga = $formvalues['ssiga']; unset($formvalues['ssiga']); 
+	}
+	
+	$title = "Tell A Friend";
+	$this->headTitle($title);
+	
+?>
+<script>
+	$(document).ready(function() {
+		$("#indexform").validate({		
+			rules: {
+				name: "required",
+				content: "required",
+				youremail: {
+					required: true, 
+					email: true
+				},
+				email: {
+					required: true
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {	
+				name: "Please enter your name",
+				youremail: {
+					"required": "Please enter your email", 
+					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				},
+				email: {
+					"required": "Please enter one or more emails"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		var tabindex = 1;
+		  $('input,select').each(function() {
+			 if (this.type != "hidden") {
+			   var $input = $(this);
+			   $input.attr("tabindex", tabindex);
+			   tabindex++;
+			 }
+		  });
+  
+		$("#contentwrapper").removeClass('well');
+		
+		function validateEmail(field) {
+			//var regex=/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b/i;
+			var regex=/^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+			return (regex.test(trim(field))) ? true : false;
+		}
+		function validateMultipleEmailsCommaSeparated(value) {
+			var result = value.split(",");
+			alert(result);
+			for(var i = 0;i < result.length;i++) {
+				if(!validateEmail(result[i])) {
+					return false;
+				}
+				return true;
+		}
+
+	}); 
+</script>
+<style>
+body {
+	font-family:'calibri','Telex',sans-serif;	
+}
+.popupdiv .form-horizontal .control-label {
+	font-size:15px;
+}
+#loginheader, #footertable, #betalogo, #headeractions {
+	display:none;
+}
+body.publicbody .footer.well {
+	height:30px;
+	min-height:0;
+}
+#clanid {
+	width:215px;
+}
+.btn-primary.btn-gold {
+	font-weight:bold;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+	padding:8px 25px 8px 25px;
+	font-size:16px;
+	border-color: #C1A118;
+}
+</style>
+<div class="popupdiv well span7" style="margin-left:170px;">
+<form class="form-horizontal " id="indexform" action="<?php echo $posturl; ?>" method="post">
+	<h3 class="well-legend" style="text-align:center;">Tell A Friend</h3></legend>
+    <table class="table">
+		<?php if($sessionhaserror) { ?>
+	        <tr>
+	        	<td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+	        </tr>
+        <?php } ?>
+        <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) || $request->success == 'true'){ ?>
+            <tr>
+	        	<td colspan="2">
+                	<div class="alert alert-success" style="text-align:left; display:block;">Successfully sent</div>
+                    <span class="pagedescription" style="font-size:18px; font-style:normal;">
+                        Thank you for your interest in the GandaAncestry beta user program.<br /><br />
+                        Would you wish to send to another friend?
+                        <a href="<?php echo $this->baseUrl('announcement/tellfriend'); ?>">Tell a Friend</a>
+                    </span>
+                </td>
+            </tr>
+        <?php } else { ?>	
+        <tr>
+            <td colspan="2">
+            	<span class="pagedescription" style="font-size:18px; font-style:normal;">
+               		Please use the form below to forward a copy of the GandaAncestry announcement to one or more friends. Use commas to separate their emails. All fields marked with <?php echo $this->translate("global_required_field_marker"); ?> are mandatory.
+                </span>
+            <td>
+        </tr>
+        <tr>
+            <td width="30%"><label class="control-label leftalign">Your Name: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input name="name" id="name" type="text" class="span3" value="" /><div id="name_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label leftalign">Your Email: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input class="span4" name="youremail" id="youremail" type="text" value="" /><div id="youremail_error"></div></td>
+        </tr>
+        <tr>
+            <td style="vertical-align:top;"><label class="control-label leftalign">Friends' Email(s): <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><textarea class="span4 expanding" style="min-height:35px;" name="email" id="email" type="text"></textarea><div id="email_error"></div></td>
+        </tr>
+        <tr>
+            <td style="vertical-align:top;"><label class="control-label leftalign">Message:</label>
+            <span class="pagedescription" style="font-size:15px;">(Optional message to accompany the announcement)</span>
+            </td>
+            <td><textarea class="span4 expanding" style="min-height:60px;" name="intromsg" id="intromsg" type="text"></textarea><div id="intromsg_error"></div></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td class="nowrapping">
+            <button type="submit" id="submitjoin" class="btn btn-primary btn-gold">Send Message</button>
+            </td>
+        </tr>
+        <?php } ?>
+  </table>
+</form>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

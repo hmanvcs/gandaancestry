@@ -1,0 +1,249 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	# Page title
+	$title = $this->translate('family_pagetitle_list');
+	
+	# Create an instance of the class to handle the pagination
+	$paginate = new Pagination();	
+	$paginate->setView($this);
+	# set the search columns to be used on this list
+	$paginate->setSearchColumns(array("p.firstname","p.lastname","p.clanname"));
+	$paginate->setDefaultSortBy("p.firstname");	
+	$paginate->setDefaultSortOrder("ASC");
+	$paginate->setItemCountPerPage("50");
+	
+	$thepersonid = $personid;
+	if(!isEmptyString($request->focusid)){
+		$thepersonid = $request->focusid;	
+	}
+	$person = new Person();
+	$person->populate($thepersonid);
+	
+	$thefamilyid = isEmptyString($familyid) ? $person->getFamilyID() : $familyid;
+	if(!isEmptyString($request->familyid)){
+		$thefamilyid = $request->familyid;	
+	}
+	
+	# family filter
+	if(isEmptyString($request->range)){
+		$request->setParam('range', '2');
+	}
+	$custom_where_query = "";
+	if(!isEmptyString($request->range)){
+		switch($request->range){
+			case 1:
+				$title = "All Families";
+				$custom_where_query = "";
+				break;
+			case 2:
+				$title = "My Families";
+				$custom_where_query = " AND (f.fatherid = '".$thepersonid."' OR f.motherid = '".$thepersonid."' OR f.addedbyid = '".$thepersonid."' OR f.createdby = '".$userid."' OR pff.id = '".$thepersonid."'  OR pmm.id = '".$thepersonid."') ";
+				break;
+			default:
+				$title = $this->translate('family_pagetitle_list');
+				break;
+		}
+	}
+	# custom queries
+	if(!isEmptyString($request->searchterm)){
+		$custom_where_query .= " AND (
+		pf.firstname LIKE '%".$request->searchterm."%' OR pf.lastname LIKE '%".$request->searchterm."%' OR pf.clanname LIKE '%".$request->searchterm."%' OR pf.othernames LIKE '%".$request->searchterm."%' OR 
+		pm.firstname LIKE '%".$request->searchterm."%' OR pm.lastname LIKE '%".$request->searchterm."%' OR pm.clanname LIKE '%".$request->searchterm."%' OR pm.othernames LIKE '%".$request->searchterm."%') ";
+	}
+	
+	$paginate->processPost($request->getParams());
+	$all_results_query = "SELECT f.id, f.fatherid, f.motherid, pf.lastname as `Family Name`, 
+	concat(pf.firstname, ' ', UPPER(pf.lastname), ' (',pf.clanname,')') as `Father`, pf.gender as 'fathergender', 
+	concat(pm.firstname, ' ', UPPER(pm.lastname), ' (',pm.clanname,')') as `Mother`, pm.gender as 'mothergender' 
+	FROM family f 
+	LEFT JOIN person pf on (f.fatherid = pf.id ) 
+	LEFT JOIN person pm on (f.motherid = pm.id) 
+	LEFT JOIN person pff on (f.id = pff.familyid) 
+	LEFT JOIN person pmm on (f.id = pmm.familyid) 
+	WHERE f.id <> '' AND ((f.fatherid IS NOT NULL AND f.motherid IS NULL) OR (f.fatherid IS NULL AND f.motherid IS NOT NULL) OR (f.fatherid IS NOT NULL AND f.motherid IS NOT NULL)) ".$custom_where_query." 
+	GROUP BY f.id 
+	ORDER BY pf.firstname ";   
+	// debugMessage($all_results_query);
+	
+	$paginate->setItemCountFromSQLQuery($all_results_query);	
+	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
+	// echo $current_results_query;
+	$session->setVar(ALL_RESULTS_QUERY, $all_results_query);
+	$session->setVar(CURRENT_RESULTS_QUERY, $current_results_query);
+	# the query string to be appended to the return to list URL
+	$session->setVar('list_query_string'.$request->getControllerName(), $request->getParams());
+	
+	$conn = Doctrine_Manager::connection(); 
+	$result = $conn->fetchAll($current_results_query);
+	$has_no_data = (count($result) == 0) ? true : false; 
+	
+	$this->headTitle($title);
+	
+?>
+<script>
+$(document).ready(function() {
+	// on range change
+	$("#range").change(function(e) {
+		if($(this).val() == '1'){
+			e.preventDefault;
+			$("#focusid").val('');
+			$("#family").val('');
+		}
+		$("#listform").submit(); 		
+	});
+		
+});	
+</script>
+<style>
+#contentcolumn {
+	width:auto;
+}
+
+select.range {
+	width:150px;
+}
+.custom_margin {
+	margin-left:10px;
+}
+.table.list {
+	width:100%;
+}
+.table.list thead {
+	background: -moz-linear-gradient(top, #284A77 0%, #335E99 47%, #3969AA 100%); 
+	color:#fff;
+}
+.table.list thead tr td a {
+	color:#fff;
+}
+</style>
+<h1><?php echo $title; ?></h1>
+<form action="<?php echo $this->baseUrl("family/listsearch"); ?>" method="get" id="listform" class="form-search">
+    <div class="well" style="padding:10px;">
+		<table class="table filtertable">
+        	<tr>
+                <td width='70%'>
+                	<table class="filters">
+                    	
+                    </table>
+                </td>
+                <td>
+                    <table style="width:100%;">
+                        <tr>
+                            <td>
+                                <span class="pull-right">
+                                    <b>Search:</b>
+                                    <?php
+                                        $range_array = array("2"=>"My Families");
+                                        $rangedropdown = new Zend_Form_Element_Select('range',
+                                                            array(
+                                                                'multiOptions' => $range_array,
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('range','span2','filter'),
+                                                                'title' => 'Filter List By'		
+                                                            )
+                                        );  
+                                        $rangedropdown->setValue($request->getParam('range'));
+                                        echo $rangedropdown->render();
+                                    ?>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="pull-right">
+                                    <input name="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium search-querys" placeholder="<?php echo $this->translate('global_list_action_search_placeholder'); ?>">
+                                    <button type="submit" class="btn btn-primary"><i class="icon-search icon-white"></i>&nbsp;</button>
+                                    <input type="hidden" name="advanced" id="advanced" value="<?php echo $request->getParam('advanced'); ?>" />
+                                    <input type="hidden" name="focusid" id="focusid" value="<?php echo $request->getParam('focusid'); ?>" />
+                                    <input type="hidden" name="familyid" id="familyid" value="<?php echo $request->getParam('familyid'); ?>" />
+                                </span>
+                            </td>  
+                        </tr>
+                    </table>
+                </td>
+			</tr>                
+        </table>
+    </div>
+	<?php if (!isEmptyString($session->getVar(SUCCESS_MESSAGE))) { ?>
+        <div class="alert alert-success"><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+    <?php } ?>
+    
+	<?php if ($has_no_data) { ?>
+    	<div class="alert alert-info"><?php echo $this->translate("family_list_norecords"); ?></div>
+    <?php } else { ?>
+    	<div><?php echo sprintf($this->translate("family_list_counter"), $paginate->getItemCounterText()); ?><?php echo $this->listcountdropdown; ?></div>
+        <table class="table table-striped table-bordered list">
+            <thead>
+                <tr>
+                    <td width="160"><?php echo $this->translate('family_photos_label'); ?></td>
+                    <td width="220"><?php echo $this->translate('family_husbandwife_label'); ?></td>
+                    <td width="160"><?php echo $this->translate('family_familyname_label'); ?></td>
+                    <td><?php echo $this->translate('family_children_label'); ?></th>
+                    <td width="100"><?php echo $this->translate("global_action_label"); ?></td>
+                </tr>
+            </thead>
+        <tbody>
+		<?php 
+			$counter = 1;				  		
+			foreach($result as $line){
+				// debugMessage($line);
+				$family = new Family();
+				$family->populate($line['id']);
+				$maleprofile = new Person();
+				$femaleprofile = new Person();
+				$maleprofile->populate($line['fatherid']);		
+				$femaleprofile->populate($line['motherid']);	
+				$parent_focusid = !isEmptyString($maleprofile->getID()) ? $maleprofile->getID() : $femaleprofile->getID();
+				$parent_name = !isEmptyString($maleprofile->getID()) ? $maleprofile->getName() : $femaleprofile->getName();
+				
+        ?>
+            <tr>
+            	<td align="center">
+            		<a style="height:100%; display:block;" href="<?php echo $this->baseUrl("family/view/id/".encode($family->getID())); ?>" title="<?php echo "View details of ".$family->getFamilyName()."'s Family"; ?>">
+                        <div style="float:left;" class="thumbinfo <?php echo $maleprofile->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>"> 
+                            <?php if(!isEmptyString($maleprofile->getID())){ ?>
+                                <img class="profileimage" src="<?php echo $maleprofile->getThumbnailPicturePath(); ?>" />
+                            <?php } else { ?>
+                                <label class="unknownimagetext">Unknown Partner</label>
+                            <?php } ?>
+                        </div>&nbsp;
+                        <div style="float:rght; display:inline-block;" class="thumbinfo <?php echo $femaleprofile->hasProfileImage() ? 'new_pic' : 'default_pic'; ?>"> 
+                            <?php if(!isEmptyString($femaleprofile->getID())){ ?>
+                                <img class="profileimage" src="<?php echo $femaleprofile->getThumbnailPicturePath(); ?>" />
+                            <?php } else { ?>
+                                <label class="unknownimagetext">Unknown Partner</label>
+                            <?php } ?>
+                        </div>
+                    </a>
+            	</td>
+            	<td align="center">
+					<?php if(!isEmptyString($maleprofile->getID())){ ?>
+                    	<a href="<?php echo $this->baseUrl("person/view/id/".encode($maleprofile->getID())); ?>" title="<?php echo $maleprofile->getName(); ?>"><?php echo $maleprofile->getName(); ?></a>
+                    <?php } else { ?>
+                    	<label class="unknownimagetext" style="text-align:left;">Unknown Partner</label>
+                    <?php } ?> 
+            		<label style="display:block; width:100%; margin-top:5px; margin-bottom:5px; padding-left:40px;">+</label>
+					<?php if(!isEmptyString($femaleprofile->getID())){ ?>
+                    	<a href="<?php echo $this->baseUrl("person/view/id/".encode($femaleprofile->getID())); ?>" title="<?php echo $femaleprofile->getName(); ?>"><?php echo $femaleprofile->getName(); ?></a>
+                    <?php } else { ?>
+                    	<label class="unknownimagetext" style="text-align:left;">Unknown Partner</label>
+                    <?php } ?>
+            	</td>
+            	<td><?php echo $family->getFamilyName(); ?></td>
+            	<td><?php echo $family->getListOfChildren(); ?></td>
+            	<td><a href="<?php echo $this->baseUrl("family/view/id/".encode($family->getID())); ?>" title="View Family">View Family</a></td>
+            </tr>
+            <?php 
+            	$counter++;						
+            	} // end processing results 
+            ?>
+            </tbody>
+		</table>
+    <?php } ?>
+    <?php echo $paginate->getPaginationLinks(); ?>
+</form>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

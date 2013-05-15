@@ -1,0 +1,70 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "GandaAncestry Registration";
+	$this->headTitle($title);
+	
+	$button_title = "Submit";
+	
+	
+?>
+<script>
+	$(document).ready(function(){
+		
+		
+	}); 
+</script>
+<style>
+</style>
+<div class="row marginleft0">
+    <div class="span8 pull-left marginleft0 public_leftcolumn">
+        <div class="content">
+        	<div class="well row span8" style="margin:0 auto; display:block;">
+				<form class="form-horizontal " id="indexform">
+                    <h3 class="well-legend" style="text-align:center;"><?php echo $title; ?></h3></legend>
+                    <table class="table">
+                        <?php if($sessionhaserror || $request->result == 'error') { ?>
+                        	<?php
+                            	$person = new Person();
+								$person->populate(decode($request->id));
+							?>
+                            <tr>
+                                <td colspan="2"><div class="alert alert-info" style="font-size:15px;">Something went wrong!</div>
+                                    <span class="pagedescription" style="font-size:16px; font-style:normal;">
+                                        Our records show that on <?php echo changeMySQLDateToPageFormat($person->getDateCreated()); ?>, you started your registration process with GandaAncestry using email '<?php echo $person->getEmail(); ?>'.<br /><br /> 
+                                        Due to a larger than anticipated number of registration requests, we are controlling the number of registrations that are completed per day.<br /><br /> 
+                                        You will receive the instruction for completing all steps in the registration process as soon as possible.
+                                        Thank you for patience.<br /><br />
+                                        
+                                        GandaAncestry Team
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) || $request->result == 'success'){ ?>
+                            <tr>
+                                <td colspan="2">
+                                    <div class="alert alert-success" style="text-align:left; display:block;">Successfully submitted.</div>
+                                    <span class="pagedescription" style="font-size:16px; font-style:normal;">
+                                    	<b>Welcome to GandaAncestry!</b><br /><br />
+                                        You have successfully launched Step 1 of your GandaAncestry account registration process. However, due to a larger than anticipated volume of registration requests that Baganda have submitted after our launch, we are controlling the number of registrations that are completed per day.<br /><br />
+                                        You will receive the instruction for completing all steps in the registration process as soon as possible.<br /><br />
+                                        Thank you for your patience.<br /><br />
+                                        GandaAncestry Team
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                        <tr>
+                            <td colspan="2" style="text-align:center;"><a id="submitjoin" class="btn btn-primary btn-gold" href="<?php echo $this->baseUrl("index"); ?>">Back to Home</a></td>
+                        </tr>	
+                  </table>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php require APPLICATION_PATH."/views/scripts/index/righthandband.phtml"; ?>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

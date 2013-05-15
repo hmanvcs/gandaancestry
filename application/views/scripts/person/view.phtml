@@ -1,0 +1,875 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$theid = decode($request->id);
+	if(isEmptyString($theid)){
+		$theid = $personid;
+	}
+	$person = new Person();
+	$person->populate($theid);
+	
+	$id = $person->getID();	
+	$name = $person->getName();
+	$firstname = $person->getFirstName();
+	$treeid = $personid;
+	$focusid = $id;
+	
+	$person->cleanUpPrivacy();
+	$privacy = $person->getPrivacyLine();
+	
+	$total = $person->getCurrentPercentageCompletion();
+	
+	# family members for person
+	$family = $person->getImmediateFamilyMembers();
+	$familyids = array();
+	foreach($family as $member){
+		$familyids[] = $member['id'];
+	}
+	
+	# all relatives for person
+	$relativeids = array();
+	$relatives = $person->getAllRelatives($id);
+	foreach($relatives as $relative){
+		$relativeids[] = $relative['relative'];
+	}
+	
+	# by default none
+	$ispublic = true;
+	$issubscriber = false; 				
+	$isrelative = false;
+	$isfamily = false;
+	$isme = false;
+	
+	# logged in person
+	$loggedinperson = new Person();
+	if(!isEmptyString($personid)){
+		$loggedinperson->populate($personid);
+		$issubscriber = true;
+	}
+	# profile for one viewing
+	if($personid == $person->getID()){
+		$ispublic = false;
+		$isme = true;
+		$isfamily = true;
+		$isrelative = true;
+	}
+	
+	if($personid != $person->getID()){
+		if(!isEmptyString($personid)){
+			$ispublic = false;
+		}
+		$issubscriber = true;
+		// determine if a family member
+		if(in_array($loggedinperson->getID(), $familyids) && !isEmptyString($personid)){
+			$isfamily = true;
+		}
+		// determine if a relative
+		if(in_array($loggedinperson->getID(), $relativeids) && !isEmptyString($personid)){
+			$isrelative = true;
+		} 
+	}
+	
+	# determine if profile was added by person
+	$addedbyme = false;
+	if(!isEmptyString($personid) && ($person->getAddedByID() == $personid || $isme || $person->getCreatedBy() == $userid)){
+		$addedbyme = true;
+		$isfamily = true;
+		$isrelative = true;
+	}
+	$allowedit = false;
+	if($person->getOwnerID() == $userid){
+		$allowedit = true;
+	}
+	
+	# determine section viewing status depending on who user is and current profile privacy
+	$shownames = false;
+	$showfamily = false;
+	$showclan = false;
+	$showpersonal = false;
+	$showemail = false;
+	$showphone = false;
+	$showaddress = false;
+	$showweb = false;
+	$showbirth = false;
+	$showpic = false;
+	
+	# names viewability
+	if(($ispublic && $privacy->getnamesection() == 1) || ($issubscriber && $privacy->getnamesection() == 2) || ($isrelative && $privacy->getnamesection() == 3) || ($isfamily && $privacy->getnamesection() == 4) || ($isme)){
+		$shownames = true;
+	}
+	# profile picture viewability
+	if(($ispublic && $privacy->getprofilepicture() == 1) || ($issubscriber && $privacy->getprofilepicture() == 2) || ($isrelative && $privacy->getprofilepicture() == 3) || ($isfamily && $privacy->getprofilepicture() == 4) || ($isme)){
+		$showpic = true;
+	}
+	# family viewability
+	if(($ispublic && $privacy->getfamilysection() == 1) || ($issubscriber && $privacy->getfamilysection() == 2) || ($isrelative && $privacy->getfamilysection() == 3) /*|| ($isfamily && $privacy->getfamilysection() == 4) || ($isme)*/){
+		$showfamily = true;
+	}
+	# personal viewability
+	if(($ispublic && $privacy->getpersonalsection() == 1) || ($issubscriber && $privacy->getpersonalsection() == 2) || ($isrelative && $privacy->getpersonalsection() == 3) || ($isfamily && $privacy->getpersonalsection() == 4) || ($isme)){
+		$showpersonal = true;
+	}
+	# clan viewability
+	if(($ispublic && $privacy->getclansection() == 1) || ($issubscriber && $privacy->getclansection() == 2) || ($isrelative && $privacy->getclansection() == 3) || ($isfamily && $privacy->getclansection() == 4) || ($isme)){
+		$showclan = true;
+	}
+	# email viewability
+	if(($ispublic && $privacy->getemailaddresssection() == 1) || ($issubscriber && $privacy->getemailaddresssection() == 2) || ($isrelative && $privacy->getemailaddresssection() == 3) || ($isfamily && $privacy->getemailaddresssection() == 4) || ($isme)){
+		$showemail = true;
+	}
+	# phone viewability
+	if(($ispublic && $privacy->getphonesection() == 1) || ($issubscriber && $privacy->getphonesection() == 2) || ($isrelative && $privacy->getphonesection() == 3) || ($isfamily && $privacy->getphonesection() == 4) || ($isme)){
+		$showphone = true;
+	}
+	# address viewability
+	if(($ispublic && $privacy->getphysicaladdresssection() == 1) || ($issubscriber && $privacy->getphysicaladdresssection() == 2) || ($isrelative && $privacy->getphysicaladdresssection() == 3) || ($isfamily && $privacy->getphysicaladdresssection() == 4) || ($isme)){
+		$showaddress = true;
+	}
+	# web address viewability
+	if(($ispublic && $privacy->getwebaddresssection() == 1) || ($issubscriber && $privacy->getwebaddresssection() == 2) || ($isrelative && $privacy->getwebaddresssection() == 3) || ($isfamily && $privacy->getwebaddresssection() == 4) || ($isme)){
+		$showweb = true;
+	}
+	# birth viewability
+	if(($ispublic && $privacy->getbirthsection() == 1) || ($issubscriber && $privacy->getbirthsection() == 2) || ($isrelative && $privacy->getbirthsection() == 3) || ($isfamily && $privacy->getbirthsection() == 4) || ($isme)){
+		$showbirth = true;
+	}
+	
+	// $person->getFormattedListOfDeleteables(); // exit();
+	
+	// temporalily hide ssiga functionality
+	$hidesiga = false;
+	
+	$controller = $request->getControllerName();
+	$action = $request->getActionName();
+	if(isEmptyString($request->tab)){
+		$request->setParam('tab', 'basics'); 
+	}
+
+	$title = $this->translate("person_pagetitle_view"); 
+	$title = $person->getName();
+	$this->headTitle($title);
+	
+?>
+<h1><?php echo $title; ?></h1>
+<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+	<div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+<?php } ?>
+<?php if(!isEmptyString($session->getVar("demo_success")) ){ ?>
+	<div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("demo_success"); ?></div>
+<?php } ?>		
+<div class="well" id="summary">
+	<table id="summarycontainer">
+		<tr>
+			<td style="width:200px; vertical-align:top;">
+            <div id="profileinfo">
+            	<?php if($allowedit){ ?>
+                	<a href="<?php echo $this->baseUrl('person/picture/id/'.encode($id)); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $person->getMediumPicturePath(); ?>" /></a>
+                <?php } else { ?>
+                	<img id="profileimage" src="<?php echo $showpic == true ? $person->getMediumPicturePath() : $person->getDefaultMediumPicturePath(); ?>" />
+                <?php } ?>
+            </div>
+			</td>
+			<td width="60%" style="vertical-align:top; padding-left:15px;">
+				<table>
+                    <tr>
+						<td style="width:140px;"><label class="control-label pull-left">Gender:</label></td>
+						<td><?php echo $person->getGenderLabel(); ?></td>
+					</tr>
+                    <?php if($showbirth){ ?>
+					<tr>
+						<td><label class="control-label pull-left">Birth Date, Place:</label></td>
+						<td><?php echo $person->getBirthDateFromEvent(); ?>
+                        <?php echo isEmptyString($person->getBirthPlaceFromEvent()) ? '' : ", ".$person->getBirthPlaceFromEvent(); ?>
+                        </td>
+					</tr>
+                    <?php } ?>
+                    <tr>
+						<td><label class="control-label type pull-left"><?php echo $this->translate("person_lifestatus_label"); ?>:</label></td>
+						<td><?php echo $person->getLifeStatusLabel(); ?></td>
+					</tr>
+                    <?php if($showbirth){ ?>
+						<?php if($person->isDead()) { ?>
+                            <tr>
+                                <td><label class="control-label pull-left">Death Date, Place:</label></td>
+                                <td><?php echo $person->getDeathDateFromEvent(); ?>
+                                <?php echo isEmptyString($person->getDeathPlaceFromEvent()) ? '' : ", ".$person->getDeathPlaceFromEvent(); ?>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                    <?php } ?>
+					<?php if(!isEmptyString($person->getAddedByID()) && $issubscriber){ ?>
+                        <tr>
+                            <td><label class="control-label pull-left">Added on:</label></td>
+                            <td><?php echo changeMySQLDateToPageFormat($person->getDateCreated()); ?></td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label pull-left">Added by:</label></td>
+                            <td><?php echo $person->getAddedBy()->getName(); ?></td>
+                        </tr>
+                    <?php } ?>
+                    <?php if($person->isAlive() && $issubscriber) { ?>
+                    <tr>
+                        <td><label class="control-label pull-left">Joined on:</label></td>
+                        <td>
+                        	<?php if(!isEmptyString($person->getUserID())){ ?>
+								<?php echo changeMySQLDateToPageFormat($person->getUser()->getActivationDate()); ?>
+                            <?php } else { ?>
+                            	<?php if($allowinvite){ ?>
+									<?php if($person->getOwner()->getPersonID() == $personid && $person->getIsInvited() !=  '1'){ ?>
+                                        <span class="inv_before" id="inv_before_<?php echo $id; ?>" style="margin-top:2px;">
+                                            <input type="text" name="email_<?php echo $id; ?>" id="email_<?php echo $id; ?>" placeholder="enter email" title="Invite <?php echo $person->getFirstName(); ?> to join <?php echo $this->translate('appname'); ?>" value="<?php echo $person->getEmail(); ?>" class="span2 invite invite_<?php echo $id; ?> xhastooltip" /><a href="javascript:doNothing();" class="btn btn-primary btn-mini xinvitetrigger" style="margin-top:-10px; opacity:0.3;" id="invite_<?php echo $id; ?>" title="Invite <?php echo $person->getFirstName(); ?> to join <?php echo $this->translate('appname'); ?>"><i class="icon-envelope icon-white"></i> <?php echo $this->translate('person_button_invite'); ?></a>
+                                            <label class="hide invite_<?php echo $id; ?>" title="<?php echo $personid; ?>"><?php echo $id; ?></label>                            
+                                            <div id="invite_<?php echo $id; ?>_error" style="margin-top:4px;"></div>
+                                        </span>
+                                        <span class="inv_after" id="inv_after_<?php echo $id; ?>">
+                                            <a id="loading_<?php echo $id; ?>" class="hidden"><img style="margin-left:0" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a>
+                                        </span>
+                                    <?php } else { ?> 
+                                        <?php if($person->getIsInvited() ==  '1' && $person->getHasAcceptedInvite() == '0') { ?>
+                                            <label class="labeldescription">Invitation sent</label>
+                                        <?php } else {
+                                            echo '--';
+                                        } ?>  
+                                    <?php } ?>  
+                            	<?php } else { echo '--';} ?>    
+							<?php } ?>
+                        </td>
+                    </tr>
+                    <?php } ?>
+                    <?php if($showfamily && !isEmptyString($person->getUserID())){ ?>
+                    <tr>
+						<td><label class="control-label pull-left">Immediate Family:</label></td>
+						<td><a href="<?php echo $this->baseUrl('person/list/focusid/'.$id.'/range/2'); ?>" title="<?php echo "View ".$person->getFirstName()."'s Family"; ?>">Show</a></td>
+					</tr>
+                    <?php } ?>
+					<tr>
+						<td><label class="control-label pull-left">Clan:</label></td>
+						<td>
+                        	<?php if($person->isMuganda()){ ?>
+                        		<a href="<?php echo $this->baseUrl('clan/view/id/'.encode($person->getClanID())); ?>"><?php echo $person->getClan()->getFullName(); ?></a>
+                            <?php } else { ?>
+                            	--
+							<?php } ?>
+                        </td>
+					</tr>
+				</table>
+			</td>
+			<td style="vertical-align:top;">
+				<ul class="nav nav-tabs nav-stacked" style="width:180px;">
+                    <?php if($addedbyme){ ?>
+                        <li><a href="javascript: void(0)" class="addpreview" title="Add Relative using <?php echo $id == $personid ? "Myself" : $firstname; ?> as the Focus Person" rel="<?php echo $id == $personid ? "Add My Relative" : "Add Relative of ".$name; ?>" id="add_<?php echo $id; ?>"><i class="icon-plus"></i> Add Relative</a>
+                        <span class="hide list_<?php echo $id; ?> add_<?php echo $id; ?>"><?php echo $id; ?></span>
+                    	<label class="hide list_<?php echo $id; ?>"><?php echo $person->getFamilyID(); ?></label>
+                        </li>
+                    <?php } ?>    
+                    <?php if($allowedit){ ?>    
+                        <li><a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil"></i> Update Profile</a></li>
+                        <li><a href="<?php echo $this->baseUrl('person/picture/id/'.encode($id)); ?>"><i class="icon-upload"></i> Upload Photo</a></li>
+                        <?php if($person->getID() != $personid){ ?>
+                        	<li><a href="javascript: void(0)" id="deleteperson" class="deleteperson"><i class="icon-trash"></i> Delete</a></li>
+                        <?php } ?>
+                    <?php } ?>
+			      	<li><a href="<?php echo $this->baseUrl('person/list'); ?>" id="view"><i class="icon-list"></i> Relatives</a></li>
+			    </ul>
+			</td>
+		</tr>
+	</table>
+</div>
+<div id="tabs">   
+    <ul>
+       <li><a href="#basics" class="basics">Overview</a></li>
+       <?php if($showclan){ ?>
+       	<li><a href="#clan" class="clan">Clan</a></li>
+       <?php } ?>       
+       <?php if($showpersonal){ ?>
+       	<li><a href="#personal" class="personal">Personal</a></li>
+       <?php } ?>
+       <?php if(!$person->isDead()){ ?>
+		   <?php if($showemail || $showphone || $showaddress || $showweb){ ?>
+            <li><a href="#contacts" class="contacts">Contacts</a></li>
+           <?php } ?>
+       <?php } ?>
+       <?php if($allowedit){ ?>
+           <li><a href="#privacy" class="privacy">Privacy</a></li>
+       <?php } ?>
+	   <?php if($isme){ ?>
+           <li><a href="#settings" class="settings">Account</a></li>
+       <?php } ?>
+    </ul>
+    <div id="basics">
+    	<form id="profileform-basics" class="form-horizontal basics">
+        <?php if($request->tab == 'basics'){ ?>
+        <div class="row" style="margin-left:-10px; margin-right:0;">
+	    	<span class="span8" style="width:670px;">
+	    		<div class="well widgetlight widget row hasprivacy" style="min-height:60px;">
+	    			<table class="table" style="margin-top:12px;">                       
+		               <tr>
+		                    <td style="width:70px;"><label class="control-label firstname"><?php echo $this->translate("person_firstname_label"); ?>:</label></td>
+                            <td style="width:110px;"><?php echo $person->getFirstName(); ?></td>
+							<td style="width:70px;"><label class="control-label lastname"><?php echo $this->translate("person_lastname_label"); ?>: </label></td>
+                            <td style="width:120px;"><?php echo $person->getLastName(); ?></td>
+		                    <td style="width:70px;"><label class="control-label clanname"><?php echo $this->translate("person_clanname_label"); ?>:</label></td>
+                            <td><?php echo isEmptyString($person->getClanName()) ? '--' : $person->getClanName(); ?></td>
+		                </tr>
+                        <?php if($shownames){ ?>                       
+                        <tr>
+		                    <td><label class="control-label screenname"><?php echo $this->translate("person_screenname_label"); ?>:</label></td>
+                            <td><?php echo isEmptyString($person->getScreenName()) ? '--' : $person->getScreenName(); ?></td>
+		                    <td><label class="control-label othernames"><?php echo $this->translate("person_othernames_label"); ?>:</label></td>
+                            <td><?php echo isEmptyString($person->getOtherNames()) ? '--' : $person->getOtherNames(); ?></td>
+		                    <td><label class="control-label alias"><?php echo $this->translate("person_alias_label"); ?>:</label></td>
+                            <td><?php echo isEmptyString($person->getAlias()) ? '--' : $person->getAlias(); ?></td>
+		                </tr>
+                        <tr>		                    
+		                    <td><label class="control-label suffix"><?php echo $this->translate("person_initials_label"); ?>: </label></td>
+                            <td><?php echo isEmptyString($person->getSuffixLabel()) ? '--' : $person->getSuffixLabel(); ?></td>
+                            <td><label class="control-label prefix"><?php echo $this->translate("person_prefix_label"); ?>: </label></td>
+                            <td><?php echo isEmptyString($person->getPrefix()) ? '--' : $person->getPrefix(); ?></td>  
+		                    <td><?php echo $person->isFemale() ? '<label class="control-label maidenname">'.$this->translate("person_maidenname_label").'</label>' : ''; ?></td>
+                            <td>
+		                    	<?php if($person->isFemale()){ ?>
+		                     		<?php echo isEmptyString($person->getMaidenName()) ? '--' : $person->getMaidenName(); ?>
+		                        <?php } ?>
+		                    </td>
+		                </tr>
+                        <?php } ?>
+                        <?php if($showfamily){ ?>
+                            <tr>		                    
+                                <td><label class="control-label"><?php echo $this->translate("person_father_label"); ?>: </label></td>
+                                <td colspan="2"><?php echo $person->hasFather() ? $person->getFather()->getName() : '--'; ?></td>
+                                <td><label class="control-label"><?php echo $this->translate("person_mother_label"); ?>: </label></td>
+                                <td colspan="2"><?php echo $person->hasMother() ? $person->getMother()->getName() : '--'; ?></td>
+                            </tr>
+                            <?php if(!$isme){ ?>
+                            <tr>
+                            	<td><label class="control-label" style="display:inline;">Relationship:&nbsp;&nbsp;</label></td>
+                                <td colspan="5"><?php echo $person->getRelationShipLabel($personid); ?></td>	
+                            </tr>
+                            <?php } ?>
+                        <?php } ?>
+					</table>
+	    		</div>
+                <?php if($showpersonal){ ?>
+                <div class="well lighter row hasprivacy widgetlight widget">
+	    			<h3 class="well-legend">About</h3>
+	    			<table class="table">                       
+		               <tr>		                    
+               				<td valign="top"><?php echo nl2br($person->getBio()); ?></td>
+		               </tr>
+					</table>
+	    		</div>
+                <?php } ?>
+                <?php if($showfamily){ ?>
+                <div class="well lighter row hasprivacy widgetlight widget" style="min-height:60px;">
+	    			<h3 class="well-legend">Immediate Family</h3>
+                    <table class="table">                       
+		               <tr>		                    
+               				<td>
+                                <ul class="nav widgetlist">
+                                    <?php 
+                                        foreach($family as $key => $aperson){
+											$theperson = new Person();
+											$theperson->populate($aperson['id']);
+											// debugMessage($aperson);
+											$haspic = false;
+											if($theperson->hasProfileImage()){
+												$haspic = true;
+											}
+                                    ?>
+                                        <li class="well">
+                                            <a href="<?php echo $this->baseUrl("person/view/id/".encode($theperson->getID())); ?>" title="<?php echo "View ".$theperson->getFirstName()."'s Profile"; ?>">
+                                            	<div class="thumbinfo <?php echo $haspic ? 'new_pic' : 'default_pic'; ?>"> 
+                                                	<img class="profileimage" src="<?php echo $theperson->getThumbnailPicturePath(); ?>" />
+                                            	</div>	
+                                                <span class="pull-left" style="display:block; text-align:center; width:100%;">
+                                                    <?php echo $theperson->getName(); ?><br />
+                                                    <?php 
+                                                        $me = '';
+                                                        if($aperson['id'] == $personid){
+                                                            $me = ' (Myself)';
+                                                        }
+                                                        $rel = '<b>'.$aperson['Relationship'].$me.'</b>';	
+                                                        echo $rel; 													
+                                                    ?>
+                                                </span>
+                                        	</a>
+                                        </li>
+                                    <?php } ?>
+                                </ul>
+							</td>
+		               </tr>
+					</table>
+	    		</div>
+                <?php } ?>
+                <?php if($isrelative){ ?>	    		
+	    		<!--<div class="well row" style="min-height:150px;">
+	    			<h3 class="well-legend">Wall</h3>
+	    			<table class="table">                       
+		               <tr>		                    
+               				<td></td>
+		               </tr>
+					</table>
+	    		</div>-->
+                <?php } ?>
+	    	</span> 
+			<span class="span3 pull-right" style="margin-right:-5px; margin-left:25px; width:235px;">
+	    		<?php if($isrelative){ ?>
+                <div class="well row" style="min-height:150px;">
+	    			<h3 class="well-legend">Statistics</h3>
+                    <table class="table table-striped table-bordered table-condensed" id="stats">
+                        <tr>		                    
+                            <td class="profilerightlabel">Relatives:</td>
+                            <td class="profilerightvalue"><?php echo $loggedinperson->getRelativeCount()-1; ?></td>
+                        </tr>
+                        <tr>		                    
+                            <td class="profilerightlabel">Immediate Family:</td>
+                            <td class="profilerightvalue"><?php echo count($person->getImmediateFamilyMembers()); ?></td>
+                        </tr>    
+                        <?php if($person->isMuganda() && !isEmptyString($person->getClanID())){ ?>                  
+                        <tr>		                    
+                            <td class="profilerightlabel">Abe <?php echo $loggedinperson->getClan()->getName(); ?>:</td>
+                            <td class="profilerightvalue"><?php echo $loggedinperson->getClanRelativeCount(); ?></td>
+                        </tr>
+                        <?php } ?>
+                    </table>
+	    		</div>
+                <?php } ?>
+                <?php if($showemail || $showphone || $showaddress || $showweb){ ?>
+	    		<div class="well row" style="min-height:150px;">
+	    			<h3 class="well-legend">Contacts</h3>
+                    <table class="table">                       
+		               <tr>		                    
+               				<td>
+                            	<?php 
+									$txtemail = '--';
+									if(!isEmptyString($person->getUserID())){
+										$txtemail = $person->getUser()->getEmail();
+									} else {
+										$txtemail = isEmptyString($person->getPrimaryEmailText()) ? '--' : $person->getPrimaryEmailText();
+									}
+								?>
+                                <?php if($showemail){ ?>
+                            		<b>Email:</b> <?php echo $txtemail; ?><br /><br />
+                                <?php } ?>
+                                <?php if($showphone){ ?>
+                            		<b>Phone:</b> <?php echo isEmptyString($person->getPrimaryPhoneText()) ? '--' : $person->getPrimaryPhoneText(); ?><br /><br />
+                                <?php } ?>
+                                <?php if($showaddress){ ?>
+                                	<b>Address:</b> <?php echo isEmptyString($person->getPrimaryAddressText()) ? '--' : "<br />".$person->getPrimaryAddressText(); ?>
+                                <?php } ?>
+                            </td>
+		               </tr>
+					</table>
+	    		</div>
+                <?php } ?>
+	    	</span>		
+        </div>
+        <?php } ?> 
+        </form> 
+	</div>
+    <?php if($showclan){ ?>
+	<div id="clan">
+    	<form id="profileform-clan" class="form-horizontal clan"> 
+        <?php if($request->tab == 'clan'){ ?>	
+    	<div class="row" style="margin-left:0px;">
+	    	<span class="span9">
+	    		<div class="well lighter row hasprivacy">
+                <?php if($person->getOwner()->getPersonID() == $personid){ ?>
+                	<a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)."/tab/clan"); ?>" title="Edit" class="button pull-right"><i class="icon-pencil"></i> Edit</a>
+                <?php } ?> 
+                	 
+		            <table class="table">                       
+		               <tr>
+			               <td width="15%"><label class="control-label type"><?php echo $this->translate("person_type_label"); ?>: </label></td>
+                           <td><?php echo $person->getTypeLabel(); ?></td>
+			           </tr>
+                       <?php if($person->isMuganda()){ ?>
+			           <tr>
+		                    <td><label class="control-label clanname"><?php echo $this->translate("person_clanname_label"); ?>:</label></td>
+                            <td><?php echo isEmptyString($person->getClanName()) ? '--' : $person->getClanName(); ?></td>
+		               </tr>
+			           <tr>
+			               <td><label class="control-label clanid"><?php echo $this->translate("person_clanid_label"); ?>:</label></td>
+                           <td><?php echo isEmptyString($person->getClanID()) ? '--' : '<a href="'.$this->baseUrl('clan/view/id/'.encode($person->getClanID())).'" title="View Profile">'.$person->getClan()->getFullName().'</a>'; ?></td>
+			           </tr>
+                       <?php if($hidesiga){ ?> 
+		               <tr>
+			               <td><label class="control-label ssigaid"><?php echo $this->translate("person_ssigaid_label"); ?>:</label></td>
+                           <td><?php echo isEmptyString($person->getSsigaID()) ? '--' : $person->getSsiga()->getFullName(); ?></td>
+			           </tr>
+                       <?php } ?>
+                       <tr>
+			               <td><label class="control-label butaka"><?php echo $this->translate("person_butaka_label"); ?>:</label></td>
+                           <td><?php echo !$person->hasButakaAddress() ? '--' : $person->getButakaAddress()->getButakaAddressLabel(); ?></td>
+			           </tr> 
+                       <?php } ?>
+					</table>
+	    		</div>
+	    	</span> 
+		</div>
+        <?php } ?> 
+		</form> 
+	</div>
+    <?php } ?>
+    <?php if($showpersonal){ ?>
+	<div id="personal"> 
+    	<form id="profileform-personal" class="form-horizontal personal">
+ 		<?php if($request->tab == 'personal'){ ?>
+    	<div class="row" style="margin-left:0px;">
+	    	<span class="span9">
+	    		<div class="well lighter row hasprivacy" style="min-height:60px;">
+                <?php if($person->getOwner()->getPersonID() == $personid){ ?>	
+                	<a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)."/tab/personal"); ?>" title="Edit" class="button pull-right"><i class="icon-pencil"></i> Edit</a>
+                <?php } ?>
+		            <table class="table">                       
+		               <tr>
+		                    <td width="100" valign="top"><label class="control-label bio"><?php echo $this->translate("person_bio_label"); ?>:</label></td>
+               				<td colspan="3" valign="top"><?php echo isEmptyString($person->getBio()) ? '--' : nl2br($person->getBio()); ?></td>
+		               </tr>
+		               <tr>
+		                    <td><label class="control-label haircolor"><?php echo $this->translate("person_haircolor_label"); ?>: </label></td>
+		                    <td width="120"><?php echo $person->getHairColorLabel(); ?></td>
+               				<td width="120"><label class="control-label eyecolor"><?php echo $this->translate("person_eyecolor_label"); ?>:</label>
+               				<td><?php echo $person->getEyeColorLabel(); ?></td>
+		               </tr>
+		               <tr>
+		                    <td><label class="control-label height"><?php echo $this->translate("person_height_label"); ?>:</label><i class="labeldescription">(Feet/Inches)</i>
+		                    <td><?php echo isEmptyString($person->getHeight()) ? '--' : number_format($person->getHeight(), 1, '.', ''); ?>
+               				<td><label class="control-label weight"><?php echo $this->translate("person_weight_label"); ?>: </label><i class="labeldescription">(Kg)</i></td>
+               				<td><?php echo isEmptyString($person->getWeight()) ? '--' : number_format($person->getWeight(), 1, '.', ''); ?></td>
+		               </tr>
+		               <tr>
+		                    <td><label class="control-label religion"><?php echo $this->translate("person_religion_label"); ?>:</label></td>
+                            <td colspan="3"><?php echo $person->getReligionLabel(); ?></td>
+		               </tr>
+		               <tr>
+		                    <td><label class="control-label language"><?php echo $this->translate("person_language_label"); ?>:</label></td>
+                            <td colspan="3"><?php echo $person->displayLanguageList(); ?></td>
+		               </tr>
+					</table>
+	    		</div>
+	    	</span> 
+		</div>
+        <?php } ?> 
+		</form>
+	</div>
+    <?php } ?>
+    <?php if(!$person->isDead()){ ?>
+    <?php if($showemail || $showphone || $showaddress || $showweb){ ?>
+	<div id="contacts"> 
+		<form id="profileform-contacts" class="form-horizontal contacts">
+        <?php if($request->tab == 'contacts'){ ?>
+    	<div class="row" style="margin-left:0px;">
+	    	<span class="span9">
+            	<?php
+					$emails = $person->getEmailContacts();
+					$count_emails = $emails->count();
+					
+					$phones = $person->getPhoneContacts();
+					$count_phones = $phones->count();
+					
+					$addresses = $person->getPhysicalAddresses();
+					$count_addresses = $addresses->count();
+					
+					$services = $person->getWebContacts();
+					$count_services = $services->count();
+					
+				?>
+                <?php if($showemail){ ?>
+    			<div class="well lighter row hasprivacy" style="min-height:60px;">
+    				<h3 class="well-legend">Email Addresses</h3>
+                    <?php if($person->getOwner()->getPersonID() == $personid){ ?>
+                    	<a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)."/tab/contacts"); ?>" title="Edit" class="button directedit pull-right"><i class="icon-pencil"></i> Edit</a>
+                    <?php } ?>
+                    
+		            <table class="table">
+                       <?php if($count_emails == 0){ ?>
+                       		<tr>                                
+                                <td class="first">
+                                <?php if($isme){ ?>
+                                	<?php echo $person->getUser()->getEmail(); ?>
+                                        <span class="labeldescription"> (Used to login)</span>
+                                <?php } else { ?>
+                                	<?php if(!isEmptyString($person->getEmail())){ ?>
+                                    	<?php echo $person->getEmail(); ?>
+                                    <?php } else { ?>
+                                		<i>None</i>
+                                     <?php } ?>
+                                <?php } ?>
+                                </td>
+                           </tr>
+                       <?php } else { ?>                       
+						   <?php
+						   		$i = 0;
+                                foreach($emails as $email){
+									// debugMessage($email->getValue1()." - ".$person->getUser()->getEmail());
+									$isprimary = false;
+									if($person->getUser()->getEmail() == $email->getValue1()){
+										$isprimary = true;
+									}
+                           ?>
+                           <tr>
+                                <td class="first">
+                               	<?php if(!isEmptyString($email->getEmailSubTypeLabel())){ ?> 
+                                	(<?php echo $email->getEmailSubTypeLabel(); ?>)
+                                <?php } ?> 
+								<?php echo $email->getValue1(); ?>&nbsp;
+                                <?php if($isme){ ?>
+                                	<?php if($count_emails >= 2){ ?>
+                                    	<input type="radio" name="primary_email" id="email_<?php echo $email->getID(); ?>" theid="<?php echo $person->getID(); ?>" fromemail="<?php echo $person->getUser()->getEmail(); ?>" lineid="<?php echo $email->getID(); ?>" value="<?php echo $email->getValue1(); ?>" class="<?php echo $isprimary == false ? 'changeemail' : ''; ?> <?php echo $isprimary == true ? '1' : '0'; ?>" title="Used to Login" />&nbsp;
+                                    <?php } ?>
+                                    <?php if($person->getUser()->getEmail() == $email->getValue1()){ ?>
+                                        <span class="labeldescription"> (Used to login)</span>
+                                    <?php } ?>
+                                    <?php if($email->getUnconfirmed() == 1){ ?>
+                                        <span class="labeldescription" style="color:#FF1919;" title="Follow instruction in Email sent to activate"> (unconfirmed)</span>
+                                    <?php } ?>
+                                <?php } ?>
+                                </td>
+                           </tr>
+                           <?php $i++; } ?>
+                       <?php } ?>       
+					</table>                    
+    			</div>
+                <?php } ?>       
+                <?php if($showphone){ ?>
+    			<div class="well lighter row hasprivacy" style="min-height:60px;">
+    				<h3 class="well-legend">Phone Numbers</h3>
+                    <?php if($person->getOwner()->getPersonID() == $personid){ ?>
+                    	<a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)."/tab/contacts"); ?>" title="Edit" class="button directedit pull-right"><i class="icon-pencil"></i> Edit</a>
+                    <?php } ?>
+                    
+		            <table class="table">
+                    	<?php if($count_phones == 0){ ?>
+                       		<tr>
+                                <td class="first"><i>None</i></td>
+                           </tr>
+                        <?php } else { ?>                      
+						   <?php 
+                                foreach($phones as $phone){
+                           ?>
+                           <tr>
+                                <td class="first">(<?php echo $phone->getPhoneSubTypeLabel(); ?>) <?php echo $phone->getValue1()." - ".$phone->getValue2()." - ".$phone->getValue3(); ?>  <?php echo $phone->getPrimaryLabel(); ?></td>
+                           </tr>
+                           <?php } ?>
+                       <?php } ?>
+					</table>
+    			</div>
+                <?php } ?>
+                <?php if($showaddress){ ?>
+    			<div class="well lighter row hasprivacy" style="min-height:60px;">
+    				<h3 class="well-legend">Physical Addresses</h3>
+                    <?php if($person->getOwner()->getPersonID() == $personid){ ?>
+                    	<a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)."/tab/contacts"); ?>" title="Edit" class="button directedit pull-right"><i class="icon-pencil"></i> Edit</a>
+                    <?php } ?> 
+                    
+		            <table class="table">  
+                       <?php if($count_addresses == 0){ ?>
+                       		<tr>
+                                <td class="first"><i>None</i></td>
+                           </tr>
+                        <?php } else { ?>                         
+						   <?php 
+                                foreach($addresses as $address){
+									$address_string = "<label style='display:block;'>";
+									if(!isEmptyString($address->getCountry()) && !isEmptyString($address->getStreetAddress())){
+										$address_string .= "(".$address->getAddressTypeLabel().")";
+									}
+									if(!isEmptyString($address->getPrimaryLabel())){
+										$address_string .= $address->getPrimaryLabel();
+									}
+									$address_string .= "</label>".$address->getFullAddress();
+                           ?>
+                           <tr>
+                                <td class="first"><?php echo $address_string; ?></td>
+                           </tr>
+                           <?php } ?>
+                        <?php } ?>
+					</table>
+    			</div>
+                <?php } ?>
+                <?php if($showweb){ ?>
+    			<div class="well lighter row hasprivacy" style="min-height:60px;">
+    				<h3 class="well-legend">Web Addresses</h3>
+                    <?php if($person->getOwner()->getPersonID() == $personid){ ?>
+                    	<a href="<?php echo $this->baseUrl('person/index/id/'.encode($id)."/tab/contacts"); ?>" title="Edit" class="button directedit pull-right"><i class="icon-pencil"></i> Edit</a>
+                    <?php } ?>
+                    
+		            <table class="table">
+                    	<?php if($count_services == 0){ ?>
+                       		<tr>
+                                <td class="first"><i>None</i></td>
+                           </tr>
+                        <?php } else { ?>     
+                            <tr>
+                                <td><label class="control-label service"><?php echo $this->translate("person_web_service_label"); ?>: </label></td>
+                                <td><label class="control-label username"><?php echo $this->translate("person_web_username_label"); ?>: </label></td>
+                                <td><label class="control-label url"><?php echo $this->translate("person_web_url_label"); ?>: </label></td>
+                           </tr>                    	                       
+                           <?php 
+                                foreach($services as $service){
+                           ?>
+                           <tr>
+                                <td class="first"><?php echo $service->getWebSubTypeLabel(); ?></td>
+                                <td style="width:125px;"><?php echo isEmptyString($service->getValue1()) ? '' : $service->getValue1(); ?></td>
+                                <td><?php echo textToUrl($service->getValue2()); ?></td>
+                           </tr>
+                           <?php } ?>
+                        <?php } ?>
+					</table>
+    			</div>
+                <?php } ?>
+	    	</span> 
+		</div>
+        <?php } ?>
+		</form>
+	</div>
+    <?php } ?>
+    <?php } ?>
+    <?php if($allowedit){ ?>
+	<div id="privacy">
+	    <form id="profileform-privacy" class="form-horizontal privacy">
+        <?php if($request->tab == 'privacy'){ ?>
+    	<div class="row" style="margin-left:0px;"> 		
+            <span class="span9">
+                <div class="well lighter row" style="min-height:80px;">
+                    <h3 class="well-legend">Privacy</h3>
+                    <table class="table">                       
+                       <tr>		                    
+                            <td>
+                            <?php require APPLICATION_PATH."/views/scripts/person/privacy.phtml"; ?>
+                            </td>
+                       </tr>
+                    </table>
+                </div>
+            </span>
+       	</div>
+        <?php } ?>
+        </form>
+	</div>
+    <?php } ?>
+    <?php if($isme){ ?>
+		<?php require APPLICATION_PATH."/views/scripts/person/settings.phtml"; ?>
+    <?php } ?>
+</div>
+<span id="waitcontent" class="hide"><a id="loading"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a></span>
+<?php if($allowedit){ ?>
+	<?php require APPLICATION_PATH."/views/scripts/person/addwidget.phtml"; ?>
+<?php } ?>
+<label class="hide" id="targetposition">leftTop</label>
+<label class="hide" id="tipposition">rightTop</label>
+<?php
+	$session->setVar(SUCCESS_MESSAGE, '');
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
+<script>
+$(document).ready(function() {
+	// override default tab
+	<?php if(!isEmptyString($request->tab)){ ?>
+		$("#tabs").tabs({ selected:'<?php echo $request->tab; ?>', fx: {opacity: 'toggle'} });	   
+	<?php } ?>
+	$('#tabs').tabs({
+		// the selected tab
+		selected: '<?php echo $request->tab; ?>'
+	});
+	
+	// remove box style if person has no profile picture
+	<?php if($person->hasProfileImage()){ ?>
+		$("#profileinfo").addClass('new_pic');
+	<?php } ?>
+	
+	// delete rules
+	$("#deleteperson").click(function() {
+		removeLine();
+	});
+	function removeLine() {
+		// confirm popup
+		var affectedlist = '';
+		<?php if(!$isme){ ?>
+			var affectedlist = '<?php echo $person->getFormattedListOfDeleteables(); ?>';
+		<?php } ?>
+		var delete_confirm_other = '';
+		var mid_delete_text = '';
+		if(affectedlist != ''){
+			var delete_confirm_other = 'By attempting to delete this person, the following people will also be deleted automatically so as to maintain the integrity of your family tree. <br />'+affectedlist+'<br />';
+			var mid_delete_text = ' and the above persons ';
+		}
+		
+		bootbox.confirm('<label class="blockcontainer">'+delete_confirm_other+' Are you sure you want to delete <b><?php echo $person->getName(); ?></b> '+mid_delete_text+' <br /> from your family tree? <br /><br /> Click <b>OK</b> to confirm, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('person/delete/id/'.$id); ?>";					
+			} else {
+				return false;
+			}
+		});
+	}
+	
+	$("#editlink").click(function(){
+		$(location).attr('href', $(this).attr('href'));
+	});
+	
+	// trigger change on default privacy
+	$(".changeemail").click(function(e){
+		var id = $(this).attr('theid');
+		var fromemail = $(this).attr('fromemail');
+		var toemail = $(this).val();
+		var lineid = $(this).attr('lineid');
+		bootbox.confirm('<label class="blockcontainer">Are you sure you want to change your GandaAncestry Login Email from <b>'+fromemail+'</b> to <b>'+toemail+'</b> ? <br /><br />If you agree to this, we shall send you an activation link to your new email to complete the request. <br /><br />Click <b>OK</b> to continue, and <b>Cancel</b> to ignore</label>', function(confirmed) {
+			if(confirmed){
+				window.location.href = "<?php echo $this->baseUrl('person/changeemail'); ?>/id/"+id+"/toemail/"+toemail+"/contactid/"+lineid;
+			} else {
+				return false;
+			}
+		});
+	});
+	
+	$("#tabs ul li a").click(function(e){
+		curentclass = $(this).attr('class');
+		$(".form-horizontal."+curentclass).html("<a id='loading' class='xhidden' style='text-align:center; display:block; margin-top:40px; margin-bottom:40px;'><span style='display:block; margin-bottom:15px; font-weight:bold;'>Loading...</span><img style='margin-left:-10px;' src='<?php echo $this->baseUrl('images/loader.gif'); ?>' /></a>").css({'display':'block'});
+		var url = '';
+		var url = "<?php echo $this->baseUrl("person/view/id/".encode($person->getID())."/tab/"); ?>"+curentclass;
+		// alert(curentclass);
+		location.href = url;
+		
+	});
+	
+}); 
+</script>
+<style>
+#tabs .form-horizontal .control-label {
+	text-align:left;
+	width:auto;
+	white-space:nowrap;
+}
+.table {
+	margin-bottom:0;
+}
+.table td {
+	border-top: 1px solid #EDEDED;
+}
+#profileform-contacts .first {
+	width: 110px;
+} 
+#profileform-contacts .first label {
+	width: 100%;
+}
+ul.immediatelist {
+	margin-top:5px;
+}
+ul.immediatelist li.well {
+	padding: 10px 2px 5px 2px;
+	margin:0 8px 0 0; 
+	display:inline-block; 
+	font-size:12px;
+	width:75px;
+	height:150px;
+	text-align:center;
+}
+#tabs .well {
+	margin-bottom:8px; 
+}
+.invite {
+	color:#e1e1e1;
+	border:1px solid #e1e1e1;
+}
+</style>

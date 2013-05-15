@@ -1,0 +1,2407 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	# Load the profile, if no ID provided then use the profile of the currently logged in user
+	$person = new Person(); 
+	if(isEmptyString($request->id)){
+		$person->populate($personid);
+	} else {
+		$person->populate(decode($request->id));
+	}
+	// $family = $person->getImmediateFamilyMembers();
+	$id = $person->getID();	
+	$name = $person->getName();
+	$firstname = $person->getFirstName();
+	
+	$title = $this->translate("person_pagetitle_edit"); 
+	if($person->getID() != $personid) {
+		$title = "Update ".$person->getName()."'s Profile"; 
+	}
+	
+	$person->cleanUpPrivacy();
+	$privacy = $person->getPrivacyLine();
+	
+	# family members for person
+	$family = $person->getImmediateFamilyMembers();
+	$familyids = array();
+	foreach($family as $member){
+		$familyids[] = $member['id'];
+	}
+	// debugMessage($familyids);
+	
+	# all relatives for person
+	$relativeids = array();
+	$relatives = $person->getAllRelatives($id);
+	foreach($relatives as $relative){
+		$relativeids[] = $relative['relative'];
+	}
+	// debugMessage($relativeids);
+	
+	# by default none
+	$ispublic = false;
+	$issubscriber = false; 				
+	$isrelative = false;
+	$isfamily = false;
+	$isme = false;
+	
+	$isfather_of_muganda = false; 
+	$ismother_of_mujjwa = false; 
+	
+	# logged in person
+	$loggedinperson = new Person();
+	if(!isEmptyString($personid)){
+		$loggedinperson->populate($personid);
+		$issubscriber = true;
+	}
+	# profile for one viewing
+	if($personid == $person->getID()){
+		$isme = true;
+		$isfamily = true;
+		$isrelative = true;
+	}
+	
+	if($personid != $person->getID()){
+		if(isEmptyString($personid)){
+			$ispublic = true;
+		}
+		$issubscriber = true;
+		// determine if a family member
+		if(in_array($loggedinperson->getID(), $familyids)){
+			$isfamily = true;
+			// debugMessage('is family');
+		}
+		// determine if a relative
+		if(in_array($loggedinperson->getID(), $relativeids)){
+			$isrelative = true;
+			//debugMessage('is relative');
+		} 
+	}
+	
+	# determine if profile was added by person
+	$addedbyme = false;
+	if($person->getAddedByID() == $personid || $isme || $person->getCreatedBy() == $userid){
+		$addedbyme = true;
+		$isfamily = true;
+		$isrelative = true;
+	}
+	$allowedit = false;
+	if($person->getOwnerID() == $userid){
+		$allowedit = true;
+	}
+	
+	// check if viewing mother of a mujjwa
+	if($loggedinperson->isMujjwa() && $loggedinperson->getMotherID() == $person->getID()){
+		$ismother_of_mujjwa = true;
+	}
+	// check if viewing father of a muganda
+	if($loggedinperson->isMuganda() && $loggedinperson->getFatherID() == $person->getID()){
+		$isfather_of_muganda = true;
+	}
+	
+	$button_title = $this->translate("person_button_save");
+	$posturl = $this->baseUrl("person/edit"); 
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$person->processPost($session->getVar(FORM_VALUES));		
+	}
+	// set the default tab
+	if (isEmptyString($request->tab)) {
+		$request->setParam('tab','basics'); 
+	}
+	
+	$dobevent = $person->getBirthDetails();
+	$dodevent = $person->getDeathDetails();
+	$dob = changeMySQLDateToPageFormat($person->getDateOfBirth());
+	if(isEmptyString($dob)){
+		if(!$dobevent){
+			$dob = "";
+		} else {
+			if(!isEmptyString($dobevent->getStartYear()) && !isEmptyString($dobevent->getStartMonth()) && !isEmptyString($dobevent->getStartDay())){
+				$dob = changeMySQLDateToPageFormat($person->getBirthDateFromEvent());
+			} else {
+				$dob = "";
+			}	
+		}
+	}
+	// debugMessage($dob);
+	
+	$placeofbirth = $person->getBirthPlaceFromEvent();
+	$placeofdeath = $person->getDeathPlaceFromEvent();
+	// debugMessage($dob." and ".$dod);
+	
+	if(!$dobevent){
+		$b_starttype = ""; $b_endtype = ""; $b_hascirca = false; $bsd = ""; $bsm = ""; $bsy = ""; $bed = ""; $bem = ""; $bey = "";
+	} else {
+		$b_hascirca = true;
+		$b_starttype = $dobevent->getStartType();
+		$b_endtype = $dobevent->getEndType();
+		$bsd = $dobevent->getStartDay(); $bsm = $dobevent->getStartMonth(); $bsy = $dobevent->getStartYear(); $bed = $dobevent->getEndDay(); $bem = $dobevent->getEndMonth(); $bey = $dobevent->getEndYear();
+	}
+	if(!$dodevent){
+		$d_starttype = ""; $d_endtype = ""; $d_hascirca = false; $dsd = ""; $dsm = ""; $dsy = ""; $ded = ""; $dem = ""; $dey = "";
+	} else {
+		$d_hascirca = true;
+		$d_starttype = $dodevent->getStartType();
+		$d_endtype = $dodevent->getEndType();
+		$dsd = $dodevent->getStartDay(); $dsm = $dodevent->getStartMonth(); $dsy = $dodevent->getStartYear(); $ded = $dodevent->getEndDay(); $dem = $dodevent->getEndMonth(); $dey = $dodevent->getEndYear();
+	}
+	
+	// all contacts
+	$allcontacts = $person->getAllContacts()->toArray();  
+	// all addresses
+	$alladdresses = $person->getAllAddresses()->toArray();
+	
+	$ssazalist = new LookupType(); 
+	$ssazalist->setName("ALL_SSAZAS");
+	$massaza = $ssazalist->getOptionValuesFromQuery();
+	
+	$placelist = new LookupType(); 
+	$placelist->setName("ALL_PLACES");
+	$places = $placelist->getOptionValuesFromQuery();
+									
+	$butaka = $person->getButakaAddress();
+	if(!$butaka){
+		$but_key = md5('butaka');
+		$but_id = "";
+		$but_type = "4";
+		$but_country = "XX";
+		$but_ssaza = '';
+		$but_parish = '';
+		$but_parishid = '';
+		$but_village = '';
+		$but_villageid = '';
+		$but_street = '---';
+	} else {
+		$but_id = $butaka->getID();
+		$but_key = array_search_key_by_id($alladdresses, $but_id);
+		$but_type = $butaka->getType();
+		$but_country = $butaka->getCountry();
+		$but_ssaza = $butaka->getCounty();
+		$but_parish = $butaka->getTownName();
+		$but_parishid = $butaka->getTownID();
+		$but_village = $butaka->getVillageName();
+		$but_villageid = $butaka->getVillageID();
+		$but_street = '---';
+	}
+	
+	$allrelationships =  getRelationShips();									
+	// temporalily hide ssiga functionality
+	$hidesiga = false;
+	
+	$controller = $request->getControllerName();
+	$action = $request->getActionName();
+	if(isEmptyString($request->tab)){
+		$request->setParam('tab', 'basics'); 
+	}
+	
+	$fatherid = $person->getFatherID();
+	$fatheryob = '';
+	// debugMessage('father is '.$fatherid);
+	if(!isEmptyString($fatherid)){
+		$father = new Person();
+		$father->populate($fatherid);
+		$fdobevent = $father->getBirthDetails();
+	}
+	
+	$cur_rship = $person->getTheRelationshipID($personid);
+	
+	$this->headTitle($title);  
+?>
+
+<style>
+img.ui-datepicker-trigger {
+	margin-left:-25px;
+}
+select.feetselect, select.starttype {
+	width:80px;
+}
+select.inchselect {
+	width:90px;
+}
+select.type {
+	width:90px;
+}
+select.type.web {
+	width:110px;
+}
+select.span3.country {
+	width:150px;
+}
+select.span3.ssazas {
+	width:130px;
+}
+select.span2.screennames { 
+	width:165px;
+}
+input.span3.address {
+	width:195px;
+}
+#profileform-contacts .first {
+	width: 110px;
+} 
+#profileform-contacts .first label {
+	width: 100%;
+}
+.form-horizontal .control-label {
+	width:0;
+	white-space:nowrap;
+}
+td.phone-second {
+	width:80px;
+}
+td.phone-third {
+	width:60px;
+}
+div.well.contactswell {
+	min-height:60px; 
+	padding-bottom:0; 
+	padding-top:25px;
+	margin-bottom:10px;
+}
+div.well.contactswell .table {
+	margin-bottom:0;
+}
+table.table.theaddresses tr td {
+	padding-left:2px;
+	padding-right:2px;
+}
+.span11 {
+	width:905px;
+}
+#tabs.ui-tabs .ui-widget-content#contacts {
+	margin-left:-15px;
+}
+a.removeline {
+	border: 1px solid #FF0000;
+}
+a.removeline:hover {
+	border: 1px solid #FF0000;
+	color:#FF0000;
+	font-weight:bold;
+	background-color:#E8D1DF;
+}
+.removelabel {
+	display:inline-block; 
+	margin-top:-24px; 
+	font-weight:bold; 
+	font-size:12px;
+}
+.modal-body {
+    font-size: 14px;
+    text-align: center;
+}
+</style>
+
+<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+	<div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+<?php } ?>	
+<?php if($sessionhaserror) { ?>
+	<div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+ <?php } ?>
+<div class="well" id="summary">
+	<table id="summarycontainer">
+		<tr>
+			<td style="width:200px;">
+                <div id="profileinfo">
+					<?php if($allowedit){ ?>
+                        <a href="<?php echo $this->baseUrl('person/picture/id/'.encode($id)); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $person->getMediumPicturePath(); ?>" /></a>
+                    <?php } else { ?>
+                        <img id="profileimage" src="<?php echo $person->getMediumPicturePath(); ?>" alt="Update Profile Photo" />
+                    <?php } ?>
+                </div>
+			</td>
+			<td width="60%" style="vertical-align:top;"><h1><?php echo $title; ?></h1>
+			</td>
+			<td style="vertical-align:top;">
+			</td>
+		</tr>
+	</table>
+</div>
+<div id="tabs">   
+    <ul>
+       <li><a href="#basics" id="a_basics" class="basics">Basics</a></li>
+       <li><a href="#clan" id="a_clan" class="clan">Clan</a></li>       
+       <li><a href="#personal" id="a_personal" class="personal">Personal</a></li>
+       <?php if(!$person->isDead()){ ?>
+       <li><a href="#contacts" id="a_contacts" class="contacts">Contacts</a></li>
+       <?php } ?>
+       <?php if($allowedit){ ?>
+           <li><a href="#privacy" id="a_privacy" class="privacy">Privacy</a></li>
+       <?php } ?>
+	   <?php if($isme){ ?>
+           <li><a href="#settings" id="a_settings" class="settings">Account</a></li>
+       <?php } ?>
+    </ul>
+    <div id="basics">
+    	<form id="profileform-general" class="form-horizontal basics" action="<?php echo $posturl; ?>" method="post">
+        <?php if($request->tab == 'basics'){ ?>
+    	<div class="row" style="margin-left:0px;">
+	    	<span class="span9">
+	    		<div class="well row" style="min-height:60px;">
+		            <table class="table">                       
+		               <tr>
+                           <td colspan="4"><span class="requiredmark"><?php echo $this->translate("global_required_field_info"); ?></span></td>
+                       </tr>
+                       <tr>
+		                    <td width="190"><label class="control-label firstname"><?php echo $this->translate("person_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                            <input name="firstname" id="firstname" type="text" class="span2 hastooltip screentrigger" value="<?php echo $person->getFirstName(); ?>" title="<?php echo $this->translate("person_firstname_tooltip"); ?>" /><div id="firstname_error"></div></td>
+							<td><label class="control-label lastname"><?php echo $this->translate("person_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+							<input name="lastname" id="lastname" type="text" class="span2 hastooltip screentrigger" value="<?php echo $person->getLastName(); ?>" title="<?php echo $this->translate("person_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>
+		                    <td>
+                            	<span id="mugandaclanname">
+                                	<label class="control-label clanname screentrigger"><?php echo $this->translate("person_clanname_label"); ?>:</label>
+		               				<input name="clanname" id="clanname" type="text" class="span2 hastooltip screentrigger" value="<?php echo $person->getClanName(); ?>" title="<?php echo $this->translate("person_clanname_tooltip"); ?>" />
+                                    <div id="clanname_error"></div>
+                                </span>
+                            </td>
+		                </tr>
+		                <tr>
+		                    <td><label class="control-label screenname"><?php echo $this->translate("person_screenname_label"); ?>:</label>
+		                     <?php
+								  $displaynameselect = new Zend_Form_Element_Select('screenname',
+										  array(
+												  'multiOptions' => array(""=>"<Select one>"),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('chzn-selectX','span2','screennames','hastooltip'),
+										  		  'title' => $this->translate("person_screenname_tooltip")	
+										  )
+								  );
+								  
+								  $displaynameselect->setValue(isEmptyString($person->getScreenName()) ? $person->getName() : $person->getScreenName());
+								  echo $displaynameselect->render();
+							  ?>
+                           </td>
+		                    <td><label class="control-label othernames"><?php echo $this->translate("person_othernames_label"); ?>:</label>
+		                    <input name="othernames" id="othernames" type="text" class="span2 hastooltip screentrigger" value="<?php echo $person->getOtherNames(); ?>" title="<?php echo $this->translate("person_othernames_tooltip"); ?>"/></td>
+		                    <td><label class="control-label alias"><?php echo $this->translate("person_alias_label"); ?>: </label>
+		                    <input name="alias" id="alias" type="text" class="span2 hastooltip" value="<?php echo $person->getAlias(); ?>" title="<?php echo $this->translate("person_alias_tooltip"); ?>" /></td>
+		                </tr>
+						<tr>		                    
+		                    <td><label class="control-label suffix"><?php echo $this->translate("person_prefix_label"); ?>: </label>
+		                    <?php
+								  $suffixlookup = new LookupType();
+								  $suffixlookup->setName("SALUTATION");
+								  $values = $suffixlookup->getOptionValuesAndDescription();
+								  //  debugMessage($values);
+								  if(!isEmptyString($person->getID()) && $person->isMale()){
+									  unset($values['2']); unset($values['4']);
+								  }
+								  if(!isEmptyString($person->getID()) && $person->isFemale()){
+									  unset($values['3']);
+								  }
+								  $suffixselect = new Zend_Form_Element_Select('suffix',
+										  array(
+												  'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $values),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('chzn-selectX','span1','type','hastooltip'),
+										  		  'title' => $this->translate("person_prefix_tooltip")	
+										  )
+								  );
+								  
+								  $suffixselect->setValue($person->getSuffix());
+								  echo $suffixselect->render();
+							  ?><div id="suffix_error"></div></td>
+                            <td><label class="control-label prefix"><?php echo $this->translate("person_initials_label"); ?>: </label>
+                            <?php 
+							  	list($first, $last) = array($person->getFirstName(), $person->getLastName());
+							 	$intials = $person->getPrefix();
+								  if(isEmptyString($intials)){
+									  $intials = $first{0}.$last{0};
+								  }
+							 ?>
+		                    <input class="span1 hastooltip" type="text" name="prefix" id="prefix" value="<?php echo $intials; ?>" title="<?php echo $this->translate("person_initials_tooltip"); ?>" /></td>
+		                    <td>
+                            <span id="isfemale">
+                                <label class="control-label maidenname"><?php echo $this->translate("person_maidenname_label"); ?>: </label>
+                                <input name="maidenname" id="maidenname" type="text" class="span2 hastooltip" value="<?php echo $person->getMaidenName(); ?>" title="<?php echo $this->translate("person_maidenname_tooltip"); ?>" />
+                            </span>
+		                    </td>
+		                </tr>
+		                <tr>
+		                    <td><label class="control-label gender"><?php echo $this->translate("person_gender_label"); ?>: </label>
+		                    <?php if(!isEmptyString($person->getID()) && !isEmptyString($person->getGender())){ ?>
+                            	<?php echo $person->getGenderLabel(); ?>
+                                <input type="hidden" name="gender" id="gender" value="<?php echo $person->getGender(); ?>" />
+                            <?php } else { ?>
+								<?php						  
+                                      $genderradio = new Zend_Form_Element_Radio('gender',
+                                              array(
+                                                      'multiOptions' => array('1'=>'Male','2'=>'Female'), 
+                                                      'view' => new Zend_View(),
+                                                      'disableLoadDefaultDecorators' => true,
+                                                      'separator' => '&nbsp;',										  
+                                                      'decorators' => array('ViewHelper',
+                                                                          array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+                                                                      )
+                                              )
+                                      );
+                                      $genderradio->setValue($person->getGender());
+                                      echo $genderradio->render();
+                                  ?><div id="gender_error"></div>
+                            <?php } ?>  
+                            </td>
+							<td colspan="2">
+							<label class="control-label lifestatus"><?php echo $this->translate("person_lifestatus_label"); ?>:</label>
+		                    <?php if($isme){ ?>
+                            	<?php echo $person->getLifeStatusLabel(); ?>
+                                <input type="hidden" name="lifestatus" id="lifestatus" value="<?php echo $person->getLifeStatus(); ?>" />
+                            <?php } else { ?>
+								<?php
+                                      $lifestatuslookup = new LookupType();
+                                      $lifestatuslookup->setName("LIFE_STATUS");
+                                      $statuses = $lifestatuslookup->getOptionValuesAndDescription();
+                                      ksort($statuses);	// unset($statuses['3']);					 
+                                      $lifestatusradio = new Zend_Form_Element_Radio('lifestatus',
+                                              array(
+                                                      'multiOptions' => $statuses, 
+                                                      'view' => new Zend_View(),
+                                                      'disableLoadDefaultDecorators' => true,
+                                                      'separator' => '&nbsp;',
+                                                      'decorators' => array('ViewHelper',
+                                                                          array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+                                                                      )
+                                              )
+                                      );
+                                      $lifestatusradio->setValue($person->getLifeStatus());
+                                      echo $lifestatusradio->render();
+                                  ?><div id="lifestatus_error"></div>
+                              <?php } ?> 
+                            </td>
+		                </tr>
+		                <tr>
+			           	   <td colspan="2"><label class="control-label dateofbirth"><?php echo $this->translate("person_dateofbirth_label"); ?>:</label>
+                           	<?php
+								$thedays = getMonthDays();
+								$themonths = getAllMonthsAsShortNamesAndAbsoluteValues();
+							?>
+                           		<?php 
+                                    $datetypelookup = new LookupType();
+                                    $datetypelookup->setName("ALL_DATE_TYPES");
+                                    $dtypes = $datetypelookup->getOptionValuesAndDescription();
+                                    ksort($dtypes); unset($dtypes[7]); unset($dtypes[8]); unset($dtypes[9]);
+                                    $datetypedp = new Zend_Form_Element_Select('starttype',
+                                                        array(
+                                                            'multiOptions' => $dtypes,	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('starttype')
+                                                        )
+                                                    );
+                                    $datetypedp->setValue($b_starttype); 
+                                    echo $datetypedp->render(); 
+                               	 ?>
+                           <span id="dobone" style="display:inline-block; margin-bottom:10px;">
+                         	  <span id="dates">
+                               <?php
+                                    $daydp = new Zend_Form_Element_Select('birthday',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), $thedays),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth','datetrigger'),
+                                                            'title' => 'Select Day'		
+                                                        )
+                                                    );
+                                    $daydp->setValue($bsd); 
+                                    echo $daydp->render(); 
+                                ?>
+                                <?php
+                                    $monthdp = new Zend_Form_Element_Select('birthmonth',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), $themonths),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth','datetrigger'),
+                                                            'title' => 'Select Month'		
+                                                        )
+                                                    );
+                                    $monthdp->setValue($bsm); 
+                                    echo $monthdp->render(); 
+                                ?>
+                                <input name="birthyear" id="birthyear" type="text" class="span1 datetrigger" value="<?php echo $bsy; ?>" maxlength="4" placeholder="" />
+                                <input name="dateofbirth" id="dateofbirth" type="text" class="span2 hastooltip" value="<?php // echo $dob; ?>" title="<?php echo $this->translate("person_dateofbirth_tooltip"); ?>" />
+                               </span>
+                               <span id="dtext"><input type="text" class="span3" name="starttext" id="starttext" value="" /></span>
+                            </span>
+                            <span id="dobtwo" style="display:block;">
+                            	<?php 
+                                    $datetypelookup = new LookupType();
+                                    $datetypelookup->setName("ALL_DATE_TYPES");
+                                    $dtypes = $datetypelookup->getOptionValuesAndDescription();
+									$rangedatestypes = array();
+									$rangedatestypes[8] = $dtypes[8]; $rangedatestypes[9] = $dtypes[9];
+                                    // ksort($dtypes); unset($dtypes[2]); unset($dtypes[3]); 
+                                    $datetypedp = new Zend_Form_Element_Select('e_starttype',
+                                                        array(
+                                                            'multiOptions' => $rangedatestypes,	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('starttype')
+                                                        )
+                                                    );
+                                    $datetypedp->setValue($b_endtype); 
+                                    echo $datetypedp->render(); 
+                               ?>
+                                <?php
+                                    $daydp = new Zend_Form_Element_Select('e_birthday',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), $thedays),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth'),
+                                                            'title' => 'Select Day'		
+                                                        )
+                                                    );
+                                    $daydp->setValue($bed); 
+                                    echo $daydp->render(); 
+                                ?>
+                                <?php
+                                    $monthdp = new Zend_Form_Element_Select('e_birthmonth',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), $themonths),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth'),
+                                                            'title' => 'Select Month'		
+                                                        )
+                                                    );
+                                    $monthdp->setValue($bem); 
+                                    echo $monthdp->render(); 
+                                ?>
+                                <input name="e_birthyear" id="e_birthyear" type="text" class="span1" value="<?php echo $bey; ?>" maxlength="4" placeholder="" />
+                                <input name="e_dateofbirth" id="e_dateofbirth" type="text" class="span2 hastooltip" value="" title="<?php echo $this->translate("person_dateofbirth_tooltip"); ?>" />
+                            </span>                            
+                            <div id="dateofbirth_error"></div>
+                            <div id="birthyear_error"></div>
+                            <div id="e_birthyear_error"></div>
+                            </td>
+			               	<td><label class="control-label placeofbirth"><?php echo $this->translate("person_placeofbirth_label"); ?>:</label>
+			               	<input name="placeofbirth" id="placeofbirth" type="text" class="span3 hastooltip" value="<?php echo $placeofbirth; ?>" title="<?php echo $this->translate("person_placeofbirth_tooltip"); ?>" />
+			               	</td>
+			           </tr>
+			           <tr id="deathrow">
+			           	   <td colspan="2" width="300"><label class="control-label dateofdeath"><?php echo $this->translate("person_dateofdeath_label"); ?>:</label>
+                           	<?php  
+								$datetypelookup = new LookupType();
+								$datetypelookup->setName("ALL_DATE_TYPES");
+								$dtypes = $datetypelookup->getOptionValuesAndDescription();
+								ksort($dtypes); unset($dtypes[7]); unset($dtypes[8]); unset($dtypes[9]);                                   
+								$datetypedp = new Zend_Form_Element_Select('d_starttype',
+													array(
+														'multiOptions' => $dtypes,	
+														'view' => new Zend_View(),
+														'decorators' => array('ViewHelper'),
+														'class' => array('starttype')
+													)
+												);
+								$datetypedp->setValue($d_starttype); 
+								echo $datetypedp->render(); 
+                               ?>
+                           <span id="d_dobone" style="margin-bottom:10px; display:inline-block;">
+                              <span id="d_dates">
+                               <?php
+                                    $daydp = new Zend_Form_Element_Select('deathday',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), $thedays),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth','datetrigger'),
+                                                            'title' => 'Select Day'		
+                                                        )
+                                                    );
+                                    $daydp->setValue($dsd); 
+                                    echo $daydp->render(); 
+                                ?>                         
+                                <?php
+                                    $monthdp = new Zend_Form_Element_Select('deathmonth',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), $themonths),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth','datetrigger'),
+                                                            'title' => 'Select Month'		
+                                                        )
+                                                    );
+                                    $monthdp->setValue($dsm); 
+                                    echo $monthdp->render(); 
+                                ?>
+                                <input name="deathyear" id="deathyear" type="text" class="span1 datetrigger" value="<?php echo $dsy; ?>" maxlength="4"  placeholder="" />
+                                <input name="dateofdeath" id="dateofdeath" type="text" class="span2 hastooltip" value="<?php // echo $dod; ?>" title="<?php echo $this->translate("person_dateofdeath_tooltip"); ?>" />
+                             </span>
+                             <span id="d_dtext"><input type="text" class="span3" name="d_starttext" id="d_starttext" value="" /></span>
+                            </span>
+                            <span id="d_dobtwo" style="display:block;">
+                            	<?php
+									$datetypelookup = new LookupType();
+                                    $datetypelookup->setName("ALL_DATE_TYPES");
+                                    $dtypes = $datetypelookup->getOptionValuesAndDescription();
+									$rangedatestypes = array();
+									$rangedatestypes[8] = $dtypes[8]; $rangedatestypes[9] = $dtypes[9];
+                                    // ksort($dtypes); unset($dtypes[2]); unset($dtypes[3]);                                    
+                                    $datetypedp = new Zend_Form_Element_Select('de_starttype',
+                                                        array(
+                                                            'multiOptions' => $rangedatestypes,	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('starttype')
+                                                        )
+                                                    );
+                                    $datetypedp->setValue($d_endtype); 
+                                    echo $datetypedp->render(); 
+                               ?>
+                                <?php
+                                    $daydp = new Zend_Form_Element_Select('e_deathday',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), $thedays),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth'),
+                                                            'title' => 'Select Day'		
+                                                        )
+                                                    );
+                                    $daydp->setValue($ded); 
+                                    echo $daydp->render(); 
+                                ?>
+                                <?php
+                                    $monthdp = new Zend_Form_Element_Select('e_deathmonth',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), $themonths),	
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('birth'),
+                                                            'title' => 'Select Month'		
+                                                        )
+                                                    );
+                                    $monthdp->setValue($dem); 
+                                    echo $monthdp->render(); 
+                                ?>
+                                <input name="e_deathyear" id="e_deathyear" type="text" class="span1" value="<?php echo $dey; ?>" maxlength="4" placeholder="" />
+                                <input name="e_dateofdeath" id="e_dateofdeath" type="text" class="span2 hastooltip" value="<?php //echo $dob; ?>" title="<?php echo $this->translate("person_dateofbirth_tooltip"); ?>" />
+                            </span>   
+                                
+                            <div id="dateofdeath_error"></div>
+                            <div id="deathyear_error"></div>
+                            <div id="e_deathyear_error"></div>
+                         </td>
+		               	<td>
+		               		<label class="control-label placeofdeath"><?php echo $this->translate("person_placeofdeath_label"); ?>:</label>
+		               		<input name="placeofdeath" id="placeofdeath" type="text" class="span3 hastooltip" value="<?php echo $placeofdeath; ?>" title="<?php echo $this->translate("person_placeofdeath_tooltip"); ?>" />
+		               	</td>
+			           </tr>
+                       <?php
+					   		$fathers = array();
+							$hasfather = false;
+							if($person->belongsToFamily()){
+								$hasfather = true;
+								$otherfathers = array(); 
+								$currentfather = array();
+								// $currentfather = 
+								if($person->hasMother()){
+									// $otherfathers = getOtherMalePartnersForPerson($person->getMotherID(), $person->getFamilyID());
+									$otherfathers = getAllMalePartnerFamilies($person->getMotherID());
+								} else {
+									$otherfathers = array($person->getFamilyID() => $person->getFather()->getName());
+								}
+								$fathers = array_merge_maintain_keys($currentfather, $otherfathers);
+							}
+							
+							$mothers = array();
+							$hasmother = false;
+							if($person->belongsToFamily()){
+								$hasmother = true;
+								$othermothers = array(); 
+								$currentmother = array();
+								//$currentmother = array($person->getFamilyID() => $person->getMother()->getName());
+								if($person->hasFather()){
+									$othermothers = getAllFemalePartnerFamilies($person->getFatherID());
+								} else {
+									$othermothers = array($person->getFamilyID() => $person->getMother()->getName());
+								}
+								$mothers = array_merge_maintain_keys($currentmother, $othermothers);
+							}
+					   ?>
+                       <tr>		                    
+		                    <td colspan="2" class="nowrapping"><label class="control-label"><?php echo $this->translate("person_father_label"); ?>: </label>
+							<?php if($person->belongsToFamily()){ ?>
+								<?php
+                                    $fathersdropdown = new Zend_Form_Element_Select('ffamilyid',
+                                        array(
+                                          'multiOptions' => $fathers,
+                                          'view' => new Zend_View(),
+                                          'decorators' => array(array('ViewHelper')),
+                                          'class' => array('span3', 'hastooltip'),
+                                          'title' => $this->translate("person_father_tooltip")
+                                        )
+                                    );
+                              
+                                    $fathersdropdown->setValue($person->getFamilyID());
+                                    echo $fathersdropdown->render(); 
+                                ?>
+                            <?php } else { ?>
+                            	None <label class='pagedescription'>(return to profile to add)</label>
+                            <?php } ?>
+		                    </td>
+                            <td colspan="2" class="nowrapping"><label class="control-label"><?php echo $this->translate("person_mother_label"); ?>: </label>
+                             <?php if($person->belongsToFamily()){ ?>
+								<?php
+                                    $mothersdropdown = new Zend_Form_Element_Select('mfamilyid',
+                                        array(
+                                          'multiOptions' => $mothers,
+                                          'view' => new Zend_View(),
+                                          'decorators' => array(array('ViewHelper')),
+                                          'class' => array('span3', 'hastooltip'),
+                                          'title' => $this->translate("person_mother_tooltip")
+                                        )
+                                    );
+                              
+                                    $mothersdropdown->setValue($person->getFamilyID());
+                                    echo $mothersdropdown->render(); 
+                                ?>
+                             <?php } else { ?>
+                            	None <label class='pagedescription'>(return to profile to add)</label>
+                             <?php } ?>   
+                            </td>
+		                </tr>
+                        <?php if($person->getID() != $personid){ ?>
+                        <tr>		                    
+		                    <td colspan="4"><label class="control-label">Relationship: </label>
+								<?php
+									if(!isEmptyString($cur_rship)){ 
+								?>
+                                	<?php echo $person->getRelationShipLabel($personid); ?><input type="hidden" name="directrelationship" id="directrelationship" value="<?php echo $cur_rship; ?>" />
+                                <?php } else { ?>
+									<?php									
+                                        $reldropdown = new Zend_Form_Element_Select('directrelationship',
+                                            array(
+                                              'multiOptions' => array_merge_maintain_keys(array('' => 'Relative'), $allrelationships),
+                                              'view' => new Zend_View(),
+                                              'decorators' => array(array('ViewHelper')),
+                                              'class' => array('span3', 'hastooltip'),
+                                              'title' => $this->translate("person_relationship_tooltip")
+                                            )
+                                        );
+                                  
+                                        $reldropdown->setValue($cur_rship);
+                                        echo $reldropdown->render(); 
+                                    ?>
+                                <?php } ?>
+		                    </td>
+		                </tr>
+                        <?php } ?>   
+					</table>
+	    		</div>
+	    		<div class="form-actions row">
+	                <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_close'); ?></button>
+	                <button type="submit" class="btn btn-primary savethennext"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_continue'); ?></button>
+	                <a href="<?php echo $this->baseUrl("person/view/id/".encode($person->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+	                <input type="hidden" name="entityname" value="Person" />
+	                <input type="hidden" id="id" name="id" value="<?php echo encode($person->getID()); ?>" />
+	                <input type="hidden" id="ownerid" name="ownerid" value="<?php echo $person->getUserID(); ?>" />
+	                <input type="hidden" id="focusid" name="focusid" value="<?php echo $person->getID(); ?>" />
+                    <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" title="general" />
+                    <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" title="general" />
+	                <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />    
+                    <input type="hidden" id="hasgeneralchanges" name="hasgeneralchanges" value="0" /> 
+	            </div>
+	    	</span> 
+		</div>
+        <?php } ?>
+		</form> 
+	</div>
+	<div id="clan"> 
+		<form id="profileform-clan" class="form-horizontal clan" action="<?php echo $posturl; ?>" method="post">
+        <?php if($request->tab == 'clan'){ ?>
+    	<div class="row" style="margin-left:0px;">
+	    	<span class="span10">
+	    		<div class="well row" style="min-height:60px;">
+		            <table class="table">                       
+		               <tr>
+			               <td colspan="3">
+                           <label class="control-label ethinicity"><?php echo $this->translate("person_ethinicity_label"); ?>:</label>
+			               	<?php if(!isEmptyString($person->getID()) && !isEmptyString($person->getType())){ ?>
+                            	<?php echo $person->getTypeLabel(); ?>
+                                <input type="hidden" name="type" id="type" value="<?php echo $person->getType(); ?>" />
+                            <?php } else { ?>
+								<?php						  
+                                      $typeradio = new Zend_Form_Element_Radio('type',
+                                              array(
+                                                      // 'multiOptions' => array('1'=>'Muganda', '2'=>'Mujjwa', '3' =>'Other'), 
+													  'multiOptions' => array('1'=>'Muganda', '2'=>'Non Muganda'),
+                                                      'view' => new Zend_View(),
+                                                      'disableLoadDefaultDecorators' => true,
+                                                      'separator' => '&nbsp;&nbsp;',	
+                                                      'decorators' => array('ViewHelper',
+                                                                          array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+                                                                      )
+                                              )
+                                      );
+                                      $typeradio->setValue($person->getType());
+                                      echo $typeradio->render();
+                                  ?><div id="type_error"></div>
+                            <?php } ?>
+			                 </td>
+			           </tr>
+                       <tbody id="muganda">
+			           <tr>
+		                    <td colspan="2"><label class="control-label clanname"><?php echo $this->translate("person_clanname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+               				<input type="text" name="clanname_t" id="clanname_t" class="span2 hastooltip" value="<?php echo $person->getClanName(); ?>" title="<?php echo $this->translate("person_clanname_tooltip"); ?>" /></td>
+		               </tr>
+			           <tr>
+			               <td colspan="2"><label class="control-label clanid"><?php echo $this->translate("person_clanid_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+			           	   	<?php if(!isEmptyString($person->getID()) && !isEmptyString($person->getClanID())){ ?>
+                            	<?php echo $person->getClan()->getName(); ?><input type="hidden" name="clanid" id="clanid" value="<?php echo $person->getClanID(); ?>" />
+                            <?php } else { ?>
+								<?php
+                                      $clanlookup = new LookupType();
+                                      $clanlookup->setName("ALL_CLANS");
+                                      $clandropdown = new Zend_Form_Element_Select('clanid',
+                                              array(
+                                                      'multiOptions' => array_merge_maintain_keys(array('' => '<Select a Clan>'), $clanlookup->getOptionValuesFromQuery()),
+                                                      'view' => new Zend_View(),
+                                                      'decorators' => array(array('ViewHelper')),
+                                                      'class' => array('xchzn-select','span3','hastooltip'),
+                                                      'title' => $this->translate("person_clanid_tooltip")
+                                              )
+                                      );
+                                      
+                                      $clandropdown->setValue($person->getClanID());
+                                      echo $clandropdown->render();
+                                  ?>
+                              <?php } ?>
+                              <div id="clanid_error"></div>
+			               </td>
+			           </tr> 
+                       <?php if($hidesiga){ ?>
+		               <tr>
+			               <td colspan="2"><label class="control-label ssigaid"><?php echo $this->translate("person_ssigaid_label"); ?>:</label>
+			           	   	<?php
+						      	$ssigalist = new LookupType(); 
+						      	$ssigalist->setName("ALL_MASIGA");
+						       	$ssigadropdown = new Zend_Form_Element_Select('ssigaid',
+													array(
+														'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $ssigalist->getOptionValuesFromQuery()),								'view' => new Zend_View(),
+														'decorators' => array('ViewHelper'),
+														'view' => new Zend_View(),
+														'class' => array('xchzn-select','span3','hastooltip'),
+										  		  		'title' => $this->translate("person_ssigaid_tooltip")
+													)
+												);
+								$ssigadropdown->setValue($person->getSsigaID()); 
+								echo $ssigadropdown->render(); 
+						      ?>
+			               </td>
+			            </tr>
+                        <?php } ?>
+                        <tr>
+		                    <td><label class="control-label butaka"><?php echo $this->translate("person_butaka_label"); ?>:</label>
+                            	<input name="addresses[<?php echo $but_key; ?>][id]" id="addresses_id_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_id; ?>" />
+                                <input name="addresses_type_<?php echo $but_key; ?>" id="addresses_type_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_type; ?>" />
+                                <input name="addresses_country_<?php echo $but_key; ?>" id="addresses_country_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_country; ?>" />
+                                <input name="addresses[<?php echo $but_key; ?>][streetaddress]" id="addresses_streetaddress_<?php echo $but_key; ?>" type="hidden" value="<?php echo $but_street; ?>" />
+                                
+                            	<?php
+									$ssazadropdown = new Zend_Form_Element_Select('addresses_ssaza_'.$but_key,
+														array(
+															'multiOptions' => array_merge_maintain_keys(array('' => "<Select Ssaza>"), $massaza),
+															'view' => new Zend_View(), 
+															'decorators' => array('ViewHelper'),
+															'class' => array('span3','ssaza','hastooltip'),
+															'title' => $this->translate("person_ssaza_tooltip")
+														)
+													);
+									$ssazadropdown->setValue($but_ssaza); 
+									echo $ssazadropdown->render(); 
+								?></td>
+                              
+                              <td><label class="control-label"><br /></label>
+                                <?php
+									$villagedropdown = new Zend_Form_Element_Select('addresses_village_'.$but_key,
+														array(
+															'multiOptions' => array('' => '<Select ssaza first>'),
+															'view' => new Zend_View(),
+															'decorators' => array('ViewHelper'),
+															'class' => array('xchzn-select','span3','hastooltip'),
+															'title' => $this->translate("person_village_tooltip")
+														)
+													);
+									$villagedropdown->setValue($but_village); 
+									echo $villagedropdown->render(); 
+								  ?>
+               				</td>
+		                </tr>
+                        <tr>
+                            <td width="33%" style="padding-top:0; border-top:none;"><label class="pagedescription">(Ssaza / county)</label></td>
+                            <td style="padding-top:0; border-top:none;"><label class="pagedescription">(Ekyalo / village)</label></td>
+                        </tr>
+                       </tbody>
+					</table>
+	    		</div>
+	    		<div class="form-actions row">
+	                <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_close'); ?></button>
+	                <button type="submit" class="btn btn-primary savethennext"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_continue'); ?></button>
+	                <a href="<?php echo $this->baseUrl("person/view/id/".encode($person->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+	                <input type="hidden" name="entityname" value="Person" />
+	                <input type="hidden" id="id" name="id" value="<?php echo encode($person->getID()); ?>" />
+	                <input type="hidden" id="ownerid" name="ownerid" value="<?php echo $person->getUserID(); ?>" />
+	                <input type="hidden" id="focusid" name="focusid" value="<?php echo $person->getID(); ?>" />
+                    <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" value="" />
+                    <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" value="" />
+	                <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />  
+                    <input type="hidden" id="hasclanchanges" name="hasclanchanges" value="0" />    
+	            </div>
+	    	</span> 
+		</div>
+        <?php } ?>
+		</form> 
+	</div>
+	<div id="personal"> 
+		<form id="profileform-personal" class="form-horizontal personal" action="<?php echo $posturl; ?>" method="post">
+    	<?php if($request->tab == 'personal'){ ?>
+        <div class="row" style="margin-left:0px;">
+	    	<span class="span9">
+	    		<div class="well row" style="min-height:60px;">
+		            <table class="table">                       
+		               <tr>
+		                    <td colspan="2"><label class="control-label bio"><?php echo $this->translate("person_bio_label"); ?>:</label>
+               				<textarea name="bio" id="bio" class="span7 hastooltip" title="<?php echo $this->translate("person_bio_tooltip"); ?>"><?php echo $person->getBio(); ?></textarea></td>
+		               </tr>
+		               <tr>
+		                    <td width="215"><label class="control-label haircolor"><?php echo $this->translate("person_haircolor_label"); ?>: </label>
+		                    <?php
+								  //$haircolorlookup = new LookupType();
+								  //$haircolorlookup->setName("ALL_HAIR_COLOR");
+								  //$haircolors = $haircolorlookup->getOptionValuesFromQuery();
+								  $haircolordropdown = new Zend_Form_Element_Select('haircolor',
+										  array(
+												  'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), getHairColors()),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span2','hastooltip'),
+										  		  'title' => $this->translate("person_haircolor_tooltip")
+										  )
+								  );
+								  
+								  $haircolordropdown->setValue($person->getHairColor());
+								  echo $haircolordropdown->render();
+							  ?>
+               				<td><label class="control-label eyecolor"><?php echo $this->translate("person_eyecolor_label"); ?>:</label>
+               				<?php
+								  //$eyecolorlookup = new LookupType();
+								  //$eyecolorlookup->setName("ALL_HAIR_COLOR");
+								  //$eyecolors = $eyecolorlookup->getOptionValuesFromQuery();
+								  $eyecolordropdown = new Zend_Form_Element_Select('eyecolor',
+										  array(
+												  'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), getEyeColors()),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span2','hastooltip'),
+										  		  'title' => $this->translate("person_eyecolor_tooltip")
+										  )
+								  );
+								  
+								  $eyecolordropdown->setValue($person->getEyeColor());
+								  echo $eyecolordropdown->render();
+							  ?></td>
+		               </tr>
+		               <tr>
+		                    <td><label class="control-label height"><?php echo $this->translate("person_height_label"); ?>: <i class="labeldescription">(Feet/Inches)</i></label>
+		                    <?php
+								list($whole, $decimal) = explode('.', number_format($person->getHeight(), 1, '.', ''));
+								
+		                    	  $feetdata = getHeightRangeInFeet();
+								  $feetdropdown = new Zend_Form_Element_Select('feet',
+										  array(
+												  'multiOptions' => array_merge_maintain_keys(array('' => '<Feet>'), $feetdata),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','feetselect')
+										  )
+								  );
+								  $feetdropdown->setValue($whole);
+								  echo $feetdropdown->render();
+							  ?>
+							  <?php
+		                    		$inchdata = getHeightRangeInInches();
+								    $inchdropdown = new Zend_Form_Element_Select('inches',
+										  array(
+												  'multiOptions' => array_merge_maintain_keys(array('' => '<Inches>'),$inchdata),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','inchselect','hastooltip'),
+												  'title' => $this->translate("person_height_tooltip")
+												  
+										  )
+								  );
+
+								  $inchdropdown->setValue($decimal);
+								  echo $inchdropdown->render();
+							  ?>
+               				<td><label class="control-label weight"><?php echo $this->translate("person_weight_label"); ?>: <i class="labeldescription">(Kg)</i></label>
+               				<input name="weight" id="weight" type="text" class="span1 hastooltip" value="<?php echo $person->getWeight(); ?>" title="<?php echo $this->translate("person_weight_tooltip"); ?>" /><div id="weight_error"></div>
+               				</td>
+		               </tr>
+		               <tr>
+		                    <td colspan="2"><label class="control-label religion"><?php echo $this->translate("person_religion_label"); ?>:</label>
+		                    <?php
+		                    	  //$religionlookup = new LookupType();
+								  //$religionlookup->setName("ALL_RELIGIONS");
+								  // $religions = $eyecolorlookup->getOptionValuesFromQuery();
+								  $religiondropdown = new Zend_Form_Element_Select('religion',
+										  array(
+												  'multiOptions' => array_merge_maintain_keys(array('' => '<Select one>'), getReligions()),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span3','hastooltip_custom'),
+										  		  'title' => $this->translate("person_faith_tooltip")
+										  )
+								  );
+								  
+								  $religiondropdown->setValue($person->getReligion());
+								  echo $religiondropdown->render();
+							  ?><span id="tooltip_religion"></span>
+		                    </td>
+		               </tr>
+		               <tr>
+		                    <td colspan="2"><label class="control-label language"><?php echo $this->translate("person_language_label"); ?>:</label>
+               				<?php
+		                    	//$languagelookup = new LookupType();
+								//$languagelookup->setName("ALL_LANGUAGES");
+								//$languages = $languagelookup->getOptionValuesFromQuery();
+								  $languagedropdown = new Zend_Form_Element_Multiselect('languages',
+										  array(
+												  'multiOptions' => getLanguages(),
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('chzn-select','multipleselect','span5','hastooltip_custom'),
+												  'title' => $this->translate("person_language_tooltip")
+										  )
+								  );
+								  
+								  $languagedropdown->setValue($person->getAllLanguages());
+								  $languagedropdown->setAttrib("data-placeholder", 'Select all in your category');
+								  echo $languagedropdown->render();
+							  ?><span id="tooltip_languages"></span>
+               				</td>
+		               </tr>
+					</table>
+	    		</div>
+	    		<div class="form-actions row">
+	                <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_close'); ?></button>
+	                <button type="submit" class="btn btn-primary savethennext"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_continue'); ?></button>
+	                <a href="javascript:doNothing();" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+	                <input type="hidden" name="entityname" value="Person" />
+	                <input type="hidden" id="id" name="id" value="<?php echo encode($person->getID()); ?>" />
+	                <input type="hidden" id="ownerid" name="ownerid" value="<?php echo $person->getUserID(); ?>" />
+	                <input type="hidden" id="focusid" name="focusid" value="<?php echo $person->getID(); ?>" />
+                    <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" value="" />
+                    <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" value="" />
+	                <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" /> 
+                    
+	            </div>
+	    	</span> 
+		</div>
+        <?php } ?>
+		</form>
+	</div>
+    <?php if(!$person->isDead()){ ?>
+	<div id="contacts"> 
+		<form id="profileform-contacts" class="form-horizontal contacts" action="<?php echo $posturl; ?>" method="post">
+    	<?php if($request->tab == 'contacts'){ ?>
+        <div class="row" style="margin-left:0px;">
+	    	<span class="span11" style="width:948px;">
+    			<div class="well row contactswell">
+    				<h3 class="well-legend">Email Addresses</h3></legend>
+		            <table class="table" style="margin-bottom:0;">
+                    	<tr>
+                            <td class="first"><label class="control-label type"><?php echo $this->translate("global_type_label"); ?></label></td>
+                            <td width="290"><label class="control-label emailaddress"><?php echo $this->translate("person_email_label"); ?></label></td>
+                            <td><label class="pull-right removelabel" style="margin-top:0;">Remove</label></td>
+						</tr>
+                    	<?php
+							$emails = $person->getEmailContacts();
+							
+							$nooflines = $emails->count();
+							$emails_array = $emails->toArray();
+							
+							$emailtypelookup = new LookupType();
+                            $emailtypelookup->setName("ALL_EMAIL_TYPES");
+							$emailtypes = $emailtypelookup->getOptionValuesAndDescription();
+							ksort($emailtypes);
+							$emailtypes = array_merge_maintain_keys(array('' => "<Select>"), $emailtypes);
+							
+							// debugMessage($emails_array);
+							$e_counter = 0; $x = 0;
+							foreach($emails as $email){
+								$key = array_search_key($allcontacts, $emails_array[$e_counter]);								
+					   	 ?>
+                         	<tr class="visible_row_email row_email_<?php echo $e_counter; ?>">
+                                <td class="first">
+								<?php                                    
+                                    $emailtypedropdown = new Zend_Form_Element_Select('emails_type_'.$key,
+                                              array(
+                                                  'multiOptions' => $emailtypes,
+                                                  'view' => new Zend_View(),
+                                                  'decorators' => array(array('ViewHelper')),
+                                                  'class' => array('xchzn-select','span2','type')
+                                              )
+                                      );
+                                      
+                                      $emailtypedropdown->setValue($email->getSubType());
+                                      echo $emailtypedropdown->render();
+                                  ?></td>
+                                <td><?php echo $email->getValue1(); ?>
+                                <?php if($email->isThePrimary() && $isme){ ?>
+                                	<span class="labeldescription"> (Used to login)</span>
+                                <?php } ?>
+                                	<input name="emails[<?php echo $key; ?>][emailaddress]" id="email_emailaddress_<?php echo $key; ?>" type="hidden" class="span4 email mail_<?php echo $key; ?>" value="<?php echo $email->getValue1(); ?>" />
+                               <input name="emails[<?php echo $key; ?>][id]" id="email_id_<?php echo $key; ?>" type="hidden" value="<?php echo $email->getID(); ?>" >
+                                </td>
+                                <td style="padding-left:30px;">
+                                <input type="hidden" name="primary_email" id="email_isprimary_<?php echo $key; ?>" value="<?php echo $key; ?>" class="primary_email <?php echo $email->getIsPrimary(); ?>" />
+
+                                <?php if(!$email->isThePrimary()){ ?>
+                                	<a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_email_<?php echo $e_counter; ?>" class="removeline close button btn" rel="email">&times;</a>
+                                <?php } ?>
+                                </td>
+                           </tr>
+                         <?php $e_counter++; $x++;
+						 	} 
+						  ?>
+                         <?php
+						 	for($i = $e_counter; $i<5; $i++){
+								// $x++;
+								$class = "visible_row_email";				
+								if($nooflines == 0){
+									if($i > $nooflines){
+										$class = "hidden_row_email";										
+									} 
+								} else {
+									if($i >= $nooflines){
+										$class = "hidden_row_email";										
+									} 
+								}
+								$useasdefault = false;
+								$showremove = true;
+								$default_email = "";
+								$default_type = "";
+								if($i == 0 && $nooflines == 0 && !IsEmptyString($person->getUserID())){
+									$default_email = $person->getUser()->getEmail();	
+									$default_type = "1";	
+									$useasdefault = true;
+									$showremove = false;							
+								}
+								
+						 ?>   
+                           <tr class="<?php echo $class; ?> row_email_<?php echo $i; ?>">
+                                <td class="first">
+                                <?php
+                                      $emailtypedropdown = new Zend_Form_Element_Select('emails_type_'.md5($x),
+                                              array(
+                                                  'multiOptions' => $emailtypes,
+                                                  'view' => new Zend_View(),
+                                                  'decorators' => array(array('ViewHelper')),
+                                                  'class' => array('xchzn-select','span2','type')
+                                              )
+                                      );
+                                      
+                                      $emailtypedropdown->setValue($default_type);
+                                      echo $emailtypedropdown->render();
+                                  ?></td>
+                                <td>
+                                <?php if(!$useasdefault){ ?>
+                                	<input name="emails[<?php echo md5($x); ?>][emailaddress]" id="emails_emailaddress_<?php echo md5($x); ?>" type="text" class="span4 email mail_<?php echo $i; ?> {email:true, messages: {email: '<?php echo $this->translate("person_email_invalid_error"); ?>'}}" value="<?php echo $default_email; ?>" />
+                                <?php } else { ?>
+									<?php echo $default_email; ?>
+                                	<input name="emails[<?php echo md5($x); ?>][emailaddress]" id="emails_emailaddress_<?php echo md5($x); ?>" type="hidden" class="span4 email mail_<?php echo $i; ?> {email:true, messages: {email: '<?php echo $this->translate("person_email_invalid_error"); ?>'}}" value="<?php echo $default_email; ?>" />
+                                <?php } ?>
+                                <?php if($useasdefault){ ?>
+                                	<span class="labeldescription"> (Used to login)</span>
+                                <?php } ?>     
+                                </td>
+                                <td style="padding-left:30px;"><input type="hidden" name="primary_email" id="email_isprimary_<?php echo md5($x); ?>" value="<?php echo md5($x); ?>" class="primary_email" />
+                                <?php if($showremove){ ?>
+                                	<a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_email_<?php echo $i; ?>" class="removeline close button btn" rel="email">&times;</a>
+                                <?php } ?> 
+                                </td>
+                           </tr>
+                         <?php $x++; } ?>     
+                       <tr>
+                       		<td colspan="3"><a href="javascript: doNothing();" title="Add another" class="addline" id="email">Add</a></td>
+                       </tr>
+					</table>
+    			</div>
+    			<div class="well row contactswell">
+    				<h3 class="well-legend">Phone Numbers</h3></legend>
+		            <table class="table">
+                     	<tr>
+		               		<td class="first"><label class="control-label type"><?php echo $this->translate("global_type_label"); ?></label></td>
+		               		<td class="phone-second"><label class="control-label countrycode"><?php echo $this->translate("person_countrycode_label"); ?></label></td>
+		               		<td class="phone-third"><label class="control-label areacode"><?php echo $this->translate("person_areacode_label"); ?></label></td>
+		               		<td width="140"><label class="control-label phonenumber"><?php echo $this->translate("person_phonenumber_label"); ?></label></td>
+                            <td><label class="control-label emailaddress"><?php echo $this->translate("person_isprimary_label"); ?></label>
+                            <label class="pull-right removelabel">Remove</label></td>
+		               </tr>
+                    	<?php 
+							$phones = $person->getPhoneContacts();
+							$nooflines = $phones->count();
+							$phones_array = $phones->toArray();
+							
+							$phonestypelookup = new LookupType();
+                            $phonestypelookup->setName("ALL_PHONE_TYPES");
+							$phonetypes = $phonestypelookup->getOptionValuesAndDescription();
+							ksort($phonetypes);
+							$phonetypes = array_merge_maintain_keys(array('' => "<Select>"), $phonetypes);
+							// debugMessage($phonetypes);
+							$p_counter = 0;
+							foreach($phones as $phone){
+								$key = array_search_key($allcontacts, $phones_array[$p_counter]);
+					   	 ?>                     
+		               <tr class="visible_row_phone row_phone_<?php echo $p_counter; ?>">
+		               		<td class="first">
+			               		<?php
+									  $phonedropdown = new Zend_Form_Element_Select('phones_type_'.$key,
+											  array(
+												  'multiOptions' => $phonetypes,
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span2','xhastooltip','type')
+											  )
+									  );
+									  
+									  $phonedropdown->setValue($phone->getSubType());
+									  echo $phonedropdown->render();
+								  ?>
+		               		</td>
+		               		<td class="phone-second">
+                            	<input name="phones[<?php echo $key; ?>][value1]" id="phone_countrycode_<?php echo $key; ?>" type="text" class="span1" value="<?php echo $phone->getValue1(); ?>" />	
+		               		</td>
+		               		<td class="phone-third">
+                            	<input name="phones[<?php echo $key; ?>][value2]" id="phone_areacode_<?php echo $key; ?>" type="text" class="span1" value="<?php echo $phone->getValue2(); ?>" />
+		               		</td>
+		               		<td>
+                            	<input name="phones[<?php echo $key; ?>][value3]" id="phones_phonenumber_<?php echo $key; ?>" type="text" class="span2" value="<?php echo $phone->getValue3(); ?>" />
+                            	<input name="phones[<?php echo $key; ?>][id]" id="phones_id_<?php echo $key; ?>" type="hidden" value="<?php echo $phone->getID(); ?>" >                           
+		               		</td>
+                            <td style="padding-left:30px;"><input type="radio" name="primary_phone" id="phone_isprimary_<?php echo $key; ?>" value="<?php echo $key; ?>" class="primary_phone <?php echo $phone->getIsPrimary(); ?>" />
+                            <a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_phone_<?php echo $p_counter; ?>" class="removeline close button btn" rel="phone">&times;</a>
+                            </td>
+		               </tr>
+                       <?php $p_counter++; $x++;
+						 } 
+						?>
+                       <?php 
+						 	for($i = $p_counter; $i<5; $i++){
+								// $x++;
+								$class = "visible_row_phone";				
+								if($nooflines == 0){
+									if($i > $nooflines){
+										$class = "hidden_row_phone";										
+									} 
+								} else {
+									if($i >= $nooflines){
+										$class = "hidden_row_phone";										
+									} 
+								}
+						 ?>
+                         <tr class="<?php echo $class; ?> row_phone_<?php echo $i; ?>">
+		               		<td class="first">
+			               		<?php
+									  $phonedropdown = new Zend_Form_Element_Select('phones_type_'.md5($x),
+											  array(
+												  'multiOptions' => $phonetypes,
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span2','type')
+											  )
+									  );
+									  
+									  $phonedropdown->setValue('');
+									  echo $phonedropdown->render();
+								  ?>
+		               		</td>
+		               		<td class="phone-second">                            
+			               		<input name="phones[<?php echo md5($x); ?>][value1]" id="phone_countrycode_<?php echo md5($x); ?>" type="text" class="span1" value="" />	
+		               		</td>
+		               		<td class="phone-third">
+		               			<input name="phones[<?php echo md5($x); ?>][value2]" id="phone_areacode_<?php echo md5($x); ?>" type="text" class="span1" value="" />
+		               		</td>
+		               		<td>
+		               			<input name="phones[<?php echo md5($x); ?>][value3]" id="phones_phonenumber_<?php echo md5($x); ?>" type="text" class="span2" value="" />
+                            	<input name="phones[<?php echo md5($x); ?>][id]" id="phones_id_<?php echo md5($x); ?>" type="hidden" value="" >
+		               		</td>
+                            <td style="padding-left:30px;"><input type="radio" name="primary_phone" id="phone_isprimary_<?php echo md5($x); ?>" value="<?php echo md5($x); ?>" class="primary_phone" />
+                             <a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_phone_<?php echo $i; ?>" class="removeline close button btn" rel="phone">&times;</a>
+                            </td>
+		               </tr>
+                       <?php $x++; } ?>
+                       <tr>
+                       		<td colspan="5"><a href="javascript: doNothing();" title="Add another" class="addline" id="phone">Add</a></td>
+                       </tr>
+					</table>
+    			</div>
+    			<div class="well row contactswell">
+    				<h3 class="well-legend">Physical Addresses</h3></legend>
+                       <?php
+							$addresses = $person->getPhysicalAddresses();
+							$nooflines = $addresses->count();
+							$currentaddresses = $addresses->toArray();
+							
+							$addresstypelookup = new LookupType();
+							$addresstypelookup->setName("ALL_ADDRESS_TYPES");
+							$addresstypes = $addresstypelookup->getOptionValuesAndDescription();
+							ksort($addresstypes);
+							$addresstypes = array_merge_maintain_keys(array('' => "<Select>"), $addresstypes);
+							
+							// debugMessage($addresstypes);
+							$countries = getCountries();
+		               		unset($countries['UG']);
+							$thecountries = array_merge_maintain_keys(array('' => "<Select Country of Residence>","XX"=>"Buganda","UG"=>"Uganda"), $countries);
+							
+							$a_counter = 0;
+							foreach($addresses as $address){
+								$key = array_search_key_by_id($alladdresses, $address->getID());	
+					   ?>
+                       <table class="table theaddresses">                  
+		               <tr class="ad visible_row_address row_address_<?php echo $a_counter; ?>" id="row_address_<?php echo $a_counter; ?>">
+		               		<td class="first">
+                            	<label class="control-label type"><?php echo $this->translate("global_type_label"); ?></label>
+			               		<?php
+									  $addresstypedropdown = new Zend_Form_Element_Select('addresses_type_'.$key,
+											  array(
+													  'multiOptions' => $addresstypes,
+													  'view' => new Zend_View(),
+													  'decorators' => array(array('ViewHelper')),
+													  'class' => array('span2','type')
+											  )
+									  );
+									  
+									  $addresstypedropdown->setValue($address->getType());
+									  echo $addresstypedropdown->render();
+								  ?>
+		               		</td>
+		               		<td><label class="control-label country"><?php echo $this->translate("person_country_label"); ?></label>
+                            	<?php
+									$countrydropdown = new Zend_Form_Element_Select('addresses_country_'.$key,
+														array(
+															'multiOptions' => $thecountries,
+															'view' => new Zend_View(), 
+															'decorators' => array('ViewHelper'),
+															'class' => array('span3','country', 'country_'.$a_counter, '{required: true, messages: {required: "'.$this->translate("person_country_error").'"}}'),
+														)
+													);
+									$countrydropdown->setValue($address->getCountry()); 
+									echo $countrydropdown->render(); 
+								?>
+		               		</td>
+                            <td id="td_ssaza_<?php echo $a_counter; ?>"><label class="control-label ssaza"><?php echo $this->translate("person_ssaza_label"); ?></label>
+                            	<?php
+									$ssazadropdown = new Zend_Form_Element_Select('addresses_ssaza_'.$key,
+														array(
+															'multiOptions' => array_merge_maintain_keys(array('' => "<Select Ssaza>"), $massaza),
+															'view' => new Zend_View(), 
+															'decorators' => array('ViewHelper'),
+															'class' => array('span3','width150'),
+															'key' => $key,
+															'currenttown' => $address->getVillageID()
+														)
+													);
+									$ssazadropdown->setValue($address->getCounty()); 
+									echo $ssazadropdown->render(); 
+								?>
+		               		</td>
+                            <td id="td_city_<?php echo $a_counter; ?>"><label class="control-label city"><?php echo $this->translate("person_city_label"); ?></label>
+                            <input name="addresses[<?php echo $key; ?>][city]" id="addresses_city_<?php echo $key; ?>" type="text" class="span2" value="<?php echo $address->getCity(); ?>" /></td>
+                            <td id="td_state_<?php echo $a_counter; ?>"><label class="control-label state"><?php echo $this->translate("person_stateprovince_label"); ?></label>
+                            <input name="addresses[<?php echo $key; ?>][state]" id="addresses_state_<?php echo $key; ?>" type="text" class="span2" value="<?php echo $address->getState(); ?>" /></td>
+                            <td id="td_zipcode_<?php echo $a_counter; ?>"><label class="control-label zipcode"><?php echo $this->translate("person_zipcode_label"); ?></label>
+                            <input name="addresses[<?php echo $key; ?>][zipcode]" id="addresses_zipcode_<?php echo $key; ?>" type="text" class="span1" value="<?php echo $address->getZipCode(); ?>" /></td>
+                            <td id="td_county_<?php echo $a_counter; ?>"><label class="control-label county"><?php echo $this->translate("person_county_label"); ?></label>
+                            <input name="addresses[<?php echo $key; ?>][county]" id="addresses_county_<?php echo $key; ?>" type="text" class="span2" value="<?php echo $address->getCounty(); ?>" /></td>
+                            <td id="td_village_<?php echo $a_counter; ?>"><label class="control-label village"><?php echo $this->translate("person_village_label"); ?></label>
+                            <input name="addresses[<?php echo $key; ?>][village]" id="addresses_village_<?php echo $key; ?>" type="text" class="width150" value="<?php echo $address->getVillageName(); ?>" />
+                            </td>
+                            <td id="td_village_but_<?php echo $a_counter; ?>"><label class="control-label"><?php echo $this->translate("person_village_label"); ?></label>
+                            	<?php
+									$villagedropdown = new Zend_Form_Element_Select('addresses_village_but_'.$key,
+														array(
+															'multiOptions' => array('' => '<Select ssaza first>'),
+															'decorators' => array('ViewHelper'),
+															'view' => new Zend_View(),
+															'class' => array('xchzn-select','width150')
+														)
+													);
+									$villagedropdown->setValue($address->getVillageID()); 
+									echo $villagedropdown->render(); 
+								  ?><input name="counter_<?php echo $a_counter; ?>" class="row_address_<?php echo $a_counter; ?>" id="counter_<?php echo $a_counter; ?>" type="hidden" value="<?php echo $a_counter; ?>" >
+                                  <input name="addresses[<?php echo $key; ?>][id]" id="addresses_id_<?php echo $key; ?>" type="hidden" value="<?php echo $address->getID(); ?>" />
+                            </td>
+                            <td width="99%">
+                            <label class="control-label primaryaddress"><?php echo $this->translate("person_isprimary_label"); ?></label>
+                            <label class="pull-right removelabel">Remove</label>
+                            <input style="margin-left:25px;" type="radio" name="primary_address" id="address_isprimary_<?php echo $a_counter; ?>" value="<?php echo $key; ?>" class="primary_address <?php echo $address->getIsPrimary(); ?>" />
+                            <a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_address_<?php echo $a_counter; ?>" class="removeline close button btn" rel="address">&times;</a>
+		               		</td>
+		               </tr>
+                       </table>
+                       <?php $a_counter++;
+						 } 
+						?>
+                        <?php 
+						 	for($i = $a_counter; $i<5; $i++){
+								$class = "visible_row_address";				
+								if($nooflines == 0){
+									if($i > $nooflines){
+										$class = "hidden_row_address";										
+									} 
+								} else {
+									if($i >= $nooflines){
+										$class = "hidden_row_address";										
+									} 
+								}
+						 ?>
+                         <table class="table theaddresses">
+                         <tr class="<?php echo $class; ?> ad row_address_<?php echo $i; ?>" id="row_address_<?php echo $i; ?>">
+		               		<td class="first">
+                            	<label class="control-label type"><?php echo $this->translate("global_type_label"); ?></label>
+			               		<?php
+									  $addresstypedropdown = new Zend_Form_Element_Select('addresses_type_'.md5($i),
+											  array(
+													  'multiOptions' => $addresstypes,
+													  'view' => new Zend_View(),
+													  'decorators' => array(array('ViewHelper')),
+													  'class' => array('span2','type')
+											  )
+									  );
+									  
+									  $addresstypedropdown->setValue('');
+									  echo $addresstypedropdown->render();
+								  ?>
+		               		</td>
+		               		<td><label class="control-label country"><?php echo $this->translate("person_country_label"); ?></label>
+                            	<?php
+									$countrydropdown = new Zend_Form_Element_Select('addresses_country_'.md5($i),
+														array(
+															'multiOptions' => $thecountries,
+															'view' => new Zend_View(), 
+															'decorators' => array('ViewHelper'),
+															'class' => array('span3','country', 'country_'.$i, '{required: true, messages: {required: "'.$this->translate("person_country_error").'"}}'),
+														)
+													);
+									$countrydropdown->setValue('XX'); 
+									echo $countrydropdown->render(); 
+								?>
+		               		</td>
+                            <td id="td_ssaza_<?php echo $i; ?>"><label class="control-label ssaza"><?php echo $this->translate("person_ssaza_label"); ?></label>
+                            	<?php
+									$ssazadropdown = new Zend_Form_Element_Select('addresses_ssaza_'.md5($i),
+														array(
+															'multiOptions' => array_merge_maintain_keys(array('' => "<Select Ssaza>"), $massaza),
+															'view' => new Zend_View(), 
+															'decorators' => array('ViewHelper'),
+															'class' => array('span3','width150', 'ssaza_'.$i),
+															'key' => md5($i)
+														)
+													);
+									$ssazadropdown->setValue(''); 
+									echo $ssazadropdown->render(); 
+								?>
+		               		</td>
+                            <td id="td_city_<?php echo $i; ?>"><label class="control-label city"><?php echo $this->translate("person_city_label"); ?></label>
+                            <input name="addresses[<?php echo md5($i); ?>][city]" id="addresses_city_<?php echo md5($i); ?>" type="text" class="span2" value="" /></td>
+                            <td id="td_state_<?php echo $i; ?>"><label class="control-label state"><?php echo $this->translate("person_stateprovince_label"); ?></label>
+                            <input name="addresses[<?php echo md5($i); ?>][state]" id="addresses_state_<?php echo md5($i); ?>" type="text" class="span2" value="" /></td>
+                            <td id="td_zipcode_<?php echo $i; ?>"><label class="control-label zipcode"><?php echo $this->translate("person_zipcode_label"); ?></label>
+                            <input name="addresses[<?php echo md5($i); ?>][zipcode]" id="addresses_zipcode_<?php echo md5($i); ?>" type="text" class="span1" value="" /></td>
+                            <td id="td_county_<?php echo $i; ?>"><label class="control-label county"><?php echo $this->translate("person_county_label"); ?></label>
+                            <input name="addresses[<?php echo md5($i); ?>][county]" id="addresses_county_<?php echo md5($i); ?>" type="text" class="span2" value="" /></td>
+                            <td id="td_village_<?php echo $i; ?>"><label class="control-label village"><?php echo $this->translate("person_village_label"); ?></label>
+                            <input name="addresses[<?php echo md5($i); ?>][village]" id="addresses_village_<?php echo md5($i); ?>" type="text" class="width150" value="" />
+                            <td id="td_village_but_<?php echo $i; ?>"><label class="control-label"><?php echo $this->translate("person_village_label"); ?></label>
+                            	<?php
+									$villagedropdown = new Zend_Form_Element_Select('addresses_village_but_'.md5($i),
+														array(
+															'multiOptions' => array('' => '<Select ssaza first>'),
+															'view' => new Zend_View(),
+															'decorators' => array('ViewHelper'),
+															'class' => array('xchzn-select','width150')
+														)
+													);
+									$villagedropdown->setValue(''); 
+									echo $villagedropdown->render(); 
+								  ?><input name="counter_<?php echo $i; ?>" class="row_address_<?php echo $i; ?>" id="counter_<?php echo $i; ?>" type="hidden" value="<?php echo $i; ?>" >
+                            </td>
+                            <td width="99%">
+                            <label class="control-label primaryaddress"><?php echo $this->translate("person_isprimary_label"); ?></label>
+                            <label class="pull-right removelabel">Remove</label>
+                            <input style="margin-left:25px;" type="radio" name="primary_address" id="address_isprimary_<?php echo md5($i); ?>" value="<?php echo md5($i); ?>" class="primary_address" />
+                            <a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_address_<?php echo $i; ?>" class="removeline close button btn" rel="address">&times;</a>
+		               		</td>
+		               	 </tr>
+                         </table>
+                       <?php } ?>
+                       <a href="javascript: doNothing();" title="Add another" class="addline" id="address">Add</a><br /><br />
+    			</div>
+    			<div class="well row contactswell">
+    				<h3 class="well-legend">Web Addresses</h3></legend>
+		            <table class="table">
+                       <tr>
+		               		<td class="first"><label class="control-label service"><?php echo $this->translate("person_web_service_label"); ?></label></td>
+		               		<td><label class="control-label username"><?php echo $this->translate("person_web_username_label"); ?></label></td>
+		               		<td width="99%"><label class="control-label url"><?php echo $this->translate("person_web_url_label"); ?></label>
+                            <label class="pull-right removelabel">Remove</label></td>
+		               </tr> 
+                       <?php 
+							$services = $person->getWebContacts();
+							$nooflines = $services->count();
+							$services_array = $services->toArray();
+							
+							$webservicelookup = new LookupType();
+                            $webservicelookup->setName("ALL_WEB_SERVICES");
+							$webtypes = $webservicelookup->getOptionValuesAndDescription();
+							ksort($webtypes);
+							$webtypes = array_merge_maintain_keys(array('' => "<Select>"), $webtypes);
+							// debugMessage($phonetypes);
+							$w_counter = 0;
+							
+							foreach($services as $service){
+								$key = array_search_key($allcontacts, $services_array[$w_counter]);
+					   ?>                 
+		               <tr class="visible_row_web row_web_<?php echo $w_counter; ?>">
+		               		<td class="first">
+		               		<?php
+								  $servicedropdown = new Zend_Form_Element_Select('services_type_'.$key,
+										  array(
+												  'multiOptions' => $webtypes,
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span2','type','web')
+										  )
+								  );
+								  
+								  $servicedropdown->setValue($service->getSubType());
+								  echo $servicedropdown->render();
+							  ?>
+		               		</td>
+		               		<td><input name="services[<?php echo $key; ?>][value1]" id="services_username_<?php echo $key; ?>" type="text" class="span2" value="<?php echo $service->getValue1(); ?>" /></td>
+		               		
+		               		<td><input name="services[<?php echo $key; ?>][value2]" id="services_url_<?php echo $key; ?>" type="text" class="span4" value="<?php echo $service->getValue2(); ?>" />
+                            <a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_web_<?php echo $w_counter; ?>" class="removeline close button btn" rel="web">&times;</a>
+		               		</td>
+		               </tr>
+                       <?php $w_counter++; $x++;
+						 } 
+					 	?>
+                       <?php 
+						 	for($i = $w_counter; $i<10; $i++){															
+								$class = "visible_row_web";				
+								if($nooflines == 0){
+									if($i > $nooflines){
+										$class = "hidden_row_web";										
+									} 
+								} else {
+									if($i >= $nooflines){
+										$class = "hidden_row_web";										
+									} 
+								}
+						?>
+                        <tr class="<?php echo $class; ?> row_web_<?php echo $i; ?>">
+		               		<td class="first">
+		               		<?php
+								  $servicedropdown = new Zend_Form_Element_Select('services_type_'.md5($x),
+										  array(
+												  'multiOptions' => $webtypes,
+												  'view' => new Zend_View(),
+												  'decorators' => array(array('ViewHelper')),
+												  'class' => array('xchzn-select','span2','type','web')
+										  )
+								  );
+								  
+								  $servicedropdown->setValue('');
+								  echo $servicedropdown->render();
+							  ?>
+		               		</td>
+		               		<td><input name="services[<?php echo md5($x); ?>][value1]" id="services_username_<?php echo md5($x); ?>" type="text" class="span2" value="" /></td>
+		               		
+		               		<td><input name="services[<?php echo md5($x); ?>][value2]" id="services_url_<?php echo md5($x); ?>" type="text" class="span4" value="" />
+                            <a href="javascript: doNothing();" title="<?php echo $this->translate("person_button_remove_contact"); ?>" id="row_web_<?php echo $i; ?>" class="removeline close button btn" rel="web">&times;</a>
+		               		</td>
+		               </tr>
+                       <?php $x++;	
+					   	 } 
+					   ?>
+                       <tr>
+                       		<td colspan="3"><a href="javascript: doNothing();" title="Add another" class="addline" id="web">Add</a></td>
+                       </tr>
+					</table>
+    			</div>
+    			<div class="form-actions row">
+	                <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_close'); ?></button>
+	                <button type="submit" class="btn btn-primary savethennext"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_continue'); ?></button>
+	                <a href="<?php echo $this->baseUrl("person/view/id/".encode($person->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+	                <input type="hidden" name="entityname" value="Person" />
+	                <input type="hidden" id="id" name="id" value="<?php echo encode($person->getID()); ?>" />
+	                <input type="hidden" id="ownerid" name="ownerid" value="<?php echo $userid; ?>" />
+	                <input type="hidden" id="focusid" name="focusid" value="<?php echo $person->getID(); ?>" />
+                    <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" value="" />
+                    <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" value="" />
+	                <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="<?php echo $this->translate('person_update_success'); ?>" />    
+	            </div>
+	    	</span> 
+		</div>
+        <?php } ?>
+		</form>
+	</div>
+    <?php } ?>
+	<?php if($allowedit){ ?>
+	<div id="privacy">
+    	<form id="profileform-privacy" class="form-horizontal privacy">
+        <?php if($request->tab == 'privacy'){ ?>
+    	<div class="row" style="margin-left:0px;"> 		
+            <span class="span9">
+                <div class="well row" style="min-height:80px;">
+                    <h3 class="well-legend">Privacy</h3>
+                    <table class="table">                       
+                       <tr>		                    
+                            <td>
+                            <?php require APPLICATION_PATH."/views/scripts/person/privacy.phtml"; ?>
+                            </td>
+                       </tr>
+                    </table>
+                </div>
+            </span>
+       	</div>
+        <?php } ?>
+        </form>
+	</div>
+    <?php } ?>
+    <?php if($isme){ ?>
+		<?php require APPLICATION_PATH."/views/scripts/person/settings.phtml"; ?>
+    <?php } ?>
+</div>
+<script>
+	$(document).ready(function() {
+		// override default tab
+		<?php if(!isEmptyString($request->tab)){ ?>
+			$("#tabs").tabs({ selected:'<?php echo $request->tab; ?>', fx: {opacity: 'toggle'} });	   
+		<?php } ?>
+		$('#tabs').tabs({
+			// the selected tab
+			selected: '<?php echo $request->tab; ?>'
+		});
+		
+		$("#profileform-contacts").validate({
+			// custom error positions
+			errorPlacement: function(error, element) {
+				error.insertAfter(element);
+			}
+		});
+			
+		// form validation
+		$("#profileform-general, #profileform-contacts, #profileform-personal").validate({		
+			// define the validation rules one field at a time
+			rules: {
+				firstname: "required",
+				lastname: "required",
+				birthyear: {
+					required: false,
+					number:true,
+					minlength: '4',
+					/*maxfatherdiff: true,*/
+					maxbirth: true,
+					max:'<?php echo date('Y'); ?>',
+					min: '<?php echo '1500'; ?>',
+					maxliving: true/*,
+					adultmin: true*/
+				},
+				e_birthyear: {
+					required: false,
+					number:true,
+					minlength: '4',
+					maxlength: '4',
+					maxe_birth: true,
+					max:'<?php echo date('Y'); ?>',
+					min: '<?php echo '1500'; ?>'
+				},
+				deathyear: {
+					required: false,
+					number:true,
+					minlength: '4',
+					maxlength: '4',
+					birthdeathdiff: true,
+					maxdeath: true,
+					max:'<?php echo date('Y'); ?>',
+					min: '<?php echo '1500'; ?>'
+				},
+				e_deathyear: {
+					required: false,
+					number:true,
+					minlength: '4',
+					maxlength: '4',
+					maxe_death: true,
+					max:'<?php echo date('Y'); ?>',
+					min: '<?php echo '1500'; ?>'
+				},
+				suffix: {
+					validprefix: true
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				firstname: "<?php echo $this->translate("person_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("person_lastname_error"); ?>",
+				birthyear: {
+					number:"Please enter valid Year",
+					min: "Earliest year allowed is 1500",
+					max: "Year should be less than current",
+					minlength: "Year must have four digits",
+					maxlength: "Year must have four digits",
+					/*maxfatherdiff: "Birth Year should be at least 12years more than person's father",*/
+					maxbirth: "Date of Birth should be before today",
+					maxliving: "Maximum allowed for a Living Person is 1900"/*,
+					adultmin: "Current age of person should be greater than 15"*/
+				},
+				e_birthyear: {
+					number:"Please enter valid Year",
+					max:"Year should be less than current",
+					min: "Earliest year allowed is 1500",
+					minlength: "Year must have four digits",
+					maxlength: "Year must have four digits",
+					maxe_birth: "Date should be before today"
+				},
+				deathyear: {
+					number:"Please enter valid Year",
+					max:"Year should be less than current",
+					min: "Earliest year allowed is 1500",
+					minlength: "Year must have four digits",
+					maxlength: "Year must have four digits",
+					birthdeathdiff: "Date of Death should be after Date of Birth",
+					maxdeath: "Date of Death should be before today"
+				},
+				e_deathyear: {
+					number:"Please enter valid Year",
+					max:"Year should be less than current",
+					min: "Earliest year allowed is 1500",
+					minlength: "Year must have four digits",
+					maxlength: "Year must have four digits",
+					maxe_death: "Date should be before today"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		$("#profileform-personal").validate({		
+			// define the validation rules one field at a time
+			rules: {
+				weight: {
+					required: false,
+					validate_number: true,
+					min: 2,
+					max: 300
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				weight: {
+					validate_number: "Please enter a valid value",
+					min: "Should be at least 2kg",
+					max: "Maximum of 300kg allowed"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		// add the validation for wholesale price to be less than retail price
+		$.validator.addMethod("validprefix", function(value, element, params) {
+			var gender = $("#gender").val();
+			var correct = gender == 1 ? 'Male' : 'Female';
+			if (gender == '1' && (value == '4' || value == '2')) {
+				return false; 
+			}
+			if (gender == '2' && (value == '3')) {
+				return false; 
+			}
+			return true;        
+		}, "Invalid salutation selected for gender ");
+		
+		// Add validation rules for number fields on each line
+		$.validator.addMethod("validate_number", function(value, element) {				
+			if(!IsValidAmount(value)){
+				return false;
+			}
+			return true;
+		}, "Please enter a valid number");
+		
+		// add the validation for father being atleast 12years older
+		$.validator.addMethod("maxfatherdiff", function(value, element, params) { 
+			var fage = '<?php echo $fatheryob; ?>';
+			var agediff = parseInt(value) - parseInt(fage); 
+			<?php if(!isEmptyString($person->getID())){ ?>
+				if(!isEmptyString(fage) && !isEmptyString(value) && (agediff < 12)){
+					return false;
+				}
+			<?php } ?>
+			return true;        
+		}, "Birth Year should be at least 12years more than person's father");
+		
+		// add the validation for father being atleast 12years older
+		$.validator.addMethod("birthdeathdiff", function(value, element, params) { 
+			var birthyear = $("#birthyear").val(); var birthmonth = $("#birthmonth").val(); var birthday = $("#birthday").val();
+			var hasbirth = false;
+			if(!isEmptyString(birthyear) && !isEmptyString(birthmonth ) && !isEmptyString(birthday)){
+				var birth = birthyear+'-'+birthmonth+'-'+birthday;
+				var b = new Date(birthyear, birthmonth+1, birthday);
+				var bstamp = b.getTime();
+				hasbirth = true;
+			}
+			var deathyear = $("#deathyear").val(); var deathmonth = $("#deathmonth").val(); var deathday = $("#deathday").val();
+			var hasdeath = false;
+			if(!isEmptyString(deathyear) && !isEmptyString(deathmonth ) && !isEmptyString(deathday)){
+				var death = deathmonth+'/'+deathday+'/'+deathyear;
+				var d = new Date(death);
+				var d = new Date(deathyear, deathmonth+1, deathday);
+				var dstamp = d.getTime();
+				hasdeath = true;
+			}
+			if(hasbirth && hasdeath){
+				if(dstamp < bstamp){
+					return false;
+				}
+			}
+			return true;        
+		}, "Date of Death should be after Date of Birth");
+		
+		// date not greater than today
+		$.validator.addMethod("maxbirth", function(value, element, params) { 
+			var n = new Date();
+			var nstamp = n.getTime();			
+			var birthyear = $("#birthyear").val(); var birthmonth = $("#birthmonth").val(); var birthday = $("#birthday").val();
+			var hasbirth = false;
+			if(!isEmptyString(birthyear) && !isEmptyString(birthmonth ) && !isEmptyString(birthday)){
+				var birth = birthmonth+'/'+birthday+'/'+birthyear;
+				var b = new Date(birth);
+				var bstamp = b.getTime();
+				hasbirth = true;
+			}
+			if(hasbirth){
+				if(bstamp > nstamp){
+					$("birthyear").attr('title', '');
+					return false;
+				}
+			}
+			return true;        
+		}, "Date of Birth should be before today");
+		
+		// date not greater than today
+		$.validator.addMethod("maxe_birth", function(value, element, params) { 
+			var n = new Date();
+			var nstamp = n.getTime();			
+			var e_birthyear = $("#e_birthyear").val(); var e_birthmonth = $("#e_birthmonth").val(); var e_birthday = $("#e_birthday").val();
+			var hasbirth = false;
+			if(!isEmptyString(e_birthyear) && !isEmptyString(e_birthmonth ) && !isEmptyString(e_birthday)){
+				var birth = e_birthmonth+'/'+e_birthday+'/'+e_birthyear;
+				var b = new Date(birth);
+				var bstamp = b.getTime();
+				hasbirth = true;
+			}
+			if(hasbirth){
+				if(bstamp > nstamp){
+					$("birthyear").attr('title', '');
+					return false;
+				}
+			}
+			return true;        
+		}, "Date should be before today");
+		
+		// date not greater than today
+		$.validator.addMethod("maxdeath", function(value, element, params) { 
+			var n = new Date();
+			var nstamp = n.getTime();			
+			var deathyear = $("#deathyear").val(); var deathmonth = $("#deathmonth").val(); var deathday = $("#deathday").val();
+			var hasdeath = false;
+			if(!isEmptyString(deathyear) && !isEmptyString(deathmonth ) && !isEmptyString(deathday)){
+				var death = deathmonth+'/'+deathday+'/'+deathyear;
+				var d = new Date(death);
+				var dstamp = d.getTime();
+				hasdeath = true;
+			}
+			if(hasdeath){
+				if(dstamp > nstamp){
+					return false;
+				}
+			}
+			return true;        
+		}, "Date of Death should be before today");
+		
+		// date not greater than today
+		$.validator.addMethod("maxe_death", function(value, element, params) { 
+			var n = new Date();
+			var nstamp = n.getTime();			
+			var e_deathyear = $("#e_deathyear").val(); var e_deathmonth = $("#e_deathmonth").val(); var e_deathday = $("#e_deathday").val();
+			var hasdeath = false;
+			if(!isEmptyString(e_deathyear) && !isEmptyString(e_deathmonth ) && !isEmptyString(e_deathday)){
+				var death = e_deathmonth+'/'+e_deathday+'/'+e_deathyear;
+				var d = new Date(death);
+				var dstamp = d.getTime();
+				hasdeath = true;
+			}
+			if(hasdeath){
+				if(dstamp > nstamp){
+					return false;
+				}
+			}
+			return true;        
+		}, "Date of Death should be before today");
+		
+		// validate maximum age allowed for living persons
+		$.validator.addMethod("maxliving", function(value, element, params) { 
+			var currentyear = '1900';
+			var selected_birthyear = $("#birthyear").val();
+			var livingstatus = $("#lifestatus").val();
+			if(livingstatus == 1 && parseInt(selected_birthyear) < parseInt(currentyear)){
+				return false;
+			}
+			return true;        
+		}, "Error");
+		
+		// minimum age for adults
+		/*$.validator.addMethod("adultmin", function(value, element, params) { 
+			var validmin = '<?php //echo date('Y')-15; ?>';
+			var selected_birthyear = $("#birthyear").val();
+			var hasspouse = '<?php //echo $person->hasSpouse() ? 1 : 0; ?>';
+			var haschildren = '<?php //echo $person->hasChildren() ? 1 : 0; ?>';
+			// alert(validmin+' - '+selected_birthyear);
+			if((parseInt(selected_birthyear) > parseInt(validmin)) && (haschildren == 1 || haschildren == 1)){
+				return false;
+			}
+			return true;        
+		}, "Error");*/
+		
+		// on type change
+		$("#type-1").click(function() {
+			multipleEnableContainerByID("muganda, mugandaclanname");
+			// disableContainerByID("mujjwa");
+		});
+		$("#type-2, #type-3").click(function() {
+			// enableContainerByID("mujjwa");
+			multipleDisableContainerByID("muganda, mugandaclanname");
+		});
+		
+		<?php if($person->isMuganda()){ ?>
+			multipleEnableContainerByID("muganda, mugandaclanname");
+		<?php } ?>
+		<?php if($person->isMujjwa() || $person->isOtheType()){ ?>
+			multipleDisableContainerByID("muganda, mugandaclanname");
+		<?php } ?>
+		
+		// on type change
+		$("#lifestatus-1").click(function() {
+			disableContainerByID("deathrow");
+		});
+		$("#lifestatus-2").click(function() {
+			enableContainerByID("deathrow");
+			// $("tr#deathrow td select, tr#deathrow td input").val('');
+			
+			enableContainerByID("d_dates");
+			disableContainerByID("d_dtext");		
+			disableContainerByID("d_dobtwo");
+		
+			$("#d_starttype").change(function() {
+				if($(this).val() == '11'){
+					enableContainerByID("d_dtext");
+					disableContainerByID("d_dates");
+				} else {
+					enableContainerByID("d_dates");
+					disableContainerByID("d_dtext");
+				}
+				if($(this).val() == '2' || $(this).val() == '3'){
+					disableContainerByID("d_dtext");
+					enableContainerByID("d_dates");
+					enableContainerByID("d_dobtwo");
+					if($(this).val() == '3'){
+						$("#de_starttype").val('8').attr('selected', true);
+					}
+					if($(this).val() == '2'){
+						$("#de_starttype").val('9').attr('selected', true);
+					}
+				} else {
+					disableContainerByID("d_dobtwo");
+				}
+			});
+			$("#d_starttype").trigger("change");
+		});
+		
+		$("#lifestatus-3").click(function() {
+			disableContainerByID("deathrow");
+		});
+		
+		<?php if($isme){ ?>
+			disableContainerByID("deathrow");
+		<?php } ?>
+							
+		<?php if($person->isAlive()) { ?>
+			$("#lifestatus-1").trigger("click");
+		<?php } ?>
+		<?php if($person->isDead()) { ?>
+			$("#lifestatus-2").trigger("click");
+		<?php } ?>
+		<?php if($person->isUnknown()) { ?>
+			disableContainerByID("deathrow");
+		<?php } ?>
+		
+		$("#gender-2").click(function(){
+			enableContainerByID("isfemale");
+		});
+		$("#gender-1").click(function(){
+			disableContainerByID("isfemale");
+		});
+		<?php if($person->isFemale()) { ?>
+			enableContainerByID("isfemale");
+		<?php } ?>
+		<?php if($person->isMale()) { ?>
+			disableContainerByID("isfemale");
+		<?php } ?>
+			
+		var dateofbirthOpts = datepickerOpts;
+		var startfrom = '<?php echo date('Y') - 18; ?>';
+		dateofbirthOpts.yearRange = "-100:-18"; 
+		dateofbirthOpts.minDate = "-100Y";
+		dateofbirthOpts.maxDate = new Date("Dec 31, "+startfrom);	
+		$("#dateofbirth, #e_dateofbirth").datepicker(dateofbirthOpts);
+
+		var dateofdeathOpts = datepickerOpts;
+		dateofdeathOpts.yearRange = "-100";
+		dateofdeathOpts.maxDate = new Date();   
+		$("#dateofdeath, #e_dateofdeath").datepicker(dateofdeathOpts); 
+		
+		$("#dateofdeath").change(function() {
+			var d_date = $(this).val();
+			if(!isEmptyString(d_date)){
+				var e = new Date(d_date);
+				// alert(e.getFullYear()+" - "+e.getMonth()+1+" - "+e.getDate());
+				$("#deathyear").val(e.getFullYear());
+				$("#deathmonth").val(e.getMonth()+1);
+				$("#deathday").val(e.getDate());
+			}
+		});
+		$("#e_dateofbirth").change(function() {
+			var thedate = $(this).val();
+			if(!isEmptyString(thedate)){
+				var d = new Date(thedate);
+				$("#e_birthyear").val(d.getFullYear());
+				$("#e_birthmonth").val(d.getMonth()+1);
+				$("#e_birthday").val(d.getDate());
+			}
+		});
+		$("#e_dateofdeath").change(function() {
+			var d_date = $(this).val();
+			if(!isEmptyString(d_date)){
+				var e = new Date(d_date);
+				$("#e_deathyear").val(e.getFullYear());
+				$("#e_deathmonth").val(e.getMonth()+1);
+				$("#e_deathday").val(e.getDate());
+			}
+		});
+		$("#dateofbirth, #dateofdeath, #e_dateofbirth, , #e_dateofdeath").change();
+		
+		// circa dates
+		enableContainerByID("dates");
+		disableContainerByID("dtext");		
+		disableContainerByID("dobtwo");
+		
+		$("#starttype").change(function() {
+			if($(this).val() == '11'){
+				enableContainerByID("dtext");
+				disableContainerByID("dates");
+			} else {
+				enableContainerByID("dates");
+				disableContainerByID("dtext");
+			}
+			if($(this).val() == '2' || $(this).val() == '3'){
+				disableContainerByID("dtext");
+				enableContainerByID("dates");
+				enableContainerByID("dobtwo");
+				if($(this).val() == '3'){
+					$("#e_starttype").val('8').attr('selected', true);
+				}
+				if($(this).val() == '2'){
+					$("#e_starttype").val('9').attr('selected', true);
+				}
+			} else {
+				disableContainerByID("dobtwo");
+			}
+		});
+		
+		<?php if($b_hascirca){ ?>
+			$("#starttype").trigger("change");
+		<?php } ?>
+		
+		// basics custom failure and success url
+		$("#profileform-general .savethenview").click(function() {
+			$("#profileform-general .successurl").val('<?php echo encode($this->baseUrl('person/view/tab/basics')); ?>');
+			$("#profileform-general .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/basics')); ?>');
+		});
+		$("#profileform-general .savethennext").click(function() {
+			$("#profileform-general .successurl").val('<?php echo encode($this->baseUrl('person/index/tab/clan')); ?>');
+			$("#profileform-general .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/basics')); ?>');
+		});
+		// clan custom failure and success url
+		$("#profileform-clan .savethenview").click(function() {
+			$("#profileform-clan .successurl").val('<?php echo encode($this->baseUrl('person/view/tab/clan')); ?>');
+			$("#profileform-clan .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/clan')); ?>');			
+		}); 
+		$("#profileform-clan .savethennext").click(function() {
+			$("#profileform-clan .successurl").val('<?php echo encode($this->baseUrl('person/index/tab/personal')); ?>');
+			$("#profileform-clan .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/clan')); ?>');
+		});
+		// personal custom failure and success url
+		$("#profileform-personal .savethenview").click(function() {
+			$("#profileform-personal .successurl").val('<?php echo encode($this->baseUrl('person/view/tab/personal')); ?>');
+			$("#profileform-personal .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/personal')); ?>');
+		}); 
+		$("#profileform-personal .savethennext").click(function() {
+			$("#profileform-personal .successurl").val('<?php echo encode($this->baseUrl('person/index/tab/contacts')); ?>');
+			$("#profileform-personal .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/personal')); ?>');
+		});
+		// contacts custom failure and success url
+		$("#profileform-contacts .savethenview").click(function() {
+			$("#profileform-contacts .successurl").val('<?php echo encode($this->baseUrl('person/view/tab/contacts')); ?>');
+			$("#profileform-contacts .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/contacts')); ?>');
+		});
+		$("#profileform-contacts .savethennext").click(function() {
+			$("#profileform-contacts .successurl").val('<?php echo encode($this->baseUrl('person/index/tab/settings')); ?>');
+			$("#profileform-contacts .failureurl").val('<?php echo encode($this->baseUrl('person/index/id/'.encode($person->getID()).'/tab/contacts')); ?>');
+		});	
+		
+		// when a user clicks add new display the first hidden firm which is not shown
+		$(".addline").click(function() {
+			showNewLine($(this).attr('id'));
+		});		
+		function showNewLine(type) {
+			$(".hidden_row_"+type+":first").removeClass("hidden_row_"+type).addClass("visible_row_"+type);	
+			
+			// remove disabled attr from the fields
+			$("tr.visible_row_"+type+" input").attr("disabled", false);
+			$("tr.visible_row_"+type+" select").attr("disabled", false);	
+				
+			//if the maximum no of rows is added, hide the link to add another row
+			if ($("tr.visible_row_"+type+"").size() == 5) {
+				$("#"+type).hide();	
+			} else {
+				$("#"+type).show();	
+			}				
+		}		
+		
+		// delete rules
+		$(".removeline").click(function() {
+			removeLine($(this).attr('id'), $(this).attr('rel'));
+		});
+		function removeLine(lineid, type) {
+			var row_to_hide = lineid;
+			// confirm popup
+			bootbox.confirm("Are you sure you want to delete this contact? <br /><br /> Click <b>'OK'</b> to confirm, and <b>'Cancel'</b> to ignore", function(confirmed) {
+				if(confirmed){
+					$("tr.visible_row_"+type).has('a#'+row_to_hide).addClass("hidden_row_"+type).removeClass("visible_row_"+type);
+					// $("input, select").attr("disabled", true);	
+					$("tr."+row_to_hide+" input").val('').attr("disabled", true);
+					$("tr."+row_to_hide+" select").val('').attr("disabled", true);	
+					//if the maximum no of rows is added, hide the link to add another row
+					if ($("tr.visible_row_"+type).size() == 5) {
+						$("#"+type).hide();		
+					} else {
+						$("#"+type).show();	
+					}			
+				} else {
+					return false;
+				}
+			});
+		}
+		
+		// default email address		
+		if(isEmptyString($("tr.row_email_0 td input.email").val())){
+			var email = '<?php echo $person->getUser()->getEmail(); ?>';
+			//$("tr.row_email_0 td input.email").val(email);
+		}
+		
+		$(".screentrigger").change(function() {
+			$("#screenname").html('');
+			var first = $("#firstname").val(); var last = $("#lastname").val(); var clan = $("#clanname").val(); var other = $("#othernames").val();
+			var opt1 = first+" "+last;
+			var opt2 = last+" "+first;
+			$("#screenname").append("<option value='"+opt1+"'>"+opt1+"</option>");
+			$("#screenname").append("<option value='"+opt2+"'>"+opt2+"</option>");
+			
+			if(!isEmptyString(clan)){
+				var opt3 = first+" "+last+" ("+clan+")";
+				var opt4 = first+" "+clan+" "+last;
+				var opt5 = last+" "+first+" ("+clan+")";
+				var opt6 = last+" "+clan+" "+first;		
+				var opt7 = clan+" "+first+" "+last;
+				var opt8 = clan+" "+last+" "+first;				
+				$("#screenname").append("<option value='"+opt3+"'>"+opt3+"</option>");
+				$("#screenname").append("<option value='"+opt4+"'>"+opt4+"</option>");
+				$("#screenname").append("<option value='"+opt5+"'>"+opt5+"</option>");
+				$("#screenname").append("<option value='"+opt6+"'>"+opt6+"</option>");
+				$("#screenname").append("<option value='"+opt7+"'>"+opt7+"</option>");
+				$("#screenname").append("<option value='"+opt8+"'>"+opt8+"</option>");
+			}
+			if(!isEmptyString(other)){
+				var opt9 = first+" "+other+" "+last;
+				var opt10 = last+" "+first+" "+other;
+				$("#screenname").append("<option value='"+opt9+"'>"+opt9+"</option>");
+				$("#screenname").append("<option value='"+opt10+"'>"+opt10+"</option>");
+			}
+			// alert('result is '+$("#screenname option").eq(10));
+			<?php if(!isEmptyString($person->getScreenName())) { ?>
+			var curval = '<?php echo $person->getScreenName(); ?>';
+			$("#screenname").val(curval).attr('selected', true);
+			<?php } ?>
+		});
+		 
+		$(".screentrigger").change();
+		<?php if(!isEmptyString($person->getScreenName())) { ?>
+			var curval = '<?php echo $person->getScreenName(); ?>';
+			$("#screenname").val(curval).attr('selected', true);
+		<?php } else { ?>
+			var first = $("#firstname").val(); var last = $("#lastname").val(); var clan = $("#clanname").val(); var other = $("#othernames").val();
+			if(!isEmptyString(clan)){				
+				$("#screenname").val(first+" "+last+" ("+clan+")").attr('selected', true);
+			}
+		<?php } ?>
+			
+		<?php 
+			for($v = 0; $v < 5; $v++) { 
+		?>
+			// var row = '<?php echo $v; ?>';
+			$("select.country_<?php echo $v; ?>").change(function() {
+				var ccode = $(this).val();
+				// alert(row);
+				// disable 
+				switch(ccode){
+					case 'US':
+					case 'CA':
+						multipleDisableContainerByID("td_ssaza_<?php echo $v; ?>, td_village_but_<?php echo $v; ?>, td_village_<?php echo $v; ?>, td_county_<?php echo $v; ?>");
+						multipleEnableContainerByID("td_city_<?php echo $v; ?>, td_state_<?php echo $v; ?>, td_zipcode_<?php echo $v; ?>");	
+						break;
+					case 'UG':
+						multipleDisableContainerByID("td_ssaza_<?php echo $v; ?>, td_village_but_<?php echo $v; ?>, td_state_<?php echo $v; ?>, td_zipcode_<?php echo $v; ?>, td_county_<?php echo $v; ?>");	
+						multipleEnableContainerByID("td_city_<?php echo $v; ?>, td_village_<?php echo $v; ?>");	
+						break;
+					case 'XX':
+						multipleDisableContainerByID("td_city_<?php echo $v; ?>, td_village_<?php echo $v; ?>, td_state_<?php echo $v; ?>, td_zipcode_<?php echo $v; ?>, td_county_<?php echo $v; ?>");	
+						multipleEnableContainerByID("td_ssaza_<?php echo $v; ?>, td_village_but_<?php echo $v; ?>");
+						break;
+					default:
+						multipleDisableContainerByID("td_ssaza_<?php echo $v; ?>, td_village_but_<?php echo $v; ?>, td_state_<?php echo $v; ?>, td_zipcode_<?php echo $v; ?>, td_county_<?php echo $v; ?>");	
+						multipleEnableContainerByID("td_city_<?php echo $v; ?>, td_village_<?php echo $v; ?>");	
+						break;
+				}
+			});	
+			
+			var ssigafield = $('#td_ssaza_<?php echo $v; ?> select').attr('id');
+			var key = $('#td_ssaza_<?php echo $v; ?> select').attr('key');
+			var currentssiga = $('#td_ssaza_<?php echo $v; ?> select').val();
+			var currentvillage = $('#td_ssaza_<?php echo $v; ?> select').attr('currenttown');
+			// alert('#addresses_village_but_'+key)
+			// chained select for buganda addresses
+			$('#td_ssaza_<?php echo $v; ?> select').selectChain({
+				target: $('#td_village_but_<?php echo $v; ?> select'),
+				url: '<?php echo $this->baseUrl('person/selectchain/'.SELECT_CHAIN_TYPE.'/ssaza_places/fieldid/'); ?>'+ssigafield,
+				data: 'currentvalue='+currentvillage,
+				type: 'get'
+			});
+			if(!isEmptyString(currentssiga)){
+				$('#td_ssaza_<?php echo $v; ?> select').trigger("change");
+			}
+			
+		<?php } ?>
+		
+		$("table.theaddresses tr.ad").each(function() {
+			var rowid = $("input."+$(this).attr('id')).val();
+			var ccode = $("select.country_"+rowid).val();
+			
+			switch(ccode){
+				case 'US':
+					multipleDisableContainerByID("td_ssaza_"+rowid+", td_village_but_"+rowid+", td_village_"+rowid+", td_county_"+rowid);
+					multipleEnableContainerByID("td_city_"+rowid+", td_state_"+rowid+", td_zipcode_"+rowid);	
+					break;
+				case 'UG':
+					multipleDisableContainerByID("td_ssaza_"+rowid+", td_village_but_"+rowid+", td_state_"+rowid+", td_zipcode_"+rowid+", td_county_"+rowid);	
+					multipleEnableContainerByID("td_city_"+rowid+", td_village_"+rowid);	
+					break;
+				case 'XX':
+					multipleDisableContainerByID("td_city_"+rowid+", td_village_"+rowid+", td_state_"+rowid+", td_zipcode_"+rowid+", td_county_"+rowid);	
+					multipleEnableContainerByID("td_ssaza_"+rowid+", td_village_but_"+rowid);
+					break;
+				default:
+					multipleDisableContainerByID("td_ssaza_"+rowid+", td_village_but_"+rowid+", td_state_"+rowid+", td_zipcode_"+rowid+", td_county_"+rowid);	
+					multipleEnableContainerByID("td_city_"+rowid+", td_village_"+rowid);	
+					break;
+			}
+		});
+		
+		// check that atleast one contact has been defaulted as primary
+		if(!$(".primary_email:checked").val()){			
+			//$("#email_isprimary_0").click();
+			$(".primary_email:first").click();
+		}
+		if(!$(".primary_phone:checked").val()){			
+			$(".primary_phone:first").click();
+		}
+		if(!$(".primary_address:checked").val()){			
+			$("#address_isprimary_0").click();
+		}
+		
+		<?php if($hidesiga){ ?>
+			// chained select to load the ssigas for a clan
+			$('#clanid').selectChain({
+				target: $('#ssigaid'),
+				url: '<?php echo $this->baseUrl('person/selectchain/'.SELECT_CHAIN_TYPE.'/clan_ssigas/')?>',
+				data: 'currentvalue=<?php echo $person->getSsigaID(); ?>',
+				type: 'get'
+			});
+			<?php if(!isEmptyString($person->getClanID()) || (!isEmptyString($person->getClanID()) && !isEmptyString($person->getSsigaID()))){ ?>
+				$('#clanid').trigger("change");
+			<?php } ?>
+		<?php } ?>
+		
+		$('#addresses_ssaza_<?php echo $but_key; ?>').selectChain({
+		    target: $('#addresses_village_<?php echo $but_key; ?>'),
+		    url: '<?php echo $this->baseUrl('person/selectchain/'.SELECT_CHAIN_TYPE.'/ssaza_places/fieldid/addresses_ssaza_'.$but_key); ?>',
+		    data: 'currentvalue=<?php echo $but_villageid; ?>',
+		    type: 'get'
+		});
+		<?php if(!isEmptyString($but_ssaza)){ ?>
+			$('#addresses_ssaza_<?php echo $but_key; ?>').trigger("change");
+		<?php } ?>
+		
+		$("#tabs ul li a").click(function(e){
+			curentclass = $(this).attr('class');
+			$(".form-horizontal."+curentclass).html("<a id='loading' class='xhidden' style='text-align:center; display:block; margin-top:40px; margin-bottom:40px;'><span style='display:block; margin-bottom:15px; font-weight:bold;'>Loading...</span><img style='margin-left:-10px;' src='<?php echo $this->baseUrl('images/loader.gif'); ?>' /></a>").css({'display':'block'});
+			var url = '';
+			var url = "<?php echo $this->baseUrl("person/index/id/".encode($person->getID())."/tab/"); ?>"+curentclass;
+			// alert(curentclass);
+			location.href = url;
+			
+		});
+	}); 
+
+</script>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

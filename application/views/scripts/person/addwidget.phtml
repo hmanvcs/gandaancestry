@@ -1,0 +1,189 @@
+	<?php
+		require_once APPLICATION_PATH.'/includes/header.php';
+		
+		$islist = true; 
+        if($request->getActionName() == 'view' || $request->getControllerName() == 'dashboard'){
+            $currentprofile = $person;
+            $id = $id;
+			$islist = false;
+        }
+        $fathertitle = ($id == $personid) ? "Add My Father" : "Add Father of ".$name;
+        $mothertitle = ($id == $personid) ? "Add My Mother" : "Add Mother of ".$name;
+        $brothertitle = ($id == $personid) ? "Add My Brother" : "Add Brother of ".$name;
+        $sistertitle = ($id == $personid) ? "Add My Sister" : "Add Sister of ".$name;
+        $sontitle = ($id == $personid) ? "Add My Son" : "Add Son of ".$name;
+        $daugtertitle = ($id == $personid) ? "Add My Daughter" : "Add Daughter of ".$name;
+        $spousetitle = ($id == $personid) ? "Add My Spouse" : "Add Spouse of ".$name;
+		
+		if($islist){
+			$focuslineid = $focuslineid;
+			$enabled = $line['addenabled'];
+			$hasfather = false;
+			$hasmother = false;
+			if(!isEmptyString($line['fatherid'])){
+				$hasfather = true;
+			}
+			if(!isEmptyString($line['motherid'])){
+				$hasmother = true;
+			}
+			$ffirstname = $line['ffirstname'];
+			$mfirstname = $line['mfirstname'];
+			// full name of father
+			$clanname = '';
+			if($line['ftype'] == 1 && !isEmptyString($line['fclanid'])){
+				$clanname = "(".$line['fclanname'].")";
+			}
+			$ffullname = isEmptyString($line['fscreenname']) ? $line['ffirstname']." ".$line['flastname']." ".$clanname : $line['fscreenname'];
+			
+			// full name of mother
+			$clanname = '';
+			if($line['mtype'] == 1 && !isEmptyString($line['mclanid'])){
+				$clanname = "(".$line['mclanname'].")";
+			}
+			$mfullname = isEmptyString($line['mscreenname']) ? $line['mfirstname']." ".$line['mlastname']." ".$clanname : $line['mscreenname'];/**/
+					
+		} else {
+			$treeline = $currentprofile->getFocusTreeLine();
+			$focuslineid = $treeline->getID();
+			$enabled = $treeline->getRelationShip()->getAddEnabled();
+			$hasfather = false;
+			if($currentprofile->hasFather()){
+				$hasfather = true;
+			}
+			$firstname = $currentprofile->getFirstName();
+			$ffirstname = $currentprofile->getFamily()->getFather()->getFirstName();
+			$ffullname = $currentprofile->getFamily()->getFather()->getName();
+			$hasmother = false;
+			if($currentprofile->hasMother()){
+				$hasmother = true;
+			}
+			$mfirstname = $currentprofile->getFamily()->getMother()->getFirstName();
+			$mfullname = $currentprofile->getFamily()->getMother()->getName();
+			
+			$hasprofileimage = false;
+			$photo_path = '';
+			if($currentprofile->hasProfileImage() ){
+				$photo_path = $currentprofile->getThumbnailPicturePath();
+			}
+			// debugMessage($photo_path);
+		}
+        $sibclass = "";						
+        $fatherenabled = false;
+        $motherenabled = false;
+        $spouseenabled = false;
+        $sonenabled = false;
+        $daughterenabled = false;
+        if($id == $personid){
+            $fatherenabled = true;
+            $motherenabled = true;
+            $spouseenabled = true;
+            $sonenabled = true;
+            $daughterenabled = true;
+        } else {
+            if(!isEmptyString($enabled)){
+                $enabled_array = explode(",",$enabled);
+                // debugMessage($enabled_array);
+                if(in_array(1, $enabled_array)){
+                    $fatherenabled = true;
+                }
+                if(in_array(2, $enabled_array)){
+                    $motherenabled = true;
+                }
+                if(in_array(5, $enabled_array)){
+                    $sonenabled = true;
+                }
+                if(in_array(6, $enabled_array)){
+                    $daughterenabled = true;
+                }
+                if(in_array(7, $enabled_array)){
+                    $spouseenabled = true;
+                }
+            }
+        }
+    ?>
+    <span class="span6 hide tooltipcontent" id="addimage_<?php echo $id; ?>">
+        <table class="reltable">
+            <tr>
+                <td id="addwig_rowone" style="vertical-align:top;">
+                    <table class="inner">
+                        <tr>
+                            <td width="30"></td>
+                            <td width="135" style="padding-top:6px; padding-left:4px;">
+                            	<?php if(!$hasfather){ ?>
+                                	<?php if($fatherenabled){ ?>
+                                        <a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/1/focusid/'.encode($id).'/treelineid/'.$focuslineid); ?>" class="addperson addbutton malebutton" id="fatherbutton_<?php echo $id; ?>" title="<?php echo $fathertitle; ?>" rel="<?php echo $fathertitle; ?>">Add Father</a>
+                                    <?php } ?>    
+                                <?php } else { ?>
+                                	<a href="<?php echo $this->baseUrl("person/view/id/".encode($id)); ?>" title="<?php echo "View ".$ffirstname."'s Profile"; ?>" class="textbutton"><?php echo $ffullname; ?></a>
+                                <?php } ?>
+                            </td>
+                            <td style="padding-top:6px; padding-left:6px;">
+                           		<?php if(!$hasmother){ ?>
+									<?php if($motherenabled){ ?>
+                                        <a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/2/focusid/'.encode($id).'/treelineid/'.$focuslineid); ?>" id="motherbutton_<?php echo $id; ?>" class="addperson addbutton femalebutton" title="<?php echo $mothertitle; ?>" rel="<?php echo $mothertitle; ?>">Add Mother</a>
+                                    <?php } ?>        
+                                <?php } else { ?>
+                                    <a href="<?php echo $this->baseUrl("person/view/id/".encode($id)); ?>" title="<?php echo "View ".$mfirstname."'s Profile"; ?>" class="textbutton"><?php echo $mfullname; ?></a>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td id="addwig_rowtwo" style="vertical-align:top;">
+                    <table class="inner">
+                        <tr>
+                            <td width="90" style="padding-left:5px; padding-top:0; vertical-align:middle; font-size:12px; text-align:center;">
+                            	<a href="<?php echo $this->baseUrl("person/view/id/".encode($id)); ?>" title="<?php echo "View ".$firstname."'s Profile"; ?>"><?php echo $name; ?></a>
+                            </td>
+                            <td width="190" style="height:25px; padding-top:0;">
+                                <div style="margin-left:35px; padding-top:0;" class="thumbinfo <?php echo $hasprofileimage ? 'new_pic' : 'default_pic'; ?>"> 
+                                    <a href="<?php echo $this->baseUrl("person/view/id/".encode($id)); ?>" title="<?php echo "View ".$firstname."'s Profile"; ?>"><img class="profileimage" src="<?php echo $photo_path; ?>" /></a>
+                                </div>
+                            </td>
+                            <td style="vertical-align:top; padding-top:0;">
+                                <table class="inner innermost" style="margin:0;">
+                                    <tr>
+                                        <td style="padding-top:20px;">
+                                          	<?php if($spouseenabled){ ?>
+												<?php $spousetxt = "Add Spouse"; ?>
+                                                <a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/7/focusid/'.encode($id).'/treelineid/'.$focuslineid); ?>" id="spousebutton_<?php echo $id; ?>" class="addperson addbutton femalebutton" title="<?php echo $spousetitle; ?>" rel="<?php echo $spousetitle; ?>"><?php echo $spousetxt; ?></a>
+                                            <?php } ?>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="height:70px; vertical-align:top;">
+                    <table class="inner">
+                        <tr>
+                            <td width="25"></td>
+                            <td width="135" style="padding-top:6px; padding-left:4px;">
+                            <?php if($sonenabled){ ?>
+                                <a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/5/focusid/'.encode($id).'/treelineid/'.$focuslineid); ?>" class="addperson addbutton malebutton" id="sonbutton_<?php echo $id; ?>" title="<?php echo $sontitle; ?>" rel="<?php echo $sontitle; ?>">Add Son</a>
+                            <?php } ?>
+                            </td>
+                            <td style="padding-top:6px; padding-left:6px;">
+                            <?php if($daughterenabled){ ?>
+                                <a href="<?php echo $this->baseUrl('person/add/pgc/true/rel/6/focusid/'.encode($id).'/treelineid/'.$focuslineid); ?>" id="daughterbutton_<?php echo $id; ?>" class="addperson addbutton femalebutton" title="<?php echo $daugtertitle; ?>" rel="<?php echo $daugtertitle; ?>">Add Daughter</a>
+                            <?php } ?>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </span>
+<style>
+#addwig_rowone {
+	height:80px;	
+}
+#addwig_rowtwo {
+	height:115px;	
+}
+</style>                    

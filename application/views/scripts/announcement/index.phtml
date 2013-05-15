@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<?php 
+	require_once APPLICATION_PATH.'/includes/header.php';
+
+	$title = $this->translate("companyname")." | Announcement";
+	
+	$applyurl = $this->serverUrl($this->baseUrl('announcement/apply'));
+	
+	$telurl = $this->serverUrl($this->baseUrl('announcement/tellfriend'));
+	
+?>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $title; ?></title>
+</head>
+<body data-spy="scroll" data-target=".subnav" data-offset="50" class="publicbody" style="background:none;">
+    <table style="margin:0 auto; background:none; width:940px;">
+        <tr>
+        	<td colspan="2" style="padding-bottom:10px; padding-top:10px; text-align:center; border-bottom: 3px solid #E2E2E2; background:none repeat scroll 0 0 #F4F4F4;">
+            	<a class="brand" id="thelogo" style="" href="<?php echo $this->baseUrl('index'); ?>"><img style="border:none;" alt="GandaAncestry" src="<?php echo $this->serverUrl($this->baseUrl('images/logogrey.png')); ?>" /></a>
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:center; display:block; font-size:13px; font-family:'calibri','Telex',sans-serif; padding-bottom:15px;">
+            	Not able to view this email properly? <a href="<?php echo $this->serverUrl($this->baseUrl('announcement')); ?>">Click here to view it online</a>
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="display:inline-block; font-weight:bold; font-size:26px; margin:10px 0 0 0; color:#000000; width:100%; text-align:center; font-family:'calibri','Telex',sans-serif;">
+            Announcing Baganda Website GandaAncestry</td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:justify; display:block; font-size:20px; line-height:28px; padding:0 70px 15px; 70px; color:#303030; font-family:'calibri','Telex',sans-serif;">We are pleased to announce GandaAncestry, the first and only Baganda family networking website. It allows you to build your family tree based on the Baganda clan system and to securely share it with relatives and friends.</td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:center; padding-bottom:15px;">
+            	<img alt="GandaAncestry Announcement" src="<?php echo $this->serverUrl($this->baseUrl('images/launch.png')); ?>" />
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:left; padding-bottom:15px; display:block; font-size:20px; line-height:28px; margin-bottom:15px; padding:0 70px 0 70px; color:#303030; font-family:'calibri','Telex',sans-serif; text-align:left; padding-left:70px;">
+            We are announced on <b>October 8, 2012</b> to commemorate <b>50 years</b> since Buganda  received her independence from the British. The website will be available to a limited number of users (beta users) until <b>November 19, 2012.</b></td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:left; padding-bottom:15px; display:block; font-size:20px; line-height:28px; margin-bottom:15px; padding:0 70px 25px 70px; color:#303030; font-family:'calibri','Telex',sans-serif; text-align:left; padding-left:70px; padding-right:10px;">
+            GandaAncestry will be officially launched on <b>November 19, 2012</b>, in honor of the <b>88th</b> birthday anniversary of Ssekabaka Muteesa II, father of beloved Kabaka Muwenda Mutebi II.</td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:left; padding-bottom:15px; display:block; font-size:20px; line-height:28px; margin-bottom:15px; color:#303030; font-family:'calibri','Telex',sans-serif; text-align:left; padding-left:70px;">
+            	<img alt="President, GandaAncestry" title="President, GandaAncestry" src="<?php echo $this->serverUrl($this->baseUrl('images/presidentsign.png')); ?>" al /><br />(Mmamba) <br />President, GandaAncestry.
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:center; padding-bottom:30px; display:block; font-size:20px; line-height:28px; margin-bottom:15px; padding:0 70px 0 70px; color:#303030; font-family:'calibri','Telex',sans-serif;">
+  			<!--<a id="apply" style="width:268px; 61px;" href="<?php //echo $applyurl; ?>" title="Apply to Be A Beta User"><img style="border:none;" src="<?php //echo $this->serverUrl($this->baseUrl('images/applybeta.png')); ?>" alt="Apply to Be A Beta User" title="Apply to Be A Beta User" /></a>-->
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:center; display:block; font-size:20px; line-height:28px; margin-bottom:15px; padding-top:30px; color:#303030; font-family:'calibri','Telex',sans-serif;"><a style="font-size:16px;" href="<?php echo $telurl; ?>">Forward this message to a friend</a>
+               
+            </td>
+        </tr>
+        <tr>
+        	<td colspan="2" style="text-align:center; display:block; font-size:16px; line-height:28px; margin-bottom:15px; padding-top:30px; color:#303030; font-family:'calibri','Telex',sans-serif;">&nbsp;Copyright &copy; 2012 GandaAncestry. All Rights Reserved.
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
